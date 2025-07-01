@@ -15,6 +15,8 @@ import {
   Area,
   AreaChart
 } from 'recharts';
+import Pagination from './Pagination';
+import { usePagination } from '../hooks/usePagination';
 
 interface ReportsProps {
   entries: DaybookEntry[];
@@ -110,6 +112,20 @@ const Reports: React.FC<ReportsProps> = ({ entries }) => {
   const trialBalance = generateTrialBalance();
   const profitLoss = generateProfitLoss();
   const cashFlow = generateCashFlow();
+
+  // Pagination for Trial Balance
+  const {
+    currentPage: trialBalancePage,
+    itemsPerPage: trialBalanceItemsPerPage,
+    totalPages: trialBalanceTotalPages,
+    totalItems: trialBalanceTotalItems,
+    paginatedData: paginatedTrialBalance,
+    handlePageChange: handleTrialBalancePageChange,
+    handleItemsPerPageChange: handleTrialBalanceItemsPerPageChange,
+  } = usePagination(trialBalance, { 
+    initialPage: 1, 
+    initialItemsPerPage: 10 
+  });
 
   return (
     <div className="space-y-6">
@@ -348,7 +364,7 @@ const Reports: React.FC<ReportsProps> = ({ entries }) => {
             {/* Mobile View */}
             <div className="lg:hidden">
               <div className="space-y-3">
-                {trialBalance.map((account, index) => (
+                {paginatedTrialBalance.map((account, index) => (
                   <div key={index} className="bg-white border border-gray-200 rounded-lg p-3 xs:p-4 hover:bg-gray-50 transition-colors">
                     <div className="flex justify-between items-start mb-2">
                       <div className="min-w-0 flex-1">
@@ -393,6 +409,22 @@ const Reports: React.FC<ReportsProps> = ({ entries }) => {
                   </div>
                 </div>
               </div>
+
+              {/* Mobile Pagination */}
+              {trialBalanceTotalItems > 0 && (
+                <div className="mt-6 border-t border-gray-200 pt-6">
+                  <Pagination
+                    currentPage={trialBalancePage}
+                    totalPages={trialBalanceTotalPages}
+                    itemsPerPage={trialBalanceItemsPerPage}
+                    totalItems={trialBalanceTotalItems}
+                    onPageChange={handleTrialBalancePageChange}
+                    onItemsPerPageChange={handleTrialBalanceItemsPerPageChange}
+                    showItemsPerPage={true}
+                    itemsPerPageOptions={[5, 10, 15, 25]}
+                  />
+                </div>
+              )}
             </div>
 
             {/* Desktop View */}
@@ -407,7 +439,7 @@ const Reports: React.FC<ReportsProps> = ({ entries }) => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {trialBalance.map((account, index) => (
+                  {paginatedTrialBalance.map((account, index) => (
                     <tr key={index} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-dark-900">{account.name}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-dark-600">{account.type}</td>
@@ -419,7 +451,9 @@ const Reports: React.FC<ReportsProps> = ({ entries }) => {
                       </td>
                     </tr>
                   ))}
-                  <tr className="bg-gray-50 font-bold">
+                </tbody>
+                <tfoot className="bg-gray-50">
+                  <tr className="font-bold">
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-dark-900" colSpan={2}>Total</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-bold text-red-600">
                       {formatCurrency(trialBalance.reduce((sum, acc) => sum + acc.debit, 0))}
@@ -428,8 +462,24 @@ const Reports: React.FC<ReportsProps> = ({ entries }) => {
                       {formatCurrency(trialBalance.reduce((sum, acc) => sum + acc.credit, 0))}
                     </td>
                   </tr>
-                </tbody>
+                </tfoot>
               </table>
+
+              {/* Desktop Pagination */}
+              {trialBalanceTotalItems > 0 && (
+                <div className="mt-6 border-t border-gray-200 pt-6">
+                  <Pagination
+                    currentPage={trialBalancePage}
+                    totalPages={trialBalanceTotalPages}
+                    itemsPerPage={trialBalanceItemsPerPage}
+                    totalItems={trialBalanceTotalItems}
+                    onPageChange={handleTrialBalancePageChange}
+                    onItemsPerPageChange={handleTrialBalanceItemsPerPageChange}
+                    showItemsPerPage={true}
+                    itemsPerPageOptions={[5, 10, 15, 25]}
+                  />
+                </div>
+              )}
             </div>
           </div>
         )}

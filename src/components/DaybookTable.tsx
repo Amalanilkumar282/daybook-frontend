@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { DaybookEntry } from '../types/daybook';
+import Pagination from './Pagination';
+import { usePagination } from '../hooks/usePagination';
 
 interface DaybookTableProps {
   entries: DaybookEntry[];
@@ -14,30 +16,6 @@ type SortDirection = 'asc' | 'desc';
 const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete }) => {
   const [sortField, setSortField] = useState<SortField>('date');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(amount);
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
-  };
-
-  const handleSort = (field: SortField) => {
-    if (field === sortField) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortField(field);
-      setSortDirection('asc');
-    }
-  };
 
   const sortedEntries = [...entries].sort((a, b) => {
     let aValue: any;
@@ -68,6 +46,43 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete 
     if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
     return 0;
   });
+
+  const {
+    currentPage,
+    itemsPerPage,
+    totalPages,
+    totalItems,
+    paginatedData: paginatedEntries,
+    handlePageChange,
+    handleItemsPerPageChange,
+  } = usePagination(sortedEntries, { 
+    initialPage: 1, 
+    initialItemsPerPage: 10 
+  });
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+    }).format(amount);
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+  };
+
+  const handleSort = (field: SortField) => {
+    if (field === sortField) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
 
   const totalDebit = entries.reduce((sum, entry) => sum + entry.debit, 0);
   const totalCredit = entries.reduce((sum, entry) => sum + entry.credit, 0);
@@ -140,7 +155,7 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete 
           <p className="text-xs xs:text-sm text-neutral-600">Swipe left for actions</p>
         </div>
         <div className="divide-y divide-neutral-100">
-          {sortedEntries.map((entry) => (
+          {paginatedEntries.map((entry) => (
             <div key={entry._id} className="p-3 xs:p-4 hover:bg-neutral-50/50 transition-colors">
               <div className="flex justify-between items-start mb-2 xs:mb-3">
                 <div className="min-w-0 flex-1">
@@ -212,6 +227,22 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete 
             </div>
           ))}
         </div>
+
+        {/* Mobile Pagination */}
+        {totalItems > 0 && (
+          <div className="mt-6 border-t border-neutral-200 pt-6">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              itemsPerPage={itemsPerPage}
+              totalItems={totalItems}
+              onPageChange={handlePageChange}
+              onItemsPerPageChange={handleItemsPerPageChange}
+              showItemsPerPage={true}
+              itemsPerPageOptions={[5, 10, 25, 50]}
+            />
+          </div>
+        )}
       </div>
 
       {/* Desktop View */}
@@ -264,7 +295,7 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete 
             </tr>
           </thead>
           <tbody className="divide-y divide-neutral-100">
-            {sortedEntries.map((entry, index) => (
+            {paginatedEntries.map((entry, index) => (
               <tr key={entry._id} className="table-row">
                 <td className="table-cell font-medium">
                   <div className="flex flex-col">
@@ -363,6 +394,22 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete 
           </tfoot>
         </table>
       </div>
+
+      {/* Desktop Pagination */}
+      {totalItems > 0 && (
+        <div className="hidden lg:block mt-6 border-t border-neutral-200 pt-6">
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            itemsPerPage={itemsPerPage}
+            totalItems={totalItems}
+            onPageChange={handlePageChange}
+            onItemsPerPageChange={handleItemsPerPageChange}
+            showItemsPerPage={true}
+            itemsPerPageOptions={[5, 10, 25, 50]}
+          />
+        </div>
+      )}
     </div>
   );
 };

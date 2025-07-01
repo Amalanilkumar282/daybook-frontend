@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { DaybookEntry } from '../types/daybook';
+import Pagination from './Pagination';
+import { usePagination } from '../hooks/usePagination';
 
 interface SearchProps {
   entries: DaybookEntry[];
@@ -19,6 +21,20 @@ const Search: React.FC<SearchProps> = ({ entries }) => {
   const [sortBy, setSortBy] = useState<'date' | 'amount' | 'relevance'>('relevance');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [isAdvancedSearch, setIsAdvancedSearch] = useState(false);
+
+  const {
+    currentPage,
+    itemsPerPage,
+    totalPages,
+    totalItems,
+    paginatedData: paginatedResults,
+    handlePageChange,
+    handleItemsPerPageChange,
+    resetPagination,
+  } = usePagination(searchResults, { 
+    initialPage: 1, 
+    initialItemsPerPage: 10 
+  });
 
   useEffect(() => {
     if (searchTerm.trim() === '' && Object.values(filters).every(value => value === '' || value === 'all')) {
@@ -80,7 +96,9 @@ const Search: React.FC<SearchProps> = ({ entries }) => {
     });
 
     setSearchResults(filteredResults);
-  }, [searchTerm, filters, sortBy, sortOrder, entries]);
+    resetPagination(); // Reset to first page when search results change
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchTerm, filters, sortBy, sortOrder, entries]); // Removed resetPagination from dependencies to prevent infinite loop
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -302,70 +320,88 @@ const Search: React.FC<SearchProps> = ({ entries }) => {
             </button>
           </div>
         ) : (
-          <div className="divide-y divide-gray-200">
-            {searchResults.map((entry) => (
-              <div key={entry._id} className="p-3 xs:p-4 sm:p-6 hover:bg-gray-50 transition-colors">
-                <div className="flex flex-col xs:flex-row xs:items-center xs:justify-between gap-2 xs:gap-4 mb-2">
-                  <div className="flex items-center space-x-3 xs:space-x-4 min-w-0 flex-shrink">
-                    <div className="flex-shrink-0">
-                      <div className={`w-8 h-8 xs:w-10 xs:h-10 rounded-full flex items-center justify-center ${
-                        entry.debit > 0 ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'
-                      }`}>
-                        <svg className="w-4 h-4 xs:w-5 xs:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          {entry.debit > 0 ? (
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16l-4-4m0 0l4-4m-4 4h18" />
-                          ) : (
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                          )}
-                        </svg>
+          <>
+            <div className="divide-y divide-gray-200">
+              {paginatedResults.map((entry) => (
+                <div key={entry._id} className="p-3 xs:p-4 sm:p-6 hover:bg-gray-50 transition-colors">
+                  <div className="flex flex-col xs:flex-row xs:items-center xs:justify-between gap-2 xs:gap-4 mb-2">
+                    <div className="flex items-center space-x-3 xs:space-x-4 min-w-0 flex-shrink">
+                      <div className="flex-shrink-0">
+                        <div className={`w-8 h-8 xs:w-10 xs:h-10 rounded-full flex items-center justify-center ${
+                          entry.debit > 0 ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'
+                        }`}>
+                          <svg className="w-4 h-4 xs:w-5 xs:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            {entry.debit > 0 ? (
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16l-4-4m0 0l4-4m-4 4h18" />
+                            ) : (
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                            )}
+                          </svg>
+                        </div>
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h4 className="text-sm xs:text-base sm:text-lg font-medium text-dark-900 truncate">
+                          {highlightText(entry.particulars, searchTerm)}
+                        </h4>
+                        <p className="text-xs xs:text-sm text-dark-600 truncate">
+                          Voucher: {highlightText(entry.voucherNumber, searchTerm)} • {formatDate(entry.date)}
+                        </p>
                       </div>
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <h4 className="text-sm xs:text-base sm:text-lg font-medium text-dark-900 truncate">
-                        {highlightText(entry.particulars, searchTerm)}
-                      </h4>
-                      <p className="text-xs xs:text-sm text-dark-600 truncate">
-                        Voucher: {highlightText(entry.voucherNumber, searchTerm)} • {formatDate(entry.date)}
-                      </p>
+                    
+                    <div className="text-left xs:text-right flex-shrink-0">
+                      <div className={`text-sm xs:text-base sm:text-lg font-bold ${entry.debit > 0 ? 'text-red-600' : 'text-green-600'} break-all xs:break-normal`}>
+                        {entry.debit > 0 ? formatCurrency(entry.debit) : formatCurrency(entry.credit)}
+                        <span className="text-xs ml-1">
+                          {entry.debit > 0 ? 'DR' : 'CR'}
+                        </span>
+                      </div>
                     </div>
                   </div>
                   
-                  <div className="text-left xs:text-right flex-shrink-0">
-                    <div className={`text-sm xs:text-base sm:text-lg font-bold ${entry.debit > 0 ? 'text-red-600' : 'text-green-600'} break-all xs:break-normal`}>
-                      {entry.debit > 0 ? formatCurrency(entry.debit) : formatCurrency(entry.credit)}
-                      <span className="text-xs ml-1">
-                        {entry.debit > 0 ? 'DR' : 'CR'}
-                      </span>
+                  <div className="flex flex-col xs:flex-row xs:items-center xs:justify-between gap-2 xs:gap-4">
+                    <div className="flex flex-wrap gap-2">
+                      <Link
+                        to={`/view/${entry._id}`}
+                        className="text-primary-600 hover:text-primary-700 text-xs xs:text-sm font-medium"
+                      >
+                        View Details
+                      </Link>
+                      <span className="text-gray-300">|</span>
+                      <Link
+                        to={`/edit/${entry._id}`}
+                        className="text-primary-600 hover:text-primary-700 text-xs xs:text-sm font-medium"
+                      >
+                        Edit
+                      </Link>
                     </div>
+                    
+                    {entry.createdAt && (
+                      <div className="text-xs text-gray-500 flex-shrink-0">
+                        Created {new Date(entry.createdAt).toLocaleDateString()}
+                      </div>
+                    )}
                   </div>
                 </div>
-                
-                <div className="flex flex-col xs:flex-row xs:items-center xs:justify-between gap-2 xs:gap-4">
-                  <div className="flex flex-wrap gap-2">
-                    <Link
-                      to={`/view/${entry._id}`}
-                      className="text-primary-600 hover:text-primary-700 text-xs xs:text-sm font-medium"
-                    >
-                      View Details
-                    </Link>
-                    <span className="text-gray-300">|</span>
-                    <Link
-                      to={`/edit/${entry._id}`}
-                      className="text-primary-600 hover:text-primary-700 text-xs xs:text-sm font-medium"
-                    >
-                      Edit
-                    </Link>
-                  </div>
-                  
-                  {entry.createdAt && (
-                    <div className="text-xs text-gray-500 flex-shrink-0">
-                      Created {new Date(entry.createdAt).toLocaleDateString()}
-                    </div>
-                  )}
-                </div>
+              ))}
+            </div>
+
+            {/* Search Results Pagination */}
+            {totalItems > 0 && (
+              <div className="border-t border-gray-200 p-4 xs:p-6">
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  itemsPerPage={itemsPerPage}
+                  totalItems={totalItems}
+                  onPageChange={handlePageChange}
+                  onItemsPerPageChange={handleItemsPerPageChange}
+                  showItemsPerPage={true}
+                  itemsPerPageOptions={[5, 10, 15, 25]}
+                />
               </div>
-            ))}
-          </div>
+            )}
+          </>
         )}
       </div>
     </div>

@@ -254,7 +254,7 @@ const Dashboard: React.FC = () => {
             </div>
           ) : (
             <DaybookTable 
-              entries={entries.slice(0, 10)} 
+              entries={entries} 
               onDelete={openDeleteModal}
               loading={loading}
             />
