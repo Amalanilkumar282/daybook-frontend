@@ -18,11 +18,16 @@ function App() {
   return (
     <ErrorBoundary>
       <Router>
-        <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen bg-gradient-to-br from-neutral-50 via-slate-50 to-neutral-100 relative overflow-hidden">
+          {/* Background decoration */}
+          <div className="absolute inset-0 opacity-30">
+            <div className="absolute inset-0 bg-gradient-to-br from-primary-100/20 via-transparent to-accent-100/20"></div>
+          </div>
+          
           <ErrorBoundary>
             <Navbar />
           </ErrorBoundary>
-          <main className="px-4 py-6">
+          <main className="relative z-10 px-4 py-8 sm:px-6 lg:px-8 animate-fade-in">
             <ErrorBoundary>
               <Routes>
                 <Route path="/" element={<Dashboard />} />
