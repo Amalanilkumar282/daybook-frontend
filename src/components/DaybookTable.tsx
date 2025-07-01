@@ -135,51 +135,51 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete 
     <div className="card animate-fade-in">
       {/* Mobile View */}
       <div className="lg:hidden">
-        <div className="p-4 border-b border-neutral-200">
-          <h3 className="text-lg font-semibold text-neutral-900">Recent Entries</h3>
-          <p className="text-sm text-neutral-600">Swipe left for actions</p>
+        <div className="p-3 xs:p-4 border-b border-neutral-200">
+          <h3 className="text-base xs:text-lg font-semibold text-neutral-900">Recent Entries</h3>
+          <p className="text-xs xs:text-sm text-neutral-600">Swipe left for actions</p>
         </div>
         <div className="divide-y divide-neutral-100">
           {sortedEntries.map((entry) => (
-            <div key={entry._id} className="p-4 hover:bg-neutral-50/50 transition-colors">
-              <div className="flex justify-between items-start mb-3">
-                <div>
-                  <div className="font-medium text-neutral-900 text-sm mb-1">
+            <div key={entry._id} className="p-3 xs:p-4 hover:bg-neutral-50/50 transition-colors">
+              <div className="flex justify-between items-start mb-2 xs:mb-3">
+                <div className="min-w-0 flex-1">
+                  <div className="font-medium text-neutral-900 text-xs xs:text-sm mb-1">
                     {formatDate(entry.date)}
                   </div>
                   <div className="text-xs text-neutral-500">
                     {new Date(entry.date).toLocaleDateString('en-US', { weekday: 'short' })}
                   </div>
                 </div>
-                <div className="modern-badge from-neutral-100 to-neutral-200 text-neutral-800 border-neutral-300/50 font-mono text-xs">
+                <div className="modern-badge from-neutral-100 to-neutral-200 text-neutral-800 border-neutral-300/50 font-mono text-xs flex-shrink-0">
                   {entry.voucherNumber}
                 </div>
               </div>
               
-              <div className="mb-3">
-                <p className="text-sm text-neutral-900 line-clamp-2" title={entry.particulars}>
+              <div className="mb-2 xs:mb-3">
+                <p className="text-xs xs:text-sm text-neutral-900 line-clamp-2" title={entry.particulars}>
                   {entry.particulars}
                 </p>
               </div>
               
-              <div className="flex justify-between items-center mb-3">
+              <div className="flex flex-col xs:flex-row xs:justify-between xs:items-center gap-2 xs:gap-3 mb-2 xs:mb-3">
                 <div className="space-y-1">
                   {entry.debit > 0 && (
-                    <div className="text-xs">
-                      <span className="text-neutral-600">Debit: </span>
-                      <span className="font-semibold text-error-600">{formatCurrency(entry.debit)}</span>
+                    <div className="text-xs flex items-center gap-1">
+                      <span className="text-neutral-600">Debit:</span>
+                      <span className="font-semibold text-error-600 break-all xs:break-normal">{formatCurrency(entry.debit)}</span>
                     </div>
                   )}
                   {entry.credit > 0 && (
-                    <div className="text-xs">
-                      <span className="text-neutral-600">Credit: </span>
-                      <span className="font-semibold text-success-600">{formatCurrency(entry.credit)}</span>
+                    <div className="text-xs flex items-center gap-1">
+                      <span className="text-neutral-600">Credit:</span>
+                      <span className="font-semibold text-success-600 break-all xs:break-normal">{formatCurrency(entry.credit)}</span>
                     </div>
                   )}
                 </div>
               </div>
               
-              <div className="flex justify-end space-x-2">
+              <div className="flex justify-end space-x-1 xs:space-x-2">
                 <Link
                   to={`/view/${entry._id}`}
                   className="p-2 text-primary-600 hover:text-primary-700 hover:bg-primary-50 rounded-xl transition-colors touch-target"

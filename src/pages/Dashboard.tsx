@@ -203,15 +203,15 @@ const Dashboard: React.FC = () => {
 
       {/* Recent Entries */}
       <div className="card">
-        <div className="p-8 border-b border-neutral-200/50">
-          <div className="flex items-center justify-between">
+        <div className="p-4 xs:p-6 sm:p-8 border-b border-neutral-200/50">
+          <div className="flex flex-col xs:flex-row xs:items-center xs:justify-between gap-3 xs:gap-4">
             <div>
-              <h2 className="text-3xl font-bold font-display text-neutral-900 mb-2">Recent Entries</h2>
-              <p className="text-neutral-600 font-medium">Latest daybook transactions and financial records</p>
+              <h2 className="text-xl xs:text-2xl sm:text-3xl font-bold font-display text-neutral-900 mb-1 xs:mb-2">Recent Entries</h2>
+              <p className="text-sm xs:text-base text-neutral-600 font-medium">Latest daybook transactions and financial records</p>
             </div>
             <Link
               to="/search"
-              className="btn-secondary text-sm flex items-center space-x-2 shadow-glow"
+              className="btn-secondary text-xs xs:text-sm flex items-center space-x-2 shadow-glow w-full xs:w-auto justify-center xs:justify-start"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -221,31 +221,31 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
         
-        <div className="p-6">
+        <div className="p-3 xs:p-4 sm:p-6">
           {entries.length === 0 && !loading ? (
-            <div className="text-center py-16">
-              <div className="w-24 h-24 bg-gradient-to-br from-neutral-100 to-neutral-200 rounded-3xl flex items-center justify-center mx-auto mb-6">
-                <svg className="w-12 h-12 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div className="text-center py-8 xs:py-12 sm:py-16">
+              <div className="w-16 h-16 xs:w-20 xs:h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-neutral-100 to-neutral-200 rounded-3xl flex items-center justify-center mx-auto mb-4 xs:mb-6">
+                <svg className="w-8 h-8 xs:w-10 xs:h-10 sm:w-12 sm:h-12 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-semibold font-display text-neutral-800 mb-2">No entries yet</h3>
-              <p className="text-neutral-600 mb-8 max-w-md mx-auto">Start managing your finances by creating your first daybook entry. Track income, expenses, and transactions with ease.</p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <h3 className="text-base xs:text-lg sm:text-xl font-semibold font-display text-neutral-800 mb-2">No entries yet</h3>
+              <p className="text-sm xs:text-base text-neutral-600 mb-6 xs:mb-8 max-w-sm xs:max-w-md mx-auto px-4">Start managing your finances by creating your first daybook entry. Track income, expenses, and transactions with ease.</p>
+              <div className="flex flex-col xs:flex-row gap-3 xs:gap-4 justify-center px-4">
                 <Link
                   to="/add"
-                  className="btn-primary flex items-center justify-center space-x-2"
+                  className="btn-primary flex items-center justify-center space-x-2 text-sm xs:text-base"
                 >
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-4 h-4 xs:w-5 xs:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                   </svg>
                   <span>Create First Entry</span>
                 </Link>
                 <Link
                   to="/reports"
-                  className="btn-secondary flex items-center justify-center space-x-2"
+                  className="btn-secondary flex items-center justify-center space-x-2 text-sm xs:text-base"
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4 xs:w-5 xs:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                   </svg>
                   <span>View Reports</span>

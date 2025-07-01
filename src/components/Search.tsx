@@ -125,16 +125,16 @@ const Search: React.FC<SearchProps> = ({ entries }) => {
     Object.values(filters).some(value => value !== '' && value !== 'all');
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 xs:space-y-6">
       {/* Search Header */}
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h2 className="text-2xl font-bold text-dark-900 mb-6">Search Entries</h2>
+      <div className="bg-white rounded-lg shadow-md p-4 xs:p-6">
+        <h2 className="text-lg xs:text-xl sm:text-2xl font-bold text-dark-900 mb-4 xs:mb-6">Search Entries</h2>
         
         {/* Main Search Bar */}
-        <div className="mb-4">
+        <div className="mb-3 xs:mb-4">
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 xs:w-5 xs:h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </div>
@@ -143,20 +143,20 @@ const Search: React.FC<SearchProps> = ({ entries }) => {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search by particulars or voucher number..."
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              className="w-full pl-8 xs:pl-10 pr-3 xs:pr-4 py-2 xs:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm xs:text-base"
             />
           </div>
         </div>
 
         {/* Advanced Search Toggle */}
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-col xs:flex-row xs:items-center xs:justify-between gap-2 xs:gap-4 mb-3 xs:mb-4">
           <button
             onClick={() => setIsAdvancedSearch(!isAdvancedSearch)}
-            className="text-primary-600 hover:text-primary-700 font-medium text-sm flex items-center space-x-1"
+            className="text-primary-600 hover:text-primary-700 font-medium text-xs xs:text-sm flex items-center space-x-1"
           >
             <span>{isAdvancedSearch ? 'Hide' : 'Show'} Advanced Filters</span>
             <svg 
-              className={`w-4 h-4 transform transition-transform ${isAdvancedSearch ? 'rotate-180' : ''}`} 
+              className={`w-3 h-3 xs:w-4 xs:h-4 transform transition-transform ${isAdvancedSearch ? 'rotate-180' : ''}`} 
               fill="none" 
               stroke="currentColor" 
               viewBox="0 0 24 24"
@@ -168,9 +168,9 @@ const Search: React.FC<SearchProps> = ({ entries }) => {
           {hasActiveFilters && (
             <button
               onClick={clearFilters}
-              className="text-red-600 hover:text-red-700 font-medium text-sm flex items-center space-x-1"
+              className="text-red-600 hover:text-red-700 font-medium text-xs xs:text-sm flex items-center space-x-1"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-3 h-3 xs:w-4 xs:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
               <span>Clear Filters</span>
@@ -304,14 +304,14 @@ const Search: React.FC<SearchProps> = ({ entries }) => {
         ) : (
           <div className="divide-y divide-gray-200">
             {searchResults.map((entry) => (
-              <div key={entry._id} className="p-6 hover:bg-gray-50 transition-colors">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center space-x-4">
+              <div key={entry._id} className="p-3 xs:p-4 sm:p-6 hover:bg-gray-50 transition-colors">
+                <div className="flex flex-col xs:flex-row xs:items-center xs:justify-between gap-2 xs:gap-4 mb-2">
+                  <div className="flex items-center space-x-3 xs:space-x-4 min-w-0 flex-shrink">
                     <div className="flex-shrink-0">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                      <div className={`w-8 h-8 xs:w-10 xs:h-10 rounded-full flex items-center justify-center ${
                         entry.debit > 0 ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'
                       }`}>
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-4 h-4 xs:w-5 xs:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           {entry.debit > 0 ? (
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16l-4-4m0 0l4-4m-4 4h18" />
                           ) : (
@@ -320,18 +320,18 @@ const Search: React.FC<SearchProps> = ({ entries }) => {
                         </svg>
                       </div>
                     </div>
-                    <div>
-                      <h4 className="text-lg font-medium text-dark-900">
+                    <div className="min-w-0 flex-1">
+                      <h4 className="text-sm xs:text-base sm:text-lg font-medium text-dark-900 truncate">
                         {highlightText(entry.particulars, searchTerm)}
                       </h4>
-                      <p className="text-sm text-dark-600">
+                      <p className="text-xs xs:text-sm text-dark-600 truncate">
                         Voucher: {highlightText(entry.voucherNumber, searchTerm)} • {formatDate(entry.date)}
                       </p>
                     </div>
                   </div>
                   
-                  <div className="text-right">
-                    <div className={`text-lg font-bold ${entry.debit > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                  <div className="text-left xs:text-right flex-shrink-0">
+                    <div className={`text-sm xs:text-base sm:text-lg font-bold ${entry.debit > 0 ? 'text-red-600' : 'text-green-600'} break-all xs:break-normal`}>
                       {entry.debit > 0 ? formatCurrency(entry.debit) : formatCurrency(entry.credit)}
                       <span className="text-xs ml-1">
                         {entry.debit > 0 ? 'DR' : 'CR'}
@@ -340,25 +340,25 @@ const Search: React.FC<SearchProps> = ({ entries }) => {
                   </div>
                 </div>
                 
-                <div className="flex items-center justify-between">
-                  <div className="flex space-x-2">
+                <div className="flex flex-col xs:flex-row xs:items-center xs:justify-between gap-2 xs:gap-4">
+                  <div className="flex flex-wrap gap-2">
                     <Link
                       to={`/view/${entry._id}`}
-                      className="text-primary-600 hover:text-primary-700 text-sm font-medium"
+                      className="text-primary-600 hover:text-primary-700 text-xs xs:text-sm font-medium"
                     >
                       View Details
                     </Link>
                     <span className="text-gray-300">|</span>
                     <Link
                       to={`/edit/${entry._id}`}
-                      className="text-primary-600 hover:text-primary-700 text-sm font-medium"
+                      className="text-primary-600 hover:text-primary-700 text-xs xs:text-sm font-medium"
                     >
                       Edit
                     </Link>
                   </div>
                   
                   {entry.createdAt && (
-                    <div className="text-xs text-gray-500">
+                    <div className="text-xs text-gray-500 flex-shrink-0">
                       Created {new Date(entry.createdAt).toLocaleDateString()}
                     </div>
                   )}

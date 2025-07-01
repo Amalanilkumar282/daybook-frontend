@@ -55,7 +55,7 @@ const SummaryCards: React.FC<SummaryCardsProps> = ({ summaryData, loading }) => 
 
   if (loading) {
     return (
-      <div className="grid-responsive-3 gap-responsive mb-6 sm:mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 xs:gap-4 sm:gap-6 mb-6 sm:mb-8">
         {[1, 2, 3].map((i) => (
           <div key={i} className="card p-responsive animate-pulse">
             <div className="h-4 bg-neutral-200 rounded w-3/4 mb-4"></div>
@@ -68,7 +68,7 @@ const SummaryCards: React.FC<SummaryCardsProps> = ({ summaryData, loading }) => 
   }
 
   return (
-    <div className="grid-responsive-3 gap-responsive mb-6 sm:mb-8 animate-slide-up">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 xs:gap-4 sm:gap-6 mb-6 sm:mb-8 animate-slide-up">
       {summaryItems.map((item, index) => {
         const balance = item.credit - item.debit;
         const isPositive = balance >= 0;

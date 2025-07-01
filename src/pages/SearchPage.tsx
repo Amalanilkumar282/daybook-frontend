@@ -66,10 +66,10 @@ const SearchPage: React.FC = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-dark-900">Search Entries</h1>
-        <p className="text-dark-600 mt-2">Find specific daybook entries using search filters and advanced options</p>
+    <div className="w-full px-3 xs:px-4 sm:px-6 lg:px-8 py-4 xs:py-6 sm:py-8 max-w-none xs:max-w-none sm:max-w-none lg:max-w-7xl xl:max-w-7xl mx-auto">
+      <div className="mb-4 xs:mb-6">
+        <h1 className="text-xl xs:text-2xl sm:text-3xl font-bold text-dark-900">Search Entries</h1>
+        <p className="text-sm xs:text-base text-dark-600 mt-1 xs:mt-2">Find specific daybook entries using search filters and advanced options</p>
       </div>
 
       <Search entries={entries} />
