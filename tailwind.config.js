@@ -4,6 +4,16 @@ module.exports = {
     "./src/**/*.{js,jsx,ts,tsx}",
   ],
   theme: {
+    screens: {
+      'xs': '320px',      // Small mobile phones
+      'sm': '475px',      // Large mobile phones
+      'md': '640px',      // Small tablets
+      'lg': '768px',      // Large tablets
+      'xl': '1024px',     // Small desktop
+      '2xl': '1280px',    // Large desktop
+      '3xl': '1536px',    // Extra large desktop
+      '4xl': '1920px',    // Ultra wide screens
+    },
     extend: {
       colors: {
         primary: {
@@ -116,6 +126,11 @@ module.exports = {
         'fade-in': 'fadeIn 0.5s ease-in-out',
         'slide-up': 'slideUp 0.3s ease-out',
         'scale-in': 'scaleIn 0.2s ease-out',
+      },
+      maxWidth: {
+        '8xl': '88rem',
+        '9xl': '96rem',
+        '10xl': '104rem',
       },
       keyframes: {
         fadeIn: {

@@ -133,7 +133,89 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete 
 
   return (
     <div className="card animate-fade-in">
-      <div className="overflow-x-auto">
+      {/* Mobile View */}
+      <div className="lg:hidden">
+        <div className="p-4 border-b border-neutral-200">
+          <h3 className="text-lg font-semibold text-neutral-900">Recent Entries</h3>
+          <p className="text-sm text-neutral-600">Swipe left for actions</p>
+        </div>
+        <div className="divide-y divide-neutral-100">
+          {sortedEntries.map((entry) => (
+            <div key={entry._id} className="p-4 hover:bg-neutral-50/50 transition-colors">
+              <div className="flex justify-between items-start mb-3">
+                <div>
+                  <div className="font-medium text-neutral-900 text-sm mb-1">
+                    {formatDate(entry.date)}
+                  </div>
+                  <div className="text-xs text-neutral-500">
+                    {new Date(entry.date).toLocaleDateString('en-US', { weekday: 'short' })}
+                  </div>
+                </div>
+                <div className="modern-badge from-neutral-100 to-neutral-200 text-neutral-800 border-neutral-300/50 font-mono text-xs">
+                  {entry.voucherNumber}
+                </div>
+              </div>
+              
+              <div className="mb-3">
+                <p className="text-sm text-neutral-900 line-clamp-2" title={entry.particulars}>
+                  {entry.particulars}
+                </p>
+              </div>
+              
+              <div className="flex justify-between items-center mb-3">
+                <div className="space-y-1">
+                  {entry.debit > 0 && (
+                    <div className="text-xs">
+                      <span className="text-neutral-600">Debit: </span>
+                      <span className="font-semibold text-error-600">{formatCurrency(entry.debit)}</span>
+                    </div>
+                  )}
+                  {entry.credit > 0 && (
+                    <div className="text-xs">
+                      <span className="text-neutral-600">Credit: </span>
+                      <span className="font-semibold text-success-600">{formatCurrency(entry.credit)}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              <div className="flex justify-end space-x-2">
+                <Link
+                  to={`/view/${entry._id}`}
+                  className="p-2 text-primary-600 hover:text-primary-700 hover:bg-primary-50 rounded-xl transition-colors touch-target"
+                  title="View Details"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                </Link>
+                <Link
+                  to={`/edit/${entry._id}`}
+                  className="p-2 text-accent-600 hover:text-accent-700 hover:bg-accent-50 rounded-xl transition-colors touch-target"
+                  title="Edit Entry"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                </Link>
+                <button
+                  onClick={() => onDelete(entry._id)}
+                  className="p-2 text-error-600 hover:text-error-700 hover:bg-error-50 rounded-xl transition-colors touch-target"
+                  title="Delete Entry"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Desktop View */}
+      <div className="hidden lg:block overflow-x-auto">
         <table className="table-modern">
           <thead>
             <tr>

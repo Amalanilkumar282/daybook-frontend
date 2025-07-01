@@ -117,20 +117,20 @@ const Dashboard: React.FC = () => {
   if (loading) {
     console.log('DEBUG: Dashboard showing loading state');
     return (
-      <div className="max-w-7xl mx-auto animate-fade-in">
+      <div className="container-wide animate-fade-in">
         <div className="animate-pulse">
-          <div className="h-8 bg-neutral-200 rounded-xl w-64 mb-6"></div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="h-6 sm:h-8 bg-neutral-200 rounded-xl w-48 sm:w-64 mb-4 sm:mb-6"></div>
+          <div className="grid-responsive-3 gap-responsive mb-6 sm:mb-8">
             {[1, 2, 3].map(i => (
-              <div key={i} className="card p-6">
+              <div key={i} className="card p-responsive">
                 <div className="h-4 bg-neutral-200 rounded w-20 mb-4"></div>
-                <div className="h-8 bg-neutral-200 rounded w-32 mb-2"></div>
-                <div className="h-6 bg-neutral-200 rounded w-24"></div>
+                <div className="h-6 sm:h-8 bg-neutral-200 rounded w-24 sm:w-32 mb-2"></div>
+                <div className="h-4 sm:h-6 bg-neutral-200 rounded w-16 sm:w-24"></div>
               </div>
             ))}
           </div>
           <div className="card">
-            <div className="h-64 bg-neutral-200 rounded-xl"></div>
+            <div className="h-48 sm:h-64 bg-neutral-200 rounded-xl"></div>
           </div>
         </div>
       </div>
@@ -138,23 +138,23 @@ const Dashboard: React.FC = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto animate-fade-in">
+    <div className="container-wide animate-fade-in">
       {/* Header */}
-      <div className="mb-10">
-        <div className="flex items-center justify-between">
+      <div className="mb-6 sm:mb-8 lg:mb-10">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="relative">
-            <h1 className="text-5xl font-bold font-display gradient-text mb-3">Dashboard</h1>
-            <p className="text-neutral-600 text-xl font-medium">Overview of your financial activities and recent transactions</p>
-            <div className="absolute -top-2 -left-2 w-24 h-24 bg-gradient-to-br from-primary-100/30 to-accent-100/30 rounded-full blur-2xl -z-10"></div>
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold font-display gradient-text mb-2 sm:mb-3">Dashboard</h1>
+            <p className="text-neutral-600 text-base sm:text-lg lg:text-xl font-medium">Overview of your financial activities and recent transactions</p>
+            <div className="absolute -top-2 -left-2 w-16 h-16 sm:w-24 sm:h-24 bg-gradient-to-br from-primary-100/30 to-accent-100/30 rounded-full blur-2xl -z-10"></div>
           </div>
-          <div className="hidden md:flex items-center space-x-6">
+          <div className="flex flex-col xs:flex-row gap-3 sm:gap-4">
             <div className="flex items-center space-x-3 px-4 py-2 bg-white/80 backdrop-blur-sm border border-neutral-200/50 rounded-2xl shadow-soft">
               <div className="w-3 h-3 bg-gradient-to-r from-success-500 to-success-600 rounded-full animate-pulse shadow-glow"></div>
               <span className="text-sm font-semibold text-neutral-700">Live Data</span>
             </div>
             <Link
               to="/add"
-              className="btn-primary flex items-center space-x-2 shadow-glow-lg"
+              className="btn-mobile-primary flex items-center justify-center space-x-2 shadow-glow-lg"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />

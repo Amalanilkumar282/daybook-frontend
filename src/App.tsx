@@ -18,16 +18,18 @@ function App() {
   return (
     <ErrorBoundary>
       <Router>
-        <div className="min-h-screen bg-gradient-to-br from-neutral-50 via-slate-50 to-neutral-100 relative overflow-hidden">
+        <div className="layout-responsive bg-gradient-to-br from-neutral-50 via-slate-50 to-neutral-100 relative overflow-x-hidden">
           {/* Background decoration */}
-          <div className="absolute inset-0 opacity-30">
+          <div className="absolute inset-0 opacity-30 pointer-events-none">
             <div className="absolute inset-0 bg-gradient-to-br from-primary-100/20 via-transparent to-accent-100/20"></div>
+            <div className="absolute top-0 left-0 w-48 h-48 xs:w-56 xs:h-56 sm:w-72 sm:h-72 bg-primary-200/10 rounded-full blur-3xl"></div>
+            <div className="absolute bottom-0 right-0 w-64 h-64 xs:w-80 xs:h-80 sm:w-96 sm:h-96 bg-accent-200/10 rounded-full blur-3xl"></div>
           </div>
           
           <ErrorBoundary>
             <Navbar />
           </ErrorBoundary>
-          <main className="relative z-10 px-4 py-8 sm:px-6 lg:px-8 animate-fade-in">
+          <main className="content-responsive relative z-10 animate-fade-in">
             <ErrorBoundary>
               <Routes>
                 <Route path="/" element={<Dashboard />} />

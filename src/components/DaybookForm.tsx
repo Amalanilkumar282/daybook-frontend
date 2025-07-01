@@ -117,13 +117,13 @@ const DaybookForm: React.FC<DaybookFormProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
-      <h2 className="text-2xl font-bold text-dark-900 mb-6">
+    <div className="bg-white rounded-lg shadow-md p-3 sm:p-4 lg:p-6">
+      <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-dark-900 mb-4 sm:mb-6">
         {mode === 'create' ? 'Add New Entry' : 'Edit Entry'}
       </h2>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4 lg:space-y-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 lg:gap-6">
           {/* Date */}
           <div>
             <label htmlFor="date" className="block text-sm font-medium text-dark-700 mb-2">

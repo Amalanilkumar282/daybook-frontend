@@ -36,14 +36,14 @@ const AddEntry: React.FC = () => {
 
   if (success) {
     return (
-      <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-green-50 border border-green-200 rounded-md p-8 text-center">
+      <div className="container-narrow py-responsive">
+        <div className="bg-green-50 border border-green-200 rounded-md p-6 sm:p-8 text-center">
           <div className="flex justify-center mb-4">
-            <svg className="w-16 h-16 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-12 h-12 sm:w-16 sm:h-16 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
-          <h2 className="text-2xl font-bold text-green-800 mb-2">Entry Added Successfully!</h2>
+          <h2 className="text-xl sm:text-2xl font-bold text-green-800 mb-2">Entry Added Successfully!</h2>
           <p className="text-green-600">Redirecting to dashboard...</p>
         </div>
       </div>
