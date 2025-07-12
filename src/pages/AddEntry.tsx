@@ -51,21 +51,17 @@ const AddEntry: React.FC = () => {
   }
 
   return (
-    <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="container-narrow-classic">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-dark-900">Add New Entry</h1>
-        <p className="text-dark-600 mt-2">Create a new daybook entry with transaction details</p>
+        <h1 className="text-classic-title font-bold text-tally-800">Add New Entry</h1>
+        <p className="text-classic-body text-tally-600 mt-2">Create a new daybook entry with transaction details</p>
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-md p-4 mb-6">
-          <div className="flex">
-            <svg className="w-5 h-5 text-red-400 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-            </svg>
-            <div className="ml-3">
-              <p className="text-sm text-red-800">{error}</p>
-            </div>
+        <div className="panel-classic bg-red-50 border-red-200 p-4 mb-6">
+          <div className="flex items-center">
+            <span className="text-red-600 mr-2">⚠️</span>
+            <p className="text-red-600 font-medium">{error}</p>
           </div>
         </div>
       )}

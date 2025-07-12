@@ -257,11 +257,18 @@ code {
   
   /* Responsive container classes for classic layout */
   .container-classic {
-    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+    @apply w-full px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16;
+    /* Full width on all screens with responsive padding */
   }
   
   .container-narrow-classic {
     @apply max-w-4xl mx-auto px-4 sm:px-6;
+    /* Narrow container for forms and focused content */
+  }
+  
+  .container-wide-classic {
+    @apply w-full px-2 sm:px-4 lg:px-6 xl:px-8;
+    /* Extra wide container with minimal padding for maximum space usage */
   }
   
   /* Classic sidebar layout */
@@ -274,16 +281,25 @@ code {
   }
   
   /* Classic grid layouts */
+  .grid-classic-1 {
+    @apply grid grid-cols-1 gap-4;
+  }
+  
   .grid-classic-2 {
-    @apply grid grid-cols-1 md:grid-cols-2 gap-4;
+    @apply grid grid-cols-1 sm:grid-cols-2 gap-4;
   }
   
   .grid-classic-3 {
-    @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4;
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4;
   }
   
   .grid-classic-4 {
-    @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4;
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4;
+  }
+  
+  .grid-classic-auto {
+    @apply grid gap-4;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   }
   
   /* Classic list styling */
@@ -305,6 +321,17 @@ code {
   
   .list-item-classic.selected {
     @apply bg-primary-100 font-medium;
+  }
+  
+  /* Classic panel layouts */
+  .panel-classic {
+    @apply bg-white border border-tally-300 text-tally-700;
+    box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.8), 1px 1px 2px rgba(0, 0, 0, 0.1);
+  }
+  
+  .panel-header-classic {
+    @apply bg-tally-100 border-b border-tally-300 px-4 py-3;
+    box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.8);
   }
 }
 

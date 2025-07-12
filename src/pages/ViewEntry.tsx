@@ -84,16 +84,16 @@ const ViewEntry: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white rounded-lg shadow-md p-6">
+      <div className="container-narrow-classic">
+        <div className="panel-classic p-6">
           <div className="animate-pulse">
-            <div className="h-8 bg-gray-200 rounded w-1/3 mb-6"></div>
+            <div className="h-8 bg-tally-200 w-1/3 mb-6"></div>
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {[1, 2, 3, 4, 5, 6].map((i) => (
                   <div key={i} className="space-y-2">
-                    <div className="h-4 bg-gray-200 rounded w-1/3"></div>
-                    <div className="h-6 bg-gray-200 rounded w-2/3"></div>
+                    <div className="h-4 bg-tally-200 w-1/3"></div>
+                    <div className="h-6 bg-tally-200 w-2/3"></div>
                   </div>
                 ))}
               </div>

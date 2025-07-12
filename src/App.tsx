@@ -24,8 +24,8 @@ function App() {
             <Navbar />
           </ErrorBoundary>
           
-          {/* Main content area with classic styling */}
-          <main className="flex-1 container-classic py-4">
+          {/* Main content area with classic styling - Full width utilization */}
+          <main className="flex-1 container-wide-classic py-4">
             <ErrorBoundary>
               <Routes>
                 <Route path="/" element={<Dashboard />} />
