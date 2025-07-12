@@ -18,18 +18,14 @@ function App() {
   return (
     <ErrorBoundary>
       <Router>
-        <div className="layout-responsive bg-gradient-to-br from-neutral-50 via-slate-50 to-neutral-100 relative overflow-x-hidden">
-          {/* Background decoration */}
-          <div className="absolute inset-0 opacity-30 pointer-events-none">
-            <div className="absolute inset-0 bg-gradient-to-br from-primary-100/20 via-transparent to-accent-100/20"></div>
-            <div className="absolute top-0 left-0 w-48 h-48 xs:w-56 xs:h-56 sm:w-72 sm:h-72 bg-primary-200/10 rounded-full blur-3xl"></div>
-            <div className="absolute bottom-0 right-0 w-64 h-64 xs:w-80 xs:h-80 sm:w-96 sm:h-96 bg-accent-200/10 rounded-full blur-3xl"></div>
-          </div>
-          
+        <div className="min-h-screen bg-tally-50 flex flex-col">
+          {/* Classic Windows-style application layout */}
           <ErrorBoundary>
             <Navbar />
           </ErrorBoundary>
-          <main className="content-responsive relative z-10 animate-fade-in">
+          
+          {/* Main content area with classic styling */}
+          <main className="flex-1 container-classic py-4">
             <ErrorBoundary>
               <Routes>
                 <Route path="/" element={<Dashboard />} />
@@ -43,6 +39,11 @@ function App() {
               </Routes>
             </ErrorBoundary>
           </main>
+          
+          {/* Classic status bar */}
+          <div className="statusbar-classic">
+            Ready | Professional Daybook System v2.0
+          </div>
         </div>
       </Router>
     </ErrorBoundary>

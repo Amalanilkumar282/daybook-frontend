@@ -117,34 +117,34 @@ const DaybookForm: React.FC<DaybookFormProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-3 sm:p-4 lg:p-6">
-      <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-dark-900 mb-4 sm:mb-6">
-        {mode === 'create' ? 'Add New Entry' : 'Edit Entry'}
-      </h2>
+    <div className="panel-classic">
+      <div className="panel-header-classic">
+        <h2 className="text-classic-title font-bold text-tally-800">
+          {mode === 'create' ? 'Add New Entry' : 'Edit Entry'}
+        </h2>
+      </div>
 
-      <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4 lg:space-y-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 lg:gap-6">
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {/* Date */}
-          <div>
-            <label htmlFor="date" className="block text-sm font-medium text-dark-700 mb-2">
-              Date *
+          <div className="form-group-classic">
+            <label htmlFor="date" className="label-classic">
+              Date: <span className="text-red-600">*</span>
             </label>
             <input
               type="date"
               id="date"
               value={formData.date}
               onChange={(e) => handleInputChange('date', e.target.value)}
-              className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
-                errors.date ? 'border-red-500' : 'border-gray-300'
-              }`}
+              className={`input-classic ${errors.date ? 'border-red-500' : ''}`}
             />
-            {errors.date && <p className="mt-1 text-sm text-red-600">{errors.date}</p>}
+            {errors.date && <p className="error-text-classic">{errors.date}</p>}
           </div>
 
           {/* Voucher Number */}
-          <div>
-            <label htmlFor="voucherNumber" className="block text-sm font-medium text-dark-700 mb-2">
-              Voucher Number *
+          <div className="form-group-classic">
+            <label htmlFor="voucherNumber" className="label-classic">
+              Voucher Number: <span className="text-red-600">*</span>
             </label>
             <input
               type="text"
@@ -152,18 +152,16 @@ const DaybookForm: React.FC<DaybookFormProps> = ({
               value={formData.voucherNumber}
               onChange={(e) => handleInputChange('voucherNumber', e.target.value)}
               placeholder="Enter voucher number"
-              className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
-                errors.voucherNumber ? 'border-red-500' : 'border-gray-300'
-              }`}
+              className={`input-classic ${errors.voucherNumber ? 'border-red-500' : ''}`}
             />
-            {errors.voucherNumber && <p className="mt-1 text-sm text-red-600">{errors.voucherNumber}</p>}
+            {errors.voucherNumber && <p className="error-text-classic">{errors.voucherNumber}</p>}
           </div>
         </div>
 
         {/* Particulars */}
-        <div>
-          <label htmlFor="particulars" className="block text-sm font-medium text-dark-700 mb-2">
-            Particulars *
+        <div className="form-group-classic">
+          <label htmlFor="particulars" className="label-classic">
+            Particulars: <span className="text-red-600">*</span>
           </label>
           <textarea
             id="particulars"
@@ -171,21 +169,19 @@ const DaybookForm: React.FC<DaybookFormProps> = ({
             value={formData.particulars}
             onChange={(e) => handleInputChange('particulars', e.target.value)}
             placeholder="Enter transaction details"
-            className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
-              errors.particulars ? 'border-red-500' : 'border-gray-300'
-            }`}
+            className={`input-classic ${errors.particulars ? 'border-red-500' : ''}`}
           />
-          {errors.particulars && <p className="mt-1 text-sm text-red-600">{errors.particulars}</p>}
+          {errors.particulars && <p className="error-text-classic">{errors.particulars}</p>}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Debit */}
-          <div>
-            <label htmlFor="debit" className="block text-sm font-medium text-dark-700 mb-2">
-              Debit Amount
+          <div className="form-group-classic">
+            <label htmlFor="debit" className="label-classic">
+              Debit Amount:
             </label>
             <div className="relative">
-              <span className="absolute left-3 top-2 text-gray-500">$</span>
+              <span className="absolute left-3 top-2 text-tally-600 font-medium">$</span>
               <input
                 type="number"
                 id="debit"
@@ -194,21 +190,19 @@ const DaybookForm: React.FC<DaybookFormProps> = ({
                 value={formData.debit}
                 onChange={(e) => handleInputChange('debit', parseFloat(e.target.value) || 0)}
                 placeholder="0.00"
-                className={`w-full pl-8 pr-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
-                  errors.debit ? 'border-red-500' : 'border-gray-300'
-                }`}
+                className={`input-classic pl-8 ${errors.debit ? 'border-red-500' : ''}`}
               />
             </div>
-            {errors.debit && <p className="mt-1 text-sm text-red-600">{errors.debit}</p>}
+            {errors.debit && <p className="error-text-classic">{errors.debit}</p>}
           </div>
 
           {/* Credit */}
-          <div>
-            <label htmlFor="credit" className="block text-sm font-medium text-dark-700 mb-2">
-              Credit Amount
+          <div className="form-group-classic">
+            <label htmlFor="credit" className="label-classic">
+              Credit Amount:
             </label>
             <div className="relative">
-              <span className="absolute left-3 top-2 text-gray-500">$</span>
+              <span className="absolute left-3 top-2 text-tally-600 font-medium">$</span>
               <input
                 type="number"
                 id="credit"
@@ -217,22 +211,19 @@ const DaybookForm: React.FC<DaybookFormProps> = ({
                 value={formData.credit}
                 onChange={(e) => handleInputChange('credit', parseFloat(e.target.value) || 0)}
                 placeholder="0.00"
-                className={`w-full pl-8 pr-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
-                  errors.credit ? 'border-red-500' : 'border-gray-300'
-                }`}
+                className={`input-classic pl-8 ${errors.credit ? 'border-red-500' : ''}`}
               />
             </div>
-            {errors.credit && <p className="mt-1 text-sm text-red-600">{errors.credit}</p>}
+            {errors.credit && <p className="error-text-classic">{errors.credit}</p>}
           </div>
         </div>
 
-        <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4">
-          <div className="flex">
-            <svg className="w-5 h-5 text-yellow-400 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-            </svg>
-            <div className="ml-3">
-              <p className="text-sm text-yellow-800">
+        {/* Information Box */}
+        <div className="info-box-classic">
+          <div className="flex items-start">
+            <span className="text-tally-700 mr-2 mt-0.5">ℹ️</span>
+            <div>
+              <p className="text-classic-body text-tally-700 font-medium">
                 <strong>Note:</strong> Enter either a debit amount OR a credit amount, not both. 
                 At least one amount must be greater than 0.
               </p>
@@ -240,18 +231,16 @@ const DaybookForm: React.FC<DaybookFormProps> = ({
           </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-4 pt-6">
+        {/* Action Buttons */}
+        <div className="flex flex-col sm:flex-row gap-3 pt-4">
           <button
             type="submit"
             disabled={isLoading}
-            className="flex-1 bg-primary-500 hover:bg-primary-600 disabled:bg-primary-300 text-white py-2 px-4 rounded-md font-medium transition-colors"
+            className="btn-classic btn-primary flex-1"
           >
             {isLoading ? (
               <div className="flex items-center justify-center">
-                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
+                <span className="mr-2">⏳</span>
                 {mode === 'create' ? 'Adding...' : 'Updating...'}
               </div>
             ) : (
@@ -264,7 +253,7 @@ const DaybookForm: React.FC<DaybookFormProps> = ({
               type="button"
               onClick={handleReset}
               disabled={isLoading}
-              className="flex-1 bg-gray-500 hover:bg-gray-600 disabled:bg-gray-300 text-white py-2 px-4 rounded-md font-medium transition-colors"
+              className="btn-classic btn-secondary flex-1"
             >
               Reset
             </button>
@@ -274,7 +263,7 @@ const DaybookForm: React.FC<DaybookFormProps> = ({
             type="button"
             onClick={onCancel}
             disabled={isLoading}
-            className="flex-1 bg-white hover:bg-gray-50 disabled:bg-gray-50 text-gray-700 border border-gray-300 py-2 px-4 rounded-md font-medium transition-colors"
+            className="btn-classic btn-cancel flex-1"
           >
             Cancel
           </button>
