@@ -13,5 +13,5 @@ const SettingsPage: React.FC = () => {
     </div>
   );
 };
-
+//Reverted 
 export default SettingsPage;
