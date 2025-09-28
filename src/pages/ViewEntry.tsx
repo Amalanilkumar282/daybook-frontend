@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { daybookApi } from '../services/api';
-import { DaybookEntry } from '../types/daybook';
+import { DaybookEntry, PayType, PayStatus } from '../types/daybook';
 import ConfirmModal from '../components/ConfirmModal';
 
 const ViewEntry: React.FC = () => {
@@ -127,12 +127,12 @@ const ViewEntry: React.FC = () => {
     );
   }
 
-  const getPaymentTypeColor = (type: 'incoming' | 'outgoing') => {
-    return type === 'incoming' ? 'text-green-600 bg-green-100' : 'text-red-600 bg-red-100';
+  const getPaymentTypeColor = (type: PayType) => {
+    return type === PayType.INCOMING ? 'text-green-600 bg-green-100' : 'text-red-600 bg-red-100';
   };
 
-  const getPaymentStatusColor = (status: 'paid' | 'un_paid') => {
-    return status === 'paid' ? 'text-green-600 bg-green-100' : 'text-orange-600 bg-orange-100';
+  const getPaymentStatusColor = (status: PayStatus) => {
+    return status === PayStatus.PAID ? 'text-green-600 bg-green-100' : 'text-orange-600 bg-orange-100';
   };
 
   return (
@@ -172,7 +172,7 @@ const ViewEntry: React.FC = () => {
                 {formatCurrency(entry.amount)}
               </div>
               <div className={`text-sm px-3 py-1 rounded-full mt-2 ${
-                entry.payment_type === 'incoming' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                entry.payment_type === PayType.INCOMING ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
               }`}>
                 {entry.payment_type.toUpperCase()}
               </div>

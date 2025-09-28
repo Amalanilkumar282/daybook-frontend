@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { DaybookFormData, DaybookEntry } from '../types/daybook';
+import { DaybookFormData, DaybookEntry, PayType, PayStatus, ModeOfPay } from '../types/daybook';
 
 interface DaybookFormProps {
   initialData?: DaybookEntry;
@@ -19,9 +19,9 @@ const DaybookForm: React.FC<DaybookFormProps> = ({
   const [formData, setFormData] = useState<DaybookFormData>({
     id_in_out: '',
     amount: 0,
-    payment_type: 'incoming',
-    pay_status: 'paid',
-    mode_of_pay: 'cash',
+    payment_type: PayType.INCOMING,
+    pay_status: PayStatus.PAID,
+    mode_of_pay: ModeOfPay.CASH,
     description: '',
   });
 
@@ -77,9 +77,9 @@ const DaybookForm: React.FC<DaybookFormProps> = ({
     setFormData({
       id_in_out: '',
       amount: 0,
-      payment_type: 'incoming',
-      pay_status: 'paid',
-      mode_of_pay: 'cash',
+      payment_type: PayType.INCOMING,
+      pay_status: PayStatus.PAID,
+      mode_of_pay: ModeOfPay.CASH,
       description: '',
     });
     setErrors({});
@@ -135,11 +135,11 @@ const DaybookForm: React.FC<DaybookFormProps> = ({
             <select
               id="payment_type"
               value={formData.payment_type}
-              onChange={(e) => handleInputChange('payment_type', e.target.value as 'incoming' | 'outgoing')}
+              onChange={(e) => handleInputChange('payment_type', e.target.value as PayType)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             >
-              <option value="incoming">Incoming</option>
-              <option value="outgoing">Outgoing</option>
+              <option value={PayType.INCOMING}>Incoming</option>
+              <option value={PayType.OUTGOING}>Outgoing</option>
             </select>
           </div>
         </div>
@@ -176,11 +176,11 @@ const DaybookForm: React.FC<DaybookFormProps> = ({
             <select
               id="pay_status"
               value={formData.pay_status}
-              onChange={(e) => handleInputChange('pay_status', e.target.value as 'paid' | 'un_paid')}
+              onChange={(e) => handleInputChange('pay_status', e.target.value as PayStatus)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             >
-              <option value="paid">Paid</option>
-              <option value="un_paid">Unpaid</option>
+              <option value={PayStatus.PAID}>Paid</option>
+              <option value={PayStatus.UNPAID}>Unpaid</option>
             </select>
           </div>
         </div>
@@ -193,16 +193,14 @@ const DaybookForm: React.FC<DaybookFormProps> = ({
           <select
             id="mode_of_pay"
             value={formData.mode_of_pay}
-            onChange={(e) => handleInputChange('mode_of_pay', e.target.value)}
+            onChange={(e) => handleInputChange('mode_of_pay', e.target.value as ModeOfPay)}
             className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
               errors.mode_of_pay ? 'border-red-500' : 'border-gray-300'
             }`}
           >
-            <option value="cash">Cash</option>
-            <option value="cheque">Cheque</option>
-            <option value="bank_transfer">Bank Transfer</option>
-            <option value="upi">UPI</option>
-            <option value="credit_card">Credit Card</option>
+            <option value={ModeOfPay.CASH}>Cash</option>
+            <option value={ModeOfPay.UPI}>UPI</option>
+            <option value={ModeOfPay.ACCOUNT_TRANSFER}>Account Transfer</option>
             <option value="debit_card">Debit Card</option>
             <option value="online">Online</option>
           </select>

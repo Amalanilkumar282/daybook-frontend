@@ -1,20 +1,38 @@
+// Enums to match backend schema
+export enum PayType {
+  INCOMING = 'incoming',
+  OUTGOING = 'outgoing'
+}
+
+export enum PayStatus {
+  PAID = 'paid',
+  UNPAID = 'un_paid'
+}
+
+export enum ModeOfPay {
+  CASH = 'cash',
+  UPI = 'upi',
+  ACCOUNT_TRANSFER = 'account_transfer'
+}
+
+// Main interfaces
 export interface DaybookEntry {
   id: number;
   created_at: string;
   id_in_out: string;
   amount: number;
-  payment_type: 'incoming' | 'outgoing';
-  pay_status: 'paid' | 'un_paid';
+  payment_type: PayType;
+  pay_status: PayStatus;
   description?: string;
-  mode_of_pay: string;
+  mode_of_pay: ModeOfPay;
 }
 
 export interface DaybookFormData {
   id_in_out: string;
   amount: number;
-  payment_type: 'incoming' | 'outgoing';
-  pay_status: 'paid' | 'un_paid';
-  mode_of_pay: string;
+  payment_type: PayType;
+  pay_status: PayStatus;
+  mode_of_pay: ModeOfPay;
   description?: string;
 }
 

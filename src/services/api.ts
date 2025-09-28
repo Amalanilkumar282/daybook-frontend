@@ -6,7 +6,10 @@ import {
   LoginCredentials, 
   RegisterCredentials, 
   AuthResponse,
-  User
+  User,
+  PayType,
+  PayStatus,
+  ModeOfPay
 } from '../types/daybook';
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://day-book-backend.vercel.app/api';
@@ -99,10 +102,10 @@ const calculateSummaryData = (entries: DaybookEntry[]): SummaryData => {
   // Calculate totals for each period
   const calculatePeriodTotals = (periodEntries: DaybookEntry[]) => {
     const incoming = periodEntries
-      .filter(entry => entry.payment_type === 'incoming')
+      .filter(entry => entry.payment_type === PayType.INCOMING)
       .reduce((sum, entry) => sum + entry.amount, 0);
     const outgoing = periodEntries
-      .filter(entry => entry.payment_type === 'outgoing')
+      .filter(entry => entry.payment_type === PayType.OUTGOING)
       .reduce((sum, entry) => sum + entry.amount, 0);
     return {
       incoming,
@@ -274,7 +277,7 @@ export const daybookApi = {
     dateTo?: string, 
     minAmount?: number, 
     maxAmount?: number,
-    paymentType?: 'incoming' | 'outgoing',
+    paymentType?: PayType,
     payStatus?: 'paid' | 'un_paid'
   }): Promise<DaybookEntry[]> => {
     try {
@@ -343,11 +346,11 @@ export const reportsApi = {
       const entries = await daybookApi.getEntriesByDateRange(startDate, endDate);
       
       const totalIncoming = entries
-        .filter(entry => entry.payment_type === 'incoming')
+        .filter(entry => entry.payment_type === PayType.INCOMING)
         .reduce((sum, entry) => sum + entry.amount, 0);
       
       const totalOutgoing = entries
-        .filter(entry => entry.payment_type === 'outgoing')
+        .filter(entry => entry.payment_type === PayType.OUTGOING)
         .reduce((sum, entry) => sum + entry.amount, 0);
       
       const netIncome = totalIncoming - totalOutgoing;
@@ -369,11 +372,11 @@ export const reportsApi = {
       const entries = await daybookApi.getEntriesByDateRange(startDate, endDate);
       
       const cashInflows = entries
-        .filter(entry => entry.payment_type === 'incoming' && entry.pay_status === 'paid')
+        .filter(entry => entry.payment_type === PayType.INCOMING && entry.pay_status === PayStatus.PAID)
         .reduce((sum, entry) => sum + entry.amount, 0);
       
       const cashOutflows = entries
-        .filter(entry => entry.payment_type === 'outgoing' && entry.pay_status === 'paid')
+        .filter(entry => entry.payment_type === PayType.OUTGOING && entry.pay_status === PayStatus.PAID)
         .reduce((sum, entry) => sum + entry.amount, 0);
       
       const netCashFlow = cashInflows - cashOutflows;
@@ -395,15 +398,15 @@ export const reportsApi = {
       const entries = await daybookApi.getEntriesByDateRange(startDate, endDate);
       
       const totalEntries = entries.length;
-      const paidEntries = entries.filter(entry => entry.pay_status === 'paid').length;
-      const unpaidEntries = entries.filter(entry => entry.pay_status === 'un_paid').length;
+      const paidEntries = entries.filter(entry => entry.pay_status === PayStatus.PAID).length;
+      const unpaidEntries = entries.filter(entry => entry.pay_status === PayStatus.UNPAID).length;
       
       const totalIncoming = entries
-        .filter(entry => entry.payment_type === 'incoming')
+        .filter(entry => entry.payment_type === PayType.INCOMING)
         .reduce((sum, entry) => sum + entry.amount, 0);
       
       const totalOutgoing = entries
-        .filter(entry => entry.payment_type === 'outgoing')
+        .filter(entry => entry.payment_type === PayType.OUTGOING)
         .reduce((sum, entry) => sum + entry.amount, 0);
       
       return {

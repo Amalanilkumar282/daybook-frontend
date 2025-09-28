@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { DaybookEntry } from '../types/daybook';
+import { DaybookEntry, PayType, PayStatus } from '../types/daybook';
 import Pagination from './Pagination';
 import { usePagination } from '../hooks/usePagination';
 
@@ -95,9 +95,9 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete 
   };
 
   const totalIncoming = entries.reduce((sum, entry) => 
-    entry.payment_type === 'incoming' ? sum + entry.amount : sum, 0);
+    entry.payment_type === PayType.INCOMING ? sum + entry.amount : sum, 0);
   const totalOutgoing = entries.reduce((sum, entry) => 
-    entry.payment_type === 'outgoing' ? sum + entry.amount : sum, 0);
+    entry.payment_type === PayType.OUTGOING ? sum + entry.amount : sum, 0);
 
   const getSortIcon = (field: SortField) => {
     if (sortField !== field) {
@@ -119,14 +119,14 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete 
     );
   };
 
-  const getPaymentTypeColor = (type: 'incoming' | 'outgoing') => {
-    return type === 'incoming' 
+  const getPaymentTypeColor = (type: PayType) => {
+    return type === PayType.INCOMING 
       ? 'modern-badge from-success-500 to-success-600 text-white border-success-400/30'
       : 'modern-badge from-error-500 to-error-600 text-white border-error-400/30';
   };
 
-  const getPaymentStatusColor = (status: 'paid' | 'un_paid') => {
-    return status === 'paid'
+  const getPaymentStatusColor = (status: PayStatus) => {
+    return status === PayStatus.PAID
       ? 'modern-badge from-green-500 to-green-600 text-white border-green-400/30'
       : 'modern-badge from-orange-500 to-orange-600 text-white border-orange-400/30';
   };
@@ -348,7 +348,7 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete 
                 <td className="table-cell">
                   <div className={getPaymentTypeColor(entry.payment_type)}>
                     <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      {entry.payment_type === 'incoming' ? (
+                      {entry.payment_type === PayType.INCOMING ? (
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                       ) : (
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />

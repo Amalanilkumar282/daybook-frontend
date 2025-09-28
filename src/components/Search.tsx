@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { DaybookEntry } from '../types/daybook';
+import { DaybookEntry, PayType } from '../types/daybook';
 import Pagination from './Pagination';
 import { usePagination } from '../hooks/usePagination';
 import { dateUtils, currencyUtils } from '../utils';
@@ -60,8 +60,8 @@ const Search: React.FC<SearchProps> = ({ entries }) => {
 
       // Type filter
       const typeMatch = filters.type === 'all' ||
-        (filters.type === 'incoming' && entry.id_in_out === 'incoming') ||
-        (filters.type === 'outgoing' && entry.id_in_out === 'outgoing');
+        (filters.type === PayType.INCOMING && entry.id_in_out === PayType.INCOMING) ||
+        (filters.type === PayType.OUTGOING && entry.id_in_out === PayType.OUTGOING);
 
       return textMatch && dateMatch && amountMatch && typeMatch;
     });
@@ -222,8 +222,8 @@ const Search: React.FC<SearchProps> = ({ entries }) => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
               >
                 <option value="all">All</option>
-                <option value="incoming">Incoming</option>
-                <option value="outgoing">Outgoing</option>
+                <option value={PayType.INCOMING}>Incoming</option>
+                <option value={PayType.OUTGOING}>Outgoing</option>
               </select>
             </div>
 
@@ -306,10 +306,10 @@ const Search: React.FC<SearchProps> = ({ entries }) => {
                     <div className="flex items-center space-x-3 xs:space-x-4 min-w-0 flex-shrink">
                       <div className="flex-shrink-0">
                         <div className={`w-8 h-8 xs:w-10 xs:h-10 rounded-full flex items-center justify-center ${
-                          entry.id_in_out === 'outgoing' ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'
+                          entry.id_in_out === PayType.OUTGOING ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'
                         }`}>
                           <svg className="w-4 h-4 xs:w-5 xs:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            {entry.id_in_out === 'outgoing' ? (
+                            {entry.id_in_out === PayType.OUTGOING ? (
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16l-4-4m0 0l4-4m-4 4h18" />
                             ) : (
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
@@ -328,10 +328,10 @@ const Search: React.FC<SearchProps> = ({ entries }) => {
                     </div>
 
                     <div className="text-left xs:text-right flex-shrink-0">
-                      <div className={`text-sm xs:text-base sm:text-lg font-bold ${entry.id_in_out === 'outgoing' ? 'text-red-600' : 'text-green-600'} break-all xs:break-normal`}>
+                      <div className={`text-sm xs:text-base sm:text-lg font-bold ${entry.id_in_out === PayType.OUTGOING ? 'text-red-600' : 'text-green-600'} break-all xs:break-normal`}>
                         {currencyUtils.formatCurrency(entry.amount)}
                         <span className="text-xs ml-1">
-                          {entry.id_in_out === 'outgoing' ? 'OUT' : 'IN'}
+                          {entry.id_in_out === PayType.OUTGOING ? 'OUT' : 'IN'}
                         </span>
                       </div>
                     </div>

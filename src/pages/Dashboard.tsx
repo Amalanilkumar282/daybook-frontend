@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { DaybookEntry, SummaryData } from '../types/daybook';
+import { DaybookEntry, PayType, PayStatus, ModeOfPay, SummaryData } from '../types/daybook';
 import { daybookApi } from '../services/api';
 import SummaryCards from '../components/SummaryCards';
 import DaybookTable from '../components/DaybookTable';
@@ -45,21 +45,21 @@ const Dashboard: React.FC = () => {
         {
           id: 1,
           created_at: '2025-06-30T08:00:00.000Z',
-          id_in_out: 'outgoing',
+          id_in_out: PayType.OUTGOING,
           amount: 100,
-          payment_type: 'outgoing',
-          pay_status: 'paid',
-          mode_of_pay: 'cash',
+          payment_type: PayType.OUTGOING,
+          pay_status: PayStatus.PAID,
+          mode_of_pay: ModeOfPay.CASH,
           description: 'Sample Entry 1'
         },
         {
           id: 2,
           created_at: '2025-06-29T14:30:00.000Z',
-          id_in_out: 'incoming',
+          id_in_out: PayType.INCOMING,
           amount: 200,
-          payment_type: 'incoming',
-          pay_status: 'paid',
-          mode_of_pay: 'online',
+          payment_type: PayType.INCOMING,
+          pay_status: PayStatus.PAID,
+          mode_of_pay: ModeOfPay.UPI,
           description: 'Sample Entry 2'
         }
       ];
