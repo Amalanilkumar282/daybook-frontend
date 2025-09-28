@@ -41,34 +41,34 @@ const Dashboard: React.FC = () => {
       setError('Failed to load data. Using fallback data for demo.');
       
       // Set fallback data for development
-      const fallbackEntries = [
+      const fallbackEntries: DaybookEntry[] = [
         {
-          _id: '1',
-          date: '2025-06-30',
-          particulars: 'Sample Entry 1',
-          voucherNumber: 'V001',
-          debit: 100,
-          credit: 0,
-          createdAt: '2025-06-30T08:00:00.000Z',
-          updatedAt: '2025-06-30T08:00:00.000Z',
+          id: 1,
+          created_at: '2025-06-30T08:00:00.000Z',
+          id_in_out: 'outgoing',
+          amount: 100,
+          payment_type: 'outgoing',
+          pay_status: 'paid',
+          mode_of_pay: 'cash',
+          description: 'Sample Entry 1'
         },
         {
-          _id: '2',
-          date: '2025-06-29',
-          particulars: 'Sample Entry 2',
-          voucherNumber: 'V002',
-          debit: 0,
-          credit: 200,
-          createdAt: '2025-06-29T14:30:00.000Z',
-          updatedAt: '2025-06-29T14:30:00.000Z',
+          id: 2,
+          created_at: '2025-06-29T14:30:00.000Z',
+          id_in_out: 'incoming',
+          amount: 200,
+          payment_type: 'incoming',
+          pay_status: 'paid',
+          mode_of_pay: 'online',
+          description: 'Sample Entry 2'
         }
       ];
       
       setEntries(fallbackEntries);
       setSummaryData({
-        today: { debit: 100, credit: 0 },
-        week: { debit: 100, credit: 200 },
-        month: { debit: 100, credit: 200 },
+        today: { incoming: 200, outgoing: 100, net: 100 },
+        week: { incoming: 200, outgoing: 100, net: 100 },
+        month: { incoming: 200, outgoing: 100, net: 100 },
       });
     } finally {
       setLoading(false);
@@ -82,7 +82,7 @@ const Dashboard: React.FC = () => {
       await daybookApi.deleteEntry(id);
       
       // Remove from local state
-      setEntries(entries.filter(entry => entry._id !== id));
+      setEntries(entries.filter(entry => entry.id.toString() !== id));
       
       // Refresh summary data
       const summaryResponse = await daybookApi.getSummary();
@@ -98,12 +98,12 @@ const Dashboard: React.FC = () => {
   };
 
   const openDeleteModal = (id: string) => {
-    const entry = entries.find(e => e._id === id);
+    const entry = entries.find(e => e.id.toString() === id);
     if (entry) {
       setDeleteModal({
         isOpen: true,
-        entryId: entry._id,
-        entryDetails: `${entry.particulars} (${entry.voucherNumber})`
+        entryId: entry.id.toString(),
+        entryDetails: `${entry.description || 'No description'} (${entry.id_in_out})`
       });
     }
   };

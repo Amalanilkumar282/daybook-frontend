@@ -17,11 +17,12 @@ const DaybookForm: React.FC<DaybookFormProps> = ({
   mode,
 }) => {
   const [formData, setFormData] = useState<DaybookFormData>({
-    date: new Date().toISOString().split('T')[0],
-    particulars: '',
-    voucherNumber: '',
-    debit: 0,
-    credit: 0,
+    id_in_out: '',
+    amount: 0,
+    payment_type: 'incoming',
+    pay_status: 'paid',
+    mode_of_pay: 'cash',
+    description: '',
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -29,11 +30,12 @@ const DaybookForm: React.FC<DaybookFormProps> = ({
   useEffect(() => {
     if (initialData) {
       setFormData({
-        date: new Date(initialData.date).toISOString().split('T')[0],
-        particulars: initialData.particulars,
-        voucherNumber: initialData.voucherNumber,
-        debit: initialData.debit,
-        credit: initialData.credit,
+        id_in_out: initialData.id_in_out,
+        amount: initialData.amount,
+        payment_type: initialData.payment_type,
+        pay_status: initialData.pay_status,
+        mode_of_pay: initialData.mode_of_pay,
+        description: initialData.description || '',
       });
     }
   }, [initialData]);
@@ -41,34 +43,16 @@ const DaybookForm: React.FC<DaybookFormProps> = ({
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
 
-    if (!formData.date) {
-      newErrors.date = 'Date is required';
+    if (!formData.id_in_out.trim()) {
+      newErrors.id_in_out = 'ID In/Out is required';
     }
 
-    if (!formData.particulars.trim()) {
-      newErrors.particulars = 'Particulars is required';
+    if (formData.amount <= 0) {
+      newErrors.amount = 'Amount must be greater than 0';
     }
 
-    if (!formData.voucherNumber.trim()) {
-      newErrors.voucherNumber = 'Voucher number is required';
-    }
-
-    if (formData.debit < 0) {
-      newErrors.debit = 'Debit cannot be negative';
-    }
-
-    if (formData.credit < 0) {
-      newErrors.credit = 'Credit cannot be negative';
-    }
-
-    if (formData.debit === 0 && formData.credit === 0) {
-      newErrors.debit = 'Either debit or credit must be greater than 0';
-      newErrors.credit = 'Either debit or credit must be greater than 0';
-    }
-
-    if (formData.debit > 0 && formData.credit > 0) {
-      newErrors.debit = 'Cannot have both debit and credit amounts';
-      newErrors.credit = 'Cannot have both debit and credit amounts';
+    if (!formData.mode_of_pay.trim()) {
+      newErrors.mode_of_pay = 'Mode of payment is required';
     }
 
     setErrors(newErrors);
@@ -91,11 +75,12 @@ const DaybookForm: React.FC<DaybookFormProps> = ({
 
   const handleReset = () => {
     setFormData({
-      date: new Date().toISOString().split('T')[0],
-      particulars: '',
-      voucherNumber: '',
-      debit: 0,
-      credit: 0,
+      id_in_out: '',
+      amount: 0,
+      payment_type: 'incoming',
+      pay_status: 'paid',
+      mode_of_pay: 'cash',
+      description: '',
     });
     setErrors({});
   };
@@ -124,117 +109,130 @@ const DaybookForm: React.FC<DaybookFormProps> = ({
 
       <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4 lg:space-y-6">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 lg:gap-6">
-          {/* Date */}
+          {/* ID In/Out */}
           <div>
-            <label htmlFor="date" className="block text-sm font-medium text-dark-700 mb-2">
-              Date *
-            </label>
-            <input
-              type="date"
-              id="date"
-              value={formData.date}
-              onChange={(e) => handleInputChange('date', e.target.value)}
-              className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
-                errors.date ? 'border-red-500' : 'border-gray-300'
-              }`}
-            />
-            {errors.date && <p className="mt-1 text-sm text-red-600">{errors.date}</p>}
-          </div>
-
-          {/* Voucher Number */}
-          <div>
-            <label htmlFor="voucherNumber" className="block text-sm font-medium text-dark-700 mb-2">
-              Voucher Number *
+            <label htmlFor="id_in_out" className="block text-sm font-medium text-dark-700 mb-2">
+              ID In/Out *
             </label>
             <input
               type="text"
-              id="voucherNumber"
-              value={formData.voucherNumber}
-              onChange={(e) => handleInputChange('voucherNumber', e.target.value)}
-              placeholder="Enter voucher number"
+              id="id_in_out"
+              value={formData.id_in_out}
+              onChange={(e) => handleInputChange('id_in_out', e.target.value)}
+              placeholder="Enter ID (e.g., IN001, OUT001)"
               className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
-                errors.voucherNumber ? 'border-red-500' : 'border-gray-300'
+                errors.id_in_out ? 'border-red-500' : 'border-gray-300'
               }`}
             />
-            {errors.voucherNumber && <p className="mt-1 text-sm text-red-600">{errors.voucherNumber}</p>}
+            {errors.id_in_out && <p className="mt-1 text-sm text-red-600">{errors.id_in_out}</p>}
+          </div>
+
+          {/* Payment Type */}
+          <div>
+            <label htmlFor="payment_type" className="block text-sm font-medium text-dark-700 mb-2">
+              Payment Type *
+            </label>
+            <select
+              id="payment_type"
+              value={formData.payment_type}
+              onChange={(e) => handleInputChange('payment_type', e.target.value as 'incoming' | 'outgoing')}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            >
+              <option value="incoming">Incoming</option>
+              <option value="outgoing">Outgoing</option>
+            </select>
           </div>
         </div>
 
-        {/* Particulars */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 lg:gap-6">
+          {/* Amount */}
+          <div>
+            <label htmlFor="amount" className="block text-sm font-medium text-dark-700 mb-2">
+              Amount *
+            </label>
+            <div className="relative">
+              <span className="absolute left-3 top-2 text-gray-500">$</span>
+              <input
+                type="number"
+                id="amount"
+                step="0.01"
+                min="0"
+                value={formData.amount}
+                onChange={(e) => handleInputChange('amount', parseFloat(e.target.value) || 0)}
+                placeholder="0.00"
+                className={`w-full pl-8 pr-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
+                  errors.amount ? 'border-red-500' : 'border-gray-300'
+                }`}
+              />
+            </div>
+            {errors.amount && <p className="mt-1 text-sm text-red-600">{errors.amount}</p>}
+          </div>
+
+          {/* Payment Status */}
+          <div>
+            <label htmlFor="pay_status" className="block text-sm font-medium text-dark-700 mb-2">
+              Payment Status *
+            </label>
+            <select
+              id="pay_status"
+              value={formData.pay_status}
+              onChange={(e) => handleInputChange('pay_status', e.target.value as 'paid' | 'un_paid')}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            >
+              <option value="paid">Paid</option>
+              <option value="un_paid">Unpaid</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Mode of Payment */}
         <div>
-          <label htmlFor="particulars" className="block text-sm font-medium text-dark-700 mb-2">
-            Particulars *
+          <label htmlFor="mode_of_pay" className="block text-sm font-medium text-dark-700 mb-2">
+            Mode of Payment *
+          </label>
+          <select
+            id="mode_of_pay"
+            value={formData.mode_of_pay}
+            onChange={(e) => handleInputChange('mode_of_pay', e.target.value)}
+            className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
+              errors.mode_of_pay ? 'border-red-500' : 'border-gray-300'
+            }`}
+          >
+            <option value="cash">Cash</option>
+            <option value="cheque">Cheque</option>
+            <option value="bank_transfer">Bank Transfer</option>
+            <option value="upi">UPI</option>
+            <option value="credit_card">Credit Card</option>
+            <option value="debit_card">Debit Card</option>
+            <option value="online">Online</option>
+          </select>
+          {errors.mode_of_pay && <p className="mt-1 text-sm text-red-600">{errors.mode_of_pay}</p>}
+        </div>
+
+        {/* Description */}
+        <div>
+          <label htmlFor="description" className="block text-sm font-medium text-dark-700 mb-2">
+            Description
           </label>
           <textarea
-            id="particulars"
+            id="description"
             rows={3}
-            value={formData.particulars}
-            onChange={(e) => handleInputChange('particulars', e.target.value)}
-            placeholder="Enter transaction details"
-            className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
-              errors.particulars ? 'border-red-500' : 'border-gray-300'
-            }`}
+            value={formData.description || ''}
+            onChange={(e) => handleInputChange('description', e.target.value)}
+            placeholder="Enter additional details (optional)"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
           />
-          {errors.particulars && <p className="mt-1 text-sm text-red-600">{errors.particulars}</p>}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Debit */}
-          <div>
-            <label htmlFor="debit" className="block text-sm font-medium text-dark-700 mb-2">
-              Debit Amount
-            </label>
-            <div className="relative">
-              <span className="absolute left-3 top-2 text-gray-500">$</span>
-              <input
-                type="number"
-                id="debit"
-                step="0.01"
-                min="0"
-                value={formData.debit}
-                onChange={(e) => handleInputChange('debit', parseFloat(e.target.value) || 0)}
-                placeholder="0.00"
-                className={`w-full pl-8 pr-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
-                  errors.debit ? 'border-red-500' : 'border-gray-300'
-                }`}
-              />
-            </div>
-            {errors.debit && <p className="mt-1 text-sm text-red-600">{errors.debit}</p>}
-          </div>
-
-          {/* Credit */}
-          <div>
-            <label htmlFor="credit" className="block text-sm font-medium text-dark-700 mb-2">
-              Credit Amount
-            </label>
-            <div className="relative">
-              <span className="absolute left-3 top-2 text-gray-500">$</span>
-              <input
-                type="number"
-                id="credit"
-                step="0.01"
-                min="0"
-                value={formData.credit}
-                onChange={(e) => handleInputChange('credit', parseFloat(e.target.value) || 0)}
-                placeholder="0.00"
-                className={`w-full pl-8 pr-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
-                  errors.credit ? 'border-red-500' : 'border-gray-300'
-                }`}
-              />
-            </div>
-            {errors.credit && <p className="mt-1 text-sm text-red-600">{errors.credit}</p>}
-          </div>
-        </div>
-
-        <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4">
+        <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
           <div className="flex">
-            <svg className="w-5 h-5 text-yellow-400 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+            <svg className="w-5 h-5 text-blue-400 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
             </svg>
             <div className="ml-3">
-              <p className="text-sm text-yellow-800">
-                <strong>Note:</strong> Enter either a debit amount OR a credit amount, not both. 
-                At least one amount must be greater than 0.
+              <p className="text-sm text-blue-800">
+                <strong>Note:</strong> Enter transaction details carefully. 
+                Use "Incoming" for received payments and "Outgoing" for made payments.
               </p>
             </div>
           </div>

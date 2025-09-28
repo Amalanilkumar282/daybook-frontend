@@ -1,7 +1,10 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import ErrorBoundary from './components/ErrorBoundary';
+import ProtectedRoute from './components/ProtectedRoute';
 import Navbar from './components/Navbar';
+import Login from './pages/Login';
+import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import AddEntry from './pages/AddEntry';
 import EditEntry from './pages/EditEntry';
@@ -10,10 +13,12 @@ import SearchPage from './pages/SearchPage';
 import ReportsPage from './pages/ReportsPage';
 import SettingsPage from './pages/SettingsPage';
 import NotFound from './pages/NotFound';
+import { authUtils } from './services/api';
 import './App.css';
 
 function App() {
   console.log('App component rendered');
+  const isAuthenticated = authUtils.isAuthenticated();
   
   return (
     <ErrorBoundary>
@@ -26,19 +31,54 @@ function App() {
             <div className="absolute bottom-0 right-0 w-64 h-64 xs:w-80 xs:h-80 sm:w-96 sm:h-96 bg-accent-200/10 rounded-full blur-3xl"></div>
           </div>
           
-          <ErrorBoundary>
-            <Navbar />
-          </ErrorBoundary>
+          {isAuthenticated && (
+            <ErrorBoundary>
+              <Navbar />
+            </ErrorBoundary>
+          )}
           <main className="content-responsive relative z-10 animate-fade-in">
             <ErrorBoundary>
               <Routes>
-                <Route path="/" element={<Dashboard />} />
-                <Route path="/add" element={<AddEntry />} />
-                <Route path="/edit/:id" element={<EditEntry />} />
-                <Route path="/view/:id" element={<ViewEntry />} />
-                <Route path="/search" element={<SearchPage />} />
-                <Route path="/reports" element={<ReportsPage />} />
-                <Route path="/settings" element={<SettingsPage />} />
+                {/* Public routes */}
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                
+                {/* Protected routes */}
+                <Route path="/" element={
+                  <ProtectedRoute>
+                    <Dashboard />
+                  </ProtectedRoute>
+                } />
+                <Route path="/add" element={
+                  <ProtectedRoute>
+                    <AddEntry />
+                  </ProtectedRoute>
+                } />
+                <Route path="/edit/:id" element={
+                  <ProtectedRoute>
+                    <EditEntry />
+                  </ProtectedRoute>
+                } />
+                <Route path="/view/:id" element={
+                  <ProtectedRoute>
+                    <ViewEntry />
+                  </ProtectedRoute>
+                } />
+                <Route path="/search" element={
+                  <ProtectedRoute>
+                    <SearchPage />
+                  </ProtectedRoute>
+                } />
+                <Route path="/reports" element={
+                  <ProtectedRoute>
+                    <ReportsPage />
+                  </ProtectedRoute>
+                } />
+                <Route path="/settings" element={
+                  <ProtectedRoute>
+                    <SettingsPage />
+                  </ProtectedRoute>
+                } />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </ErrorBoundary>

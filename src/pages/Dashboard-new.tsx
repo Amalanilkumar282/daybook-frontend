@@ -37,9 +37,9 @@ const Dashboard: React.FC = () => {
       // Set fallback data for development
       setEntries([]);
       setSummaryData({
-        today: { debit: 0, credit: 0 },
-        week: { debit: 0, credit: 0 },
-        month: { debit: 0, credit: 0 },
+        today: { incoming: 0, outgoing: 0, net: 0 },
+        week: { incoming: 0, outgoing: 0, net: 0 },
+        month: { incoming: 0, outgoing: 0, net: 0 },
       });
     } finally {
       setLoading(false);
@@ -53,7 +53,7 @@ const Dashboard: React.FC = () => {
       await daybookApi.deleteEntry(id);
       
       // Remove from local state
-      setEntries(entries.filter(entry => entry._id !== id));
+      setEntries(entries.filter(entry => entry.id.toString() !== id));
       
       // Refresh summary data
       const summaryResponse = await daybookApi.getSummary();
@@ -69,12 +69,12 @@ const Dashboard: React.FC = () => {
   };
 
   const openDeleteModal = (id: string) => {
-    const entry = entries.find(e => e._id === id);
+    const entry = entries.find(e => e.id.toString() === id);
     if (entry) {
       setDeleteModal({
         isOpen: true,
-        entryId: entry._id,
-        entryDetails: `${entry.particulars} (${entry.voucherNumber})`
+        entryId: entry.id.toString(),
+        entryDetails: `${entry.description || 'No description'} (Entry #${entry.id})`
       });
     }
   };

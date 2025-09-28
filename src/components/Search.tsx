@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { DaybookEntry } from '../types/daybook';
 import Pagination from './Pagination';
 import { usePagination } from '../hooks/usePagination';
+import { dateUtils, currencyUtils } from '../utils';
 
 interface SearchProps {
   entries: DaybookEntry[];
@@ -16,7 +17,7 @@ const Search: React.FC<SearchProps> = ({ entries }) => {
     dateTo: '',
     minAmount: '',
     maxAmount: '',
-    type: 'all', // 'all', 'debit', 'credit'
+    type: 'all', // 'all', 'incoming', 'outgoing'
   });
   const [sortBy, setSortBy] = useState<'date' | 'amount' | 'relevance'>('relevance');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
@@ -45,87 +46,59 @@ const Search: React.FC<SearchProps> = ({ entries }) => {
     let filteredResults = entries.filter(entry => {
       // Text search
       const textMatch = searchTerm.trim() === '' || 
-        entry.particulars.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        entry.voucherNumber.toLowerCase().includes(searchTerm.toLowerCase());
+        (entry.description && entry.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        entry.id.toString().includes(searchTerm.toLowerCase());
 
       // Date filters
-      const dateMatch = (!filters.dateFrom || entry.date >= filters.dateFrom) &&
-        (!filters.dateTo || entry.date <= filters.dateTo);
+      const dateMatch = (!filters.dateFrom || entry.created_at >= filters.dateFrom) &&
+        (!filters.dateTo || entry.created_at <= filters.dateTo);
 
       // Amount filters
-      const entryAmount = Math.max(entry.debit, entry.credit);
+      const entryAmount = entry.amount;
       const amountMatch = (!filters.minAmount || entryAmount >= parseFloat(filters.minAmount)) &&
         (!filters.maxAmount || entryAmount <= parseFloat(filters.maxAmount));
 
       // Type filter
       const typeMatch = filters.type === 'all' ||
-        (filters.type === 'debit' && entry.debit > 0) ||
-        (filters.type === 'credit' && entry.credit > 0);
+        (filters.type === 'incoming' && entry.id_in_out === 'incoming') ||
+        (filters.type === 'outgoing' && entry.id_in_out === 'outgoing');
 
       return textMatch && dateMatch && amountMatch && typeMatch;
     });
 
-    // Sort results
+    // Sorting
     filteredResults.sort((a, b) => {
       let comparison = 0;
-      
       switch (sortBy) {
         case 'date':
-          comparison = new Date(a.date).getTime() - new Date(b.date).getTime();
+          comparison = new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
           break;
         case 'amount':
-          const aAmount = Math.max(a.debit, a.credit);
-          const bAmount = Math.max(b.debit, b.credit);
-          comparison = aAmount - bAmount;
+          comparison = a.amount - b.amount;
           break;
         case 'relevance':
           // Simple relevance scoring based on search term position
           if (searchTerm.trim()) {
-            const aScore = (a.particulars.toLowerCase().indexOf(searchTerm.toLowerCase()) === 0 ? 2 : 1) +
-              (a.voucherNumber.toLowerCase().indexOf(searchTerm.toLowerCase()) === 0 ? 1 : 0);
-            const bScore = (b.particulars.toLowerCase().indexOf(searchTerm.toLowerCase()) === 0 ? 2 : 1) +
-              (b.voucherNumber.toLowerCase().indexOf(searchTerm.toLowerCase()) === 0 ? 1 : 0);
+            const aScore = ((a.description && a.description.toLowerCase().indexOf(searchTerm.toLowerCase()) === 0) ? 2 : 1) +
+              (a.id.toString().indexOf(searchTerm.toLowerCase()) === 0 ? 1 : 0);
+            const bScore = ((b.description && b.description.toLowerCase().indexOf(searchTerm.toLowerCase()) === 0) ? 2 : 1) +
+              (b.id.toString().indexOf(searchTerm.toLowerCase()) === 0 ? 1 : 0);
             comparison = bScore - aScore;
           } else {
-            comparison = new Date(b.date).getTime() - new Date(a.date).getTime();
+            comparison = new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
           }
           break;
       }
 
-      return sortOrder === 'asc' ? comparison : -comparison;
+      return sortOrder === 'desc' ? -comparison : comparison;
     });
 
     setSearchResults(filteredResults);
-    resetPagination(); // Reset to first page when search results change
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchTerm, filters, sortBy, sortOrder, entries]); // Removed resetPagination from dependencies to prevent infinite loop
+    resetPagination();
+  }, [searchTerm, filters, sortBy, sortOrder, entries, resetPagination]);
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(amount);
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
-  };
-
-  const highlightText = (text: string, highlight: string) => {
-    if (!highlight.trim()) return text;
-    
-    const regex = new RegExp(`(${highlight})`, 'gi');
-    const parts = text.split(regex);
-    
-    return parts.map((part, index) => 
-      regex.test(part) ? 
-        <span key={index} className="bg-yellow-200 font-semibold">{part}</span> : 
-        part
-    );
+  const handleFilterChange = (field: string, value: string) => {
+    setFilters(prev => ({ ...prev, [field]: value }));
   };
 
   const clearFilters = () => {
@@ -137,201 +110,206 @@ const Search: React.FC<SearchProps> = ({ entries }) => {
       maxAmount: '',
       type: 'all',
     });
+    setSortBy('relevance');
+    setSortOrder('desc');
+    setIsAdvancedSearch(false);
   };
 
-  const hasActiveFilters = searchTerm.trim() !== '' || 
-    Object.values(filters).some(value => value !== '' && value !== 'all');
+  const highlightText = (text: string, searchTerm: string) => {
+    if (!searchTerm.trim()) return text;
+    
+    const regex = new RegExp(`(${searchTerm})`, 'gi');
+    const parts = text.split(regex);
+    
+    return parts.map((part, index) => 
+      regex.test(part) ? (
+        <span key={index} className="bg-yellow-200 font-semibold">{part}</span>
+      ) : part
+    );
+  };
 
   return (
-    <div className="space-y-4 xs:space-y-6">
+    <div className="bg-white rounded-lg shadow-md p-4 sm:p-6">
       {/* Search Header */}
-      <div className="bg-white rounded-lg shadow-md p-4 xs:p-6">
-        <h2 className="text-lg xs:text-xl sm:text-2xl font-bold text-dark-900 mb-4 xs:mb-6">Search Entries</h2>
-        
-        {/* Main Search Bar */}
-        <div className="mb-3 xs:mb-4">
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <svg className="w-4 h-4 xs:w-5 xs:h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-            </div>
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search by particulars or voucher number..."
-              className="w-full pl-8 xs:pl-10 pr-3 xs:pr-4 py-2 xs:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm xs:text-base"
-            />
-          </div>
+      <div className="flex flex-col xs:flex-row xs:items-center xs:justify-between gap-4 mb-6">
+        <div>
+          <h2 className="text-xl sm:text-2xl font-bold text-dark-900 mb-1">Search Entries</h2>
+          <p className="text-sm sm:text-base text-dark-600">
+            Find entries by description, amount, or date
+          </p>
         </div>
+        <button
+          onClick={() => setIsAdvancedSearch(!isAdvancedSearch)}
+          className="flex items-center space-x-2 bg-primary-500 hover:bg-primary-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4" />
+          </svg>
+          <span className="text-sm">{isAdvancedSearch ? 'Simple' : 'Advanced'}</span>
+        </button>
+      </div>
 
-        {/* Advanced Search Toggle */}
-        <div className="flex flex-col xs:flex-row xs:items-center xs:justify-between gap-2 xs:gap-4 mb-3 xs:mb-4">
-          <button
-            onClick={() => setIsAdvancedSearch(!isAdvancedSearch)}
-            className="text-primary-600 hover:text-primary-700 font-medium text-xs xs:text-sm flex items-center space-x-1"
-          >
-            <span>{isAdvancedSearch ? 'Hide' : 'Show'} Advanced Filters</span>
-            <svg 
-              className={`w-3 h-3 xs:w-4 xs:h-4 transform transition-transform ${isAdvancedSearch ? 'rotate-180' : ''}`} 
-              fill="none" 
-              stroke="currentColor" 
-              viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+      {/* Search Input */}
+      <div className="mb-4">
+        <div className="relative">
+          <input
+            type="text"
+            placeholder="Search by description or entry ID..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm sm:text-base"
+          />
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
-          </button>
-          
-          {hasActiveFilters && (
-            <button
-              onClick={clearFilters}
-              className="text-red-600 hover:text-red-700 font-medium text-xs xs:text-sm flex items-center space-x-1"
-            >
-              <svg className="w-3 h-3 xs:w-4 xs:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-              <span>Clear Filters</span>
-            </button>
-          )}
-        </div>
-
-        {/* Advanced Filters */}
-        {isAdvancedSearch && (
-          <div className="border-t pt-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-              <div>
-                <label className="block text-sm font-medium text-dark-700 mb-2">Date From</label>
-                <input
-                  type="date"
-                  value={filters.dateFrom}
-                  onChange={(e) => setFilters(prev => ({ ...prev, dateFrom: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-dark-700 mb-2">Date To</label>
-                <input
-                  type="date"
-                  value={filters.dateTo}
-                  onChange={(e) => setFilters(prev => ({ ...prev, dateTo: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-dark-700 mb-2">Entry Type</label>
-                <select
-                  value={filters.type}
-                  onChange={(e) => setFilters(prev => ({ ...prev, type: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                >
-                  <option value="all">All Types</option>
-                  <option value="debit">Debit Only</option>
-                  <option value="credit">Credit Only</option>
-                </select>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-dark-700 mb-2">Min Amount</label>
-                <input
-                  type="number"
-                  value={filters.minAmount}
-                  onChange={(e) => setFilters(prev => ({ ...prev, minAmount: e.target.value }))}
-                  placeholder="0.00"
-                  step="0.01"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-dark-700 mb-2">Max Amount</label>
-                <input
-                  type="number"
-                  value={filters.maxAmount}
-                  onChange={(e) => setFilters(prev => ({ ...prev, maxAmount: e.target.value }))}
-                  placeholder="999999.99"
-                  step="0.01"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                />
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Sort Options */}
-        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-          <div className="flex items-center space-x-2">
-            <label className="text-sm font-medium text-dark-700">Sort by:</label>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
-              className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-            >
-              <option value="relevance">Relevance</option>
-              <option value="date">Date</option>
-              <option value="amount">Amount</option>
-            </select>
-          </div>
-          
-          <div className="flex items-center space-x-2">
-            <label className="text-sm font-medium text-dark-700">Order:</label>
-            <select
-              value={sortOrder}
-              onChange={(e) => setSortOrder(e.target.value as any)}
-              className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-            >
-              <option value="desc">Descending</option>
-              <option value="asc">Ascending</option>
-            </select>
           </div>
         </div>
       </div>
 
-      {/* Search Results */}
-      <div className="bg-white rounded-lg shadow-md">
-        <div className="p-6 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-dark-900">
-            Search Results {searchResults.length > 0 && `(${searchResults.length} entries found)`}
-          </h3>
-        </div>
+      {/* Advanced Filters */}
+      {isAdvancedSearch && (
+        <div className="bg-gray-50 p-4 rounded-lg mb-6 space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {/* Date Range */}
+            <div>
+              <label className="block text-sm font-medium text-dark-700 mb-1">From Date</label>
+              <input
+                type="date"
+                value={filters.dateFrom}
+                onChange={(e) => handleFilterChange('dateFrom', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-dark-700 mb-1">To Date</label>
+              <input
+                type="date"
+                value={filters.dateTo}
+                onChange={(e) => handleFilterChange('dateTo', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+              />
+            </div>
 
-        {!hasActiveFilters ? (
-          <div className="p-8 text-center">
-            <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Start searching</h3>
-            <p className="text-gray-500">Enter a search term or use filters to find specific entries.</p>
+            {/* Amount Range */}
+            <div>
+              <label className="block text-sm font-medium text-dark-700 mb-1">Min Amount</label>
+              <input
+                type="number"
+                step="0.01"
+                value={filters.minAmount}
+                onChange={(e) => handleFilterChange('minAmount', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-dark-700 mb-1">Max Amount</label>
+              <input
+                type="number"
+                step="0.01"
+                value={filters.maxAmount}
+                onChange={(e) => handleFilterChange('maxAmount', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+              />
+            </div>
+
+            {/* Type Filter */}
+            <div>
+              <label className="block text-sm font-medium text-dark-700 mb-1">Type</label>
+              <select
+                value={filters.type}
+                onChange={(e) => handleFilterChange('type', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+              >
+                <option value="all">All</option>
+                <option value="incoming">Incoming</option>
+                <option value="outgoing">Outgoing</option>
+              </select>
+            </div>
+
+            {/* Sort Options */}
+            <div>
+              <label className="block text-sm font-medium text-dark-700 mb-1">Sort By</label>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as 'date' | 'amount' | 'relevance')}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+              >
+                <option value="relevance">Relevance</option>
+                <option value="date">Date</option>
+                <option value="amount">Amount</option>
+              </select>
+            </div>
           </div>
-        ) : searchResults.length === 0 ? (
-          <div className="p-8 text-center">
-            <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No results found</h3>
-            <p className="text-gray-500 mb-4">Try adjusting your search terms or filters.</p>
+
+          <div className="flex flex-col xs:flex-row gap-2 xs:gap-4">
+            <div className="flex items-center space-x-4">
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  name="sortOrder"
+                  value="desc"
+                  checked={sortOrder === 'desc'}
+                  onChange={(e) => setSortOrder(e.target.value as 'asc' | 'desc')}
+                  className="text-primary-600"
+                />
+                <span className="ml-2 text-sm">Descending</span>
+              </label>
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  name="sortOrder"
+                  value="asc"
+                  checked={sortOrder === 'asc'}
+                  onChange={(e) => setSortOrder(e.target.value as 'asc' | 'desc')}
+                  className="text-primary-600"
+                />
+                <span className="ml-2 text-sm">Ascending</span>
+              </label>
+            </div>
             <button
               onClick={clearFilters}
-              className="text-primary-600 hover:text-primary-700 font-medium"
+              className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-md font-medium transition-colors text-sm"
             >
-              Clear all filters
+              Clear All
             </button>
           </div>
-        ) : (
-          <>
+        </div>
+      )}
+
+      {/* Results Summary */}
+      {searchResults.length > 0 && (
+        <div className="flex flex-col xs:flex-row xs:items-center xs:justify-between gap-2 mb-4 p-3 bg-primary-50 rounded-lg">
+          <div className="text-sm sm:text-base">
+            <span className="font-semibold text-primary-700">
+              {totalItems} result{totalItems !== 1 ? 's' : ''}
+            </span>
+            <span className="text-primary-600 ml-1">
+              {searchTerm && `for "${searchTerm}"`}
+            </span>
+          </div>
+          <div className="text-xs sm:text-sm text-primary-600">
+            Page {currentPage} of {totalPages}
+          </div>
+        </div>
+      )}
+
+      {/* Search Results */}
+      {searchResults.length > 0 ? (
+        <div className="space-y-4">
+          {/* Results List */}
+          <div className="border border-gray-200 rounded-lg overflow-hidden">
             <div className="divide-y divide-gray-200">
               {paginatedResults.map((entry) => (
-                <div key={entry._id} className="p-3 xs:p-4 sm:p-6 hover:bg-gray-50 transition-colors">
+                <div key={entry.id} className="p-3 xs:p-4 sm:p-6 hover:bg-gray-50 transition-colors">
                   <div className="flex flex-col xs:flex-row xs:items-center xs:justify-between gap-2 xs:gap-4 mb-2">
                     <div className="flex items-center space-x-3 xs:space-x-4 min-w-0 flex-shrink">
                       <div className="flex-shrink-0">
                         <div className={`w-8 h-8 xs:w-10 xs:h-10 rounded-full flex items-center justify-center ${
-                          entry.debit > 0 ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'
+                          entry.id_in_out === 'outgoing' ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'
                         }`}>
                           <svg className="w-4 h-4 xs:w-5 xs:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            {entry.debit > 0 ? (
+                            {entry.id_in_out === 'outgoing' ? (
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16l-4-4m0 0l4-4m-4 4h18" />
                             ) : (
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
@@ -341,69 +319,96 @@ const Search: React.FC<SearchProps> = ({ entries }) => {
                       </div>
                       <div className="min-w-0 flex-1">
                         <h4 className="text-sm xs:text-base sm:text-lg font-medium text-dark-900 truncate">
-                          {highlightText(entry.particulars, searchTerm)}
+                          {highlightText(entry.description || 'No description', searchTerm)}
                         </h4>
                         <p className="text-xs xs:text-sm text-dark-600 truncate">
-                          Voucher: {highlightText(entry.voucherNumber, searchTerm)} • {formatDate(entry.date)}
+                          Entry ID: {highlightText(entry.id.toString(), searchTerm)} • {dateUtils.formatDate(entry.created_at)}
                         </p>
                       </div>
                     </div>
-                    
+
                     <div className="text-left xs:text-right flex-shrink-0">
-                      <div className={`text-sm xs:text-base sm:text-lg font-bold ${entry.debit > 0 ? 'text-red-600' : 'text-green-600'} break-all xs:break-normal`}>
-                        {entry.debit > 0 ? formatCurrency(entry.debit) : formatCurrency(entry.credit)}
+                      <div className={`text-sm xs:text-base sm:text-lg font-bold ${entry.id_in_out === 'outgoing' ? 'text-red-600' : 'text-green-600'} break-all xs:break-normal`}>
+                        {currencyUtils.formatCurrency(entry.amount)}
                         <span className="text-xs ml-1">
-                          {entry.debit > 0 ? 'DR' : 'CR'}
+                          {entry.id_in_out === 'outgoing' ? 'OUT' : 'IN'}
                         </span>
                       </div>
                     </div>
                   </div>
-                  
-                  <div className="flex flex-col xs:flex-row xs:items-center xs:justify-between gap-2 xs:gap-4">
+
+                  {/* Actions */}
+                  <div className="flex flex-col xs:flex-row xs:items-center xs:justify-between gap-2">
                     <div className="flex flex-wrap gap-2">
                       <Link
-                        to={`/view/${entry._id}`}
+                        to={`/view/${entry.id}`}
                         className="text-primary-600 hover:text-primary-700 text-xs xs:text-sm font-medium"
                       >
                         View Details
                       </Link>
                       <span className="text-gray-300">|</span>
                       <Link
-                        to={`/edit/${entry._id}`}
+                        to={`/edit/${entry.id}`}
                         className="text-primary-600 hover:text-primary-700 text-xs xs:text-sm font-medium"
                       >
                         Edit
                       </Link>
                     </div>
-                    
-                    {entry.createdAt && (
+
+                    {entry.created_at && (
                       <div className="text-xs text-gray-500 flex-shrink-0">
-                        Created {new Date(entry.createdAt).toLocaleDateString()}
+                        Created {new Date(entry.created_at).toLocaleDateString()}
                       </div>
                     )}
                   </div>
                 </div>
               ))}
             </div>
+          </div>
 
-            {/* Search Results Pagination */}
-            {totalItems > 0 && (
-              <div className="border-t border-gray-200 p-4 xs:p-6">
-                <Pagination
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  itemsPerPage={itemsPerPage}
-                  totalItems={totalItems}
-                  onPageChange={handlePageChange}
-                  onItemsPerPageChange={handleItemsPerPageChange}
-                  showItemsPerPage={true}
-                  itemsPerPageOptions={[5, 10, 15, 25]}
-                />
-              </div>
-            )}
-          </>
-        )}
-      </div>
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={totalItems}
+              itemsPerPage={itemsPerPage}
+              onPageChange={handlePageChange}
+              onItemsPerPageChange={handleItemsPerPageChange}
+            />
+          )}
+        </div>
+      ) : searchTerm.trim() !== '' || Object.values(filters).some(value => value !== '' && value !== 'all') ? (
+        <div className="text-center py-8">
+          <div className="max-w-md mx-auto">
+            <svg className="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <h3 className="text-lg font-medium text-dark-900 mb-2">No results found</h3>
+            <p className="text-dark-600 mb-4">
+              No entries match your search criteria. Try adjusting your search terms or filters.
+            </p>
+            <button
+              onClick={clearFilters}
+              className="bg-primary-500 hover:bg-primary-600 text-white px-4 py-2 rounded-md font-medium transition-colors"
+            >
+              Clear Search
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="text-center py-8">
+          <div className="max-w-md mx-auto">
+            <svg className="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <h3 className="text-lg font-medium text-dark-900 mb-2">Start searching</h3>
+            <p className="text-dark-600">
+              Enter a search term or use filters to find specific daybook entries.
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

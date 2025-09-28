@@ -1,34 +1,62 @@
 export interface DaybookEntry {
-  _id: string;
-  date: string; // ISO date string
-  particulars: string;
-  voucherNumber: string;
-  debit: number;
-  credit: number;
-  createdAt?: string;
-  updatedAt?: string;
+  id: number;
+  created_at: string;
+  id_in_out: string;
+  amount: number;
+  payment_type: 'incoming' | 'outgoing';
+  pay_status: 'paid' | 'un_paid';
+  description?: string;
+  mode_of_pay: string;
 }
 
 export interface DaybookFormData {
-  date: string;
-  particulars: string;
-  voucherNumber: string;
-  debit: number;
-  credit: number;
+  id_in_out: string;
+  amount: number;
+  payment_type: 'incoming' | 'outgoing';
+  pay_status: 'paid' | 'un_paid';
+  mode_of_pay: string;
+  description?: string;
+}
+
+// Authentication interfaces
+export interface User {
+  id: string;
+  email: string;
+  created_at: string;
+}
+
+export interface LoginCredentials {
+  email: string;
+  password: string;
+}
+
+export interface RegisterCredentials {
+  email: string;
+  password: string;
+  confirmPassword: string;
+}
+
+export interface AuthResponse {
+  message: string;
+  token: string;
+  user: User;
 }
 
 export interface SummaryData {
   today: {
-    debit: number;
-    credit: number;
+    incoming: number;
+    outgoing: number;
+    net: number;
   };
   week: {
-    debit: number;
-    credit: number;
+    incoming: number;
+    outgoing: number;
+    net: number;
   };
   month: {
-    debit: number;
-    credit: number;
+    incoming: number;
+    outgoing: number;
+    net: number;
   };
 }
 

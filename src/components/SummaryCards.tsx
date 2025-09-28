@@ -17,8 +17,9 @@ const SummaryCards: React.FC<SummaryCardsProps> = ({ summaryData, loading }) => 
   const summaryItems = [
     {
       title: 'Today',
-      debit: summaryData?.today.debit || 0,
-      credit: summaryData?.today.credit || 0,
+      incoming: summaryData?.today.incoming || 0,
+      outgoing: summaryData?.today.outgoing || 0,
+      net: summaryData?.today.net || 0,
       gradient: 'from-primary-500 to-primary-600',
       bgGradient: 'from-primary-50 to-primary-100',
       icon: (
@@ -29,8 +30,9 @@ const SummaryCards: React.FC<SummaryCardsProps> = ({ summaryData, loading }) => 
     },
     {
       title: 'This Week',
-      debit: summaryData?.week.debit || 0,
-      credit: summaryData?.week.credit || 0,
+      incoming: summaryData?.week.incoming || 0,
+      outgoing: summaryData?.week.outgoing || 0,
+      net: summaryData?.week.net || 0,
       gradient: 'from-success-500 to-success-600',
       bgGradient: 'from-success-50 to-success-100',
       icon: (
@@ -41,8 +43,9 @@ const SummaryCards: React.FC<SummaryCardsProps> = ({ summaryData, loading }) => 
     },
     {
       title: 'This Month',
-      debit: summaryData?.month.debit || 0,
-      credit: summaryData?.month.credit || 0,
+      incoming: summaryData?.month.incoming || 0,
+      outgoing: summaryData?.month.outgoing || 0,
+      net: summaryData?.month.net || 0,
       gradient: 'from-accent-500 to-accent-600',
       bgGradient: 'from-accent-50 to-accent-100',
       icon: (
@@ -70,8 +73,7 @@ const SummaryCards: React.FC<SummaryCardsProps> = ({ summaryData, loading }) => 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 xs:gap-4 sm:gap-6 mb-6 sm:mb-8 animate-slide-up">
       {summaryItems.map((item, index) => {
-        const balance = item.credit - item.debit;
-        const isPositive = balance >= 0;
+        const isPositive = item.net >= 0;
         
         return (
           <div key={index} className={`stat-card bg-gradient-to-br ${item.bgGradient} border-l-4 ${item.gradient} relative overflow-hidden`}>
@@ -92,22 +94,22 @@ const SummaryCards: React.FC<SummaryCardsProps> = ({ summaryData, loading }) => 
               
               <div className="space-y-3 sm:space-y-4">
                 <div className="flex justify-between items-center py-2 sm:py-3 px-3 sm:px-4 bg-white/60 backdrop-blur-sm rounded-2xl border border-white/50">
-                  <span className="text-xs sm:text-sm font-bold text-neutral-700">Debit:</span>
-                  <span className="font-bold text-error-600 text-base sm:text-lg">{formatCurrency(item.debit)}</span>
+                  <span className="text-xs sm:text-sm font-bold text-neutral-700">Incoming:</span>
+                  <span className="font-bold text-success-600 text-base sm:text-lg">{formatCurrency(item.incoming)}</span>
                 </div>
                 <div className="flex justify-between items-center py-2 sm:py-3 px-3 sm:px-4 bg-white/60 backdrop-blur-sm rounded-2xl border border-white/50">
-                  <span className="text-xs sm:text-sm font-bold text-neutral-700">Credit:</span>
-                  <span className="font-bold text-success-600 text-base sm:text-lg">{formatCurrency(item.credit)}</span>
+                  <span className="text-xs sm:text-sm font-bold text-neutral-700">Outgoing:</span>
+                  <span className="font-bold text-error-600 text-base sm:text-lg">{formatCurrency(item.outgoing)}</span>
                 </div>
                 <div className="border-t border-neutral-200 pt-3 sm:pt-4">
                   <div className="flex justify-between items-center py-2 sm:py-3 px-3 sm:px-4 bg-gradient-to-r from-white/80 to-white/60 backdrop-blur-sm rounded-2xl border border-white/60">
                     <span className="text-xs sm:text-sm font-bold text-neutral-800">Net Balance:</span>
                     <div className="flex items-center space-x-2">
                       <span className={`font-bold text-lg sm:text-xl ${isPositive ? 'text-success-600' : 'text-error-600'}`}>
-                        {formatCurrency(Math.abs(balance))} 
+                        {formatCurrency(Math.abs(item.net))} 
                       </span>
                       <span className={`text-xs font-bold px-2 py-1 rounded-xl ${isPositive ? 'bg-success-100 text-success-700' : 'bg-error-100 text-error-700'}`}>
-                        {isPositive ? 'CR' : 'DR'}
+                        {isPositive ? 'PROFIT' : 'LOSS'}
                       </span>
                     </div>
                   </div>

@@ -1,13 +1,22 @@
 import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { daybookApi } from '../services/api';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { daybookApi, authApi, authUtils } from '../services/api';
 
 const Navbar: React.FC = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
+
+  const user = authUtils.getUser();
 
   const isActive = (path: string) => {
     return location.pathname === path;
+  };
+
+  const handleLogout = () => {
+    authApi.logout();
+    navigate('/login');
   };
 
   const handleExportCsv = async () => {
@@ -88,6 +97,40 @@ const Navbar: React.FC = () => {
               </svg>
               <span className="hidden xl:inline">Export</span>
             </button>
+            
+            {/* User Menu */}
+            <div className="relative">
+              <button
+                onClick={() => setShowUserMenu(!showUserMenu)}
+                className="flex items-center space-x-2 px-3 py-2.5 rounded-2xl text-sm font-semibold text-neutral-700 hover:text-primary-600 hover:bg-primary-50/80 transition-all duration-300"
+              >
+                <div className="w-7 h-7 bg-gradient-to-r from-primary-500 to-primary-600 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                  {user?.email.charAt(0).toUpperCase()}
+                </div>
+                <span className="hidden xl:inline">{user?.email}</span>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              
+              {showUserMenu && (
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-neutral-200 py-1 z-50">
+                  <div className="px-4 py-2 border-b border-neutral-100">
+                    <p className="text-sm font-medium text-neutral-900">{user?.email}</p>
+                    <p className="text-xs text-neutral-500">Logged in</p>
+                  </div>
+                  <button
+                    onClick={handleLogout}
+                    className="w-full text-left px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50 flex items-center space-x-2"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                    <span>Logout</span>
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Mobile Menu Button */}
@@ -167,6 +210,32 @@ const Navbar: React.FC = () => {
                   <span>Settings</span>
                 </div>
               </Link>
+
+              <div className="border-t border-neutral-200 my-2"></div>
+
+              <div className="px-2 py-2">
+                <div className="flex items-center space-x-3 px-3 py-2">
+                  <div className="w-6 h-6 bg-gradient-to-r from-primary-500 to-primary-600 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                    {user?.email.charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-neutral-900">{user?.email}</p>
+                    <p className="text-xs text-neutral-500">Logged in</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    closeMobileMenu();
+                    handleLogout();
+                  }}
+                  className="w-full flex items-center space-x-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-xl transition-all duration-300"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                  </svg>
+                  <span>Logout</span>
+                </button>
+              </div>
             </div>
           </div>
         )}

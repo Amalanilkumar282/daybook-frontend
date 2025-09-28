@@ -1,0 +1,325 @@
+backend requests tested through postman:
+
+1) Register.
+
+POST url : https://day-book-backend.vercel.app/api/auth/register
+
+body:
+{
+  "email": "amalanilkumaredu@gmail.com",
+  "password": "Password@1",
+  "confirmPassword": "Password@1"
+}
+
+Response:
+{
+    "message": "User created successfully",
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJkZjA3NzY2MC1jZDBmLTRhMjItYWY2OC0wY2QzNGFlNjFmY2YiLCJlbWFpbCI6ImFtYWxhbmlsa3VtYXJlZHVAZ21haWwuY29tIiwiaWF0IjoxNzU4NzQzNDQ2LCJleHAiOjE3NTg4Mjk4NDZ9.01Rkzoe9VlHq6V0sCMQlQdffvWAYzawUV3akowCh5Ug",
+    "user": {
+        "id": "df077660-cd0f-4a22-af68-0cd34ae61fcf",
+        "email": "amalanilkumaredu@gmail.com",
+        "created_at": "2025-09-24T19:50:46.289135Z"
+    }
+}
+
+2) Login.
+
+POST url : https://day-book-backend.vercel.app/api/auth/login
+
+body:
+{
+  "email": "amalanilkumaredu@gmail.com",
+  "password": "Password@1"
+}
+
+response:
+{
+    "message": "Login successful",
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJkZjA3NzY2MC1jZDBmLTRhMjItYWY2OC0wY2QzNGFlNjFmY2YiLCJlbWFpbCI6ImFtYWxhbmlsa3VtYXJlZHVAZ21haWwuY29tIiwiaWF0IjoxNzU4NzQzNjQ0LCJleHAiOjE3NTg4MzAwNDR9.Nxd-93nkR6SS7GMfRYYPpmYUuEAIT9-SZGWO43BvRW0",
+    "user": {
+        "id": "df077660-cd0f-4a22-af68-0cd34ae61fcf",
+        "email": "amalanilkumaredu@gmail.com",
+        "created_at": "2025-09-24T19:50:46.289135Z"
+    }
+}
+
+3) Create.
+
+POST url : https://day-book-backend.vercel.app/api/daybook/create
+
+body: 
+{
+  "id_in_out": "IN011",	//uid or id of the nurse or cient involved
+  "amount": 1000,	//amount
+  "payment_type": "incoming",	//for nurse pay creation it will be outgoing else incoming
+  "pay_status": "paid",	//set as un_paid
+  "mode_of_pay": "cash",	//not needed
+  "description": "Test payment entry"	//not mandatory 
+}
+
+response:
+{
+    "message": "Day book entry created successfully",
+    "data": {
+        "id": 6,
+        "created_at": "2025-09-24T20:00:59.852855+00:00",
+        "id_in_out": "IN011",
+        "amount": 1000,
+        "payment_type": "incoming",
+        "pay_status": "paid",
+        "description": "Test payment entry",
+        "mode_of_pay": "cash"
+    }
+}
+
+
+4) Get full list.
+
+GET url : https://day-book-backend.vercel.app/api/daybook/list
+
+body:
+
+response:
+{
+    "message": "Day book entries retrieved successfully",
+    "data": [
+        {
+            "id": 8,
+            "created_at": "2025-09-24T20:08:06.937176+00:00",
+            "id_in_out": "IN003",
+            "amount": 10000,
+            "payment_type": "incoming",
+            "pay_status": "paid",
+            "description": "Test payment entry",
+            "mode_of_pay": "cash"
+        },
+        {
+            "id": 7,
+            "created_at": "2025-09-24T20:06:51.229086+00:00",
+            "id_in_out": "IN002",
+            "amount": 10000,
+            "payment_type": "incoming",
+            "pay_status": "paid",
+            "description": "Test payment entry",
+            "mode_of_pay": "cash"
+        },
+        {
+            "id": 6,
+            "created_at": "2025-09-24T20:00:59.852855+00:00",
+            "id_in_out": "IN011",
+            "amount": 1000,
+            "payment_type": "incoming",
+            "pay_status": "paid",
+            "description": "Test payment entry",
+            "mode_of_pay": "cash"
+        },
+        {
+            "id": 5,
+            "created_at": "2025-08-16T12:02:24.41791+00:00",
+            "id_in_out": "IN011",
+            "amount": 1000,
+            "payment_type": "incoming",
+            "pay_status": "paid",
+            "description": "Test payment entry",
+            "mode_of_pay": "cash"
+        },
+        {
+            "id": 4,
+            "created_at": "2025-08-16T11:07:46.578812+00:00",
+            "id_in_out": "IN009",
+            "amount": 1000,
+            "payment_type": "incoming",
+            "pay_status": "paid",
+            "description": "Test payment entry",
+            "mode_of_pay": "cash"
+        },
+        {
+            "id": 3,
+            "created_at": "2025-08-16T11:07:26.124544+00:00",
+            "id_in_out": "IN007",
+            "amount": 1000,
+            "payment_type": "incoming",
+            "pay_status": "paid",
+            "description": "Test payment entry",
+            "mode_of_pay": "cash"
+        },
+        {
+            "id": 2,
+            "created_at": "2025-08-16T09:51:03.569011+00:00",
+            "id_in_out": "IN001",
+            "amount": 1000,
+            "payment_type": "incoming",
+            "pay_status": "un_paid",
+            "description": "Test payment entry",
+            "mode_of_pay": "cash"
+        }
+    ]
+}
+
+
+5) Get entries between two date
+GET url: https://day-book-backend.vercel.app/api/daybook/date-range?start_date=2025-09-01&end_date=2025-09-26
+
+body: 
+
+response: 
+
+{
+    "message": "Day book entries retrieved successfully",
+    "data": [
+        {
+            "id": 8,
+            "created_at": "2025-09-24T20:08:06.937176+00:00",
+            "id_in_out": "IN003",
+            "amount": 10000,
+            "payment_type": "incoming",
+            "pay_status": "paid",
+            "description": "Test payment entry",
+            "mode_of_pay": "cash"
+        },
+        {
+            "id": 7,
+            "created_at": "2025-09-24T20:06:51.229086+00:00",
+            "id_in_out": "IN002",
+            "amount": 10000,
+            "payment_type": "outgoing",
+            "pay_status": "un_paid",
+            "description": "Test payment new update entry",
+            "mode_of_pay": "cash"
+        },
+        {
+            "id": 6,
+            "created_at": "2025-09-24T20:00:59.852855+00:00",
+            "id_in_out": "IN011",
+            "amount": 1000,
+            "payment_type": "incoming",
+            "pay_status": "paid",
+            "description": "Test payment entry",
+            "mode_of_pay": "cash"
+        }
+    ]
+}
+
+6)Get entries from a specific date
+
+GET url: https://day-book-backend.vercel.app/api/daybook/from-date?start_date=2023-08-01
+
+body:
+
+response:
+
+{
+    "message": "Day book entries retrieved successfully",
+    "data": [
+        {
+            "id": 8,
+            "created_at": "2025-09-24T20:08:06.937176+00:00",
+            "id_in_out": "IN003",
+            "amount": 10000,
+            "payment_type": "incoming",
+            "pay_status": "paid",
+            "description": "Test payment entry",
+            "mode_of_pay": "cash"
+        },
+        {
+            "id": 7,
+            "created_at": "2025-09-24T20:06:51.229086+00:00",
+            "id_in_out": "IN002",
+            "amount": 10000,
+            "payment_type": "outgoing",
+            "pay_status": "un_paid",
+            "description": "Test payment new update entry",
+            "mode_of_pay": "cash"
+        },
+        {
+            "id": 6,
+            "created_at": "2025-09-24T20:00:59.852855+00:00",
+            "id_in_out": "IN011",
+            "amount": 1000,
+            "payment_type": "incoming",
+            "pay_status": "paid",
+            "description": "Test payment entry",
+            "mode_of_pay": "cash"
+        },
+        {
+            "id": 5,
+            "created_at": "2025-08-16T12:02:24.41791+00:00",
+            "id_in_out": "IN011",
+            "amount": 1000,
+            "payment_type": "incoming",
+            "pay_status": "paid",
+            "description": "Test payment entry",
+            "mode_of_pay": "cash"
+        },
+        {
+            "id": 4,
+            "created_at": "2025-08-16T11:07:46.578812+00:00",
+            "id_in_out": "IN009",
+            "amount": 1000,
+            "payment_type": "incoming",
+            "pay_status": "paid",
+            "description": "Test payment entry",
+            "mode_of_pay": "cash"
+        },
+        {
+            "id": 3,
+            "created_at": "2025-08-16T11:07:26.124544+00:00",
+            "id_in_out": "IN007",
+            "amount": 1000,
+            "payment_type": "incoming",
+            "pay_status": "paid",
+            "description": "Test payment entry",
+            "mode_of_pay": "cash"
+        },
+        {
+            "id": 2,
+            "created_at": "2025-08-16T09:51:03.569011+00:00",
+            "id_in_out": "IN001",
+            "amount": 1000,
+            "payment_type": "incoming",
+            "pay_status": "un_paid",
+            "description": "Test payment entry",
+            "mode_of_pay": "cash"
+        }
+    ]
+}
+
+7) Update
+
+PUT url : https://day-book-backend.vercel.app/api/daybook/update/7
+
+body:
+{
+  "amount": 10000,
+        "payment_type": "outgoing",
+        "pay_status": "un_paid",
+        "description": "Test payment new update entry",
+        "mode_of_pay": "cash"
+}
+
+response:
+
+{
+    "message": "Day book entry updated successfully",
+    "data": {
+        "id": 7,
+        "created_at": "2025-09-24T20:06:51.229086+00:00",
+        "id_in_out": "IN002",
+        "amount": 10000,
+        "payment_type": "outgoing",
+        "pay_status": "un_paid",
+        "description": "Test payment new update entry",
+        "mode_of_pay": "cash"
+    }
+}
+
+8) Delete
+
+DELETE url : https://day-book-backend.vercel.app/api/daybook/delete/1
+
+body:
+
+response:
+{
+    "message": "Day book entry deleted successfully"
+}

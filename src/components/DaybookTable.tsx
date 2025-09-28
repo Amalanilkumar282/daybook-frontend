@@ -10,11 +10,11 @@ interface DaybookTableProps {
   onDelete: (id: string) => void;
 }
 
-type SortField = 'date' | 'debit' | 'credit' | 'particulars';
+type SortField = 'created_at' | 'amount' | 'id_in_out' | 'payment_type';
 type SortDirection = 'asc' | 'desc';
 
 const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete }) => {
-  const [sortField, setSortField] = useState<SortField>('date');
+  const [sortField, setSortField] = useState<SortField>('created_at');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
   const sortedEntries = [...entries].sort((a, b) => {
@@ -22,21 +22,21 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete 
     let bValue: any;
 
     switch (sortField) {
-      case 'date':
-        aValue = new Date(a.date);
-        bValue = new Date(b.date);
+      case 'created_at':
+        aValue = new Date(a.created_at);
+        bValue = new Date(b.created_at);
         break;
-      case 'debit':
-        aValue = a.debit;
-        bValue = b.debit;
+      case 'amount':
+        aValue = a.amount;
+        bValue = b.amount;
         break;
-      case 'credit':
-        aValue = a.credit;
-        bValue = b.credit;
+      case 'id_in_out':
+        aValue = a.id_in_out.toLowerCase();
+        bValue = b.id_in_out.toLowerCase();
         break;
-      case 'particulars':
-        aValue = a.particulars.toLowerCase();
-        bValue = b.particulars.toLowerCase();
+      case 'payment_type':
+        aValue = a.payment_type.toLowerCase();
+        bValue = b.payment_type.toLowerCase();
         break;
       default:
         return 0;
@@ -75,6 +75,16 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete 
     });
   };
 
+  const formatDateTime = (dateString: string) => {
+    return new Date(dateString).toLocaleString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
   const handleSort = (field: SortField) => {
     if (field === sortField) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
@@ -84,8 +94,10 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete 
     }
   };
 
-  const totalDebit = entries.reduce((sum, entry) => sum + entry.debit, 0);
-  const totalCredit = entries.reduce((sum, entry) => sum + entry.credit, 0);
+  const totalIncoming = entries.reduce((sum, entry) => 
+    entry.payment_type === 'incoming' ? sum + entry.amount : sum, 0);
+  const totalOutgoing = entries.reduce((sum, entry) => 
+    entry.payment_type === 'outgoing' ? sum + entry.amount : sum, 0);
 
   const getSortIcon = (field: SortField) => {
     if (sortField !== field) {
@@ -105,6 +117,18 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete 
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
       </svg>
     );
+  };
+
+  const getPaymentTypeColor = (type: 'incoming' | 'outgoing') => {
+    return type === 'incoming' 
+      ? 'modern-badge from-success-500 to-success-600 text-white border-success-400/30'
+      : 'modern-badge from-error-500 to-error-600 text-white border-error-400/30';
+  };
+
+  const getPaymentStatusColor = (status: 'paid' | 'un_paid') => {
+    return status === 'paid'
+      ? 'modern-badge from-green-500 to-green-600 text-white border-green-400/30'
+      : 'modern-badge from-orange-500 to-orange-600 text-white border-orange-400/30';
   };
 
   if (loading) {
@@ -156,47 +180,47 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete 
         </div>
         <div className="divide-y divide-neutral-100">
           {paginatedEntries.map((entry) => (
-            <div key={entry._id} className="p-3 xs:p-4 hover:bg-neutral-50/50 transition-colors">
+            <div key={entry.id} className="p-3 xs:p-4 hover:bg-neutral-50/50 transition-colors">
               <div className="flex justify-between items-start mb-2 xs:mb-3">
                 <div className="min-w-0 flex-1">
                   <div className="font-medium text-neutral-900 text-xs xs:text-sm mb-1">
-                    {formatDate(entry.date)}
+                    {formatDate(entry.created_at)}
                   </div>
                   <div className="text-xs text-neutral-500">
-                    {new Date(entry.date).toLocaleDateString('en-US', { weekday: 'short' })}
+                    {new Date(entry.created_at).toLocaleDateString('en-US', { weekday: 'short' })}
                   </div>
                 </div>
                 <div className="modern-badge from-neutral-100 to-neutral-200 text-neutral-800 border-neutral-300/50 font-mono text-xs flex-shrink-0">
-                  {entry.voucherNumber}
+                  {entry.id_in_out}
                 </div>
               </div>
               
               <div className="mb-2 xs:mb-3">
-                <p className="text-xs xs:text-sm text-neutral-900 line-clamp-2" title={entry.particulars}>
-                  {entry.particulars}
+                <p className="text-xs xs:text-sm text-neutral-900 line-clamp-2">
+                  {entry.description || 'No description'}
                 </p>
               </div>
               
               <div className="flex flex-col xs:flex-row xs:justify-between xs:items-center gap-2 xs:gap-3 mb-2 xs:mb-3">
                 <div className="space-y-1">
-                  {entry.debit > 0 && (
-                    <div className="text-xs flex items-center gap-1">
-                      <span className="text-neutral-600">Debit:</span>
-                      <span className="font-semibold text-error-600 break-all xs:break-normal">{formatCurrency(entry.debit)}</span>
-                    </div>
-                  )}
-                  {entry.credit > 0 && (
-                    <div className="text-xs flex items-center gap-1">
-                      <span className="text-neutral-600">Credit:</span>
-                      <span className="font-semibold text-success-600 break-all xs:break-normal">{formatCurrency(entry.credit)}</span>
-                    </div>
-                  )}
+                  <div className="text-xs flex items-center gap-2">
+                    <span className={getPaymentTypeColor(entry.payment_type)}>
+                      {entry.payment_type.toUpperCase()}
+                    </span>
+                    <span className="font-semibold text-neutral-800">{formatCurrency(entry.amount)}</span>
+                  </div>
+                  <div className="text-xs flex items-center gap-2">
+                    <span className={getPaymentStatusColor(entry.pay_status)}>
+                      {entry.pay_status.replace('_', ' ').toUpperCase()}
+                    </span>
+                    <span className="text-neutral-600">{entry.mode_of_pay}</span>
+                  </div>
                 </div>
               </div>
               
               <div className="flex justify-end space-x-1 xs:space-x-2">
                 <Link
-                  to={`/view/${entry._id}`}
+                  to={`/view/${entry.id}`}
                   className="p-2 text-primary-600 hover:text-primary-700 hover:bg-primary-50 rounded-xl transition-colors touch-target"
                   title="View Details"
                 >
@@ -206,7 +230,7 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete 
                   </svg>
                 </Link>
                 <Link
-                  to={`/edit/${entry._id}`}
+                  to={`/edit/${entry.id}`}
                   className="p-2 text-accent-600 hover:text-accent-700 hover:bg-accent-50 rounded-xl transition-colors touch-target"
                   title="Edit Entry"
                 >
@@ -215,7 +239,7 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete 
                   </svg>
                 </Link>
                 <button
-                  onClick={() => onDelete(entry._id)}
+                  onClick={() => onDelete(entry.id.toString())}
                   className="p-2 text-error-600 hover:text-error-700 hover:bg-error-50 rounded-xl transition-colors touch-target"
                   title="Delete Entry"
                 >
@@ -252,42 +276,48 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete 
             <tr>
               <th
                 className="table-header cursor-pointer hover:bg-neutral-100 transition-colors"
-                onClick={() => handleSort('date')}
+                onClick={() => handleSort('created_at')}
               >
                 <div className="flex items-center space-x-2">
                   <span>Date</span>
-                  {getSortIcon('date')}
+                  {getSortIcon('created_at')}
                 </div>
               </th>
               <th
                 className="table-header cursor-pointer hover:bg-neutral-100 transition-colors"
-                onClick={() => handleSort('particulars')}
+                onClick={() => handleSort('id_in_out')}
               >
                 <div className="flex items-center space-x-2">
-                  <span>Particulars</span>
-                  {getSortIcon('particulars')}
+                  <span>ID In/Out</span>
+                  {getSortIcon('id_in_out')}
                 </div>
               </th>
               <th className="table-header">
-                Voucher No.
+                Description
               </th>
               <th
-                className="table-header text-right cursor-pointer hover:bg-neutral-100 transition-colors"
-                onClick={() => handleSort('debit')}
+                className="table-header cursor-pointer hover:bg-neutral-100 transition-colors"
+                onClick={() => handleSort('payment_type')}
               >
-                <div className="flex items-center justify-end space-x-2">
-                  <span>Debit</span>
-                  {getSortIcon('debit')}
+                <div className="flex items-center space-x-2">
+                  <span>Type</span>
+                  {getSortIcon('payment_type')}
                 </div>
               </th>
               <th
                 className="table-header text-right cursor-pointer hover:bg-neutral-100 transition-colors"
-                onClick={() => handleSort('credit')}
+                onClick={() => handleSort('amount')}
               >
                 <div className="flex items-center justify-end space-x-2">
-                  <span>Credit</span>
-                  {getSortIcon('credit')}
+                  <span>Amount</span>
+                  {getSortIcon('amount')}
                 </div>
+              </th>
+              <th className="table-header text-center">
+                Status
+              </th>
+              <th className="table-header text-center">
+                Mode
               </th>
               <th className="table-header text-center">
                 Actions
@@ -296,53 +326,56 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete 
           </thead>
           <tbody className="divide-y divide-neutral-100">
             {paginatedEntries.map((entry, index) => (
-              <tr key={entry._id} className="table-row">
+              <tr key={entry.id} className="table-row">
                 <td className="table-cell font-medium">
                   <div className="flex flex-col">
-                    <span className="text-neutral-900">{formatDate(entry.date)}</span>
-                    <span className="text-xs text-neutral-500">{new Date(entry.date).toLocaleDateString('en-US', { weekday: 'short' })}</span>
-                  </div>
-                </td>
-                <td className="table-cell">
-                  <div className="max-w-xs">
-                    <div className="font-medium text-neutral-900 truncate" title={entry.particulars}>
-                      {entry.particulars}
-                    </div>
+                    <span className="text-neutral-900">{formatDate(entry.created_at)}</span>
+                    <span className="text-xs text-neutral-500">{new Date(entry.created_at).toLocaleDateString('en-US', { weekday: 'short' })}</span>
                   </div>
                 </td>
                 <td className="table-cell">
                   <div className="modern-badge from-neutral-100 to-neutral-200 text-neutral-800 border-neutral-300/50 font-mono">
-                    {entry.voucherNumber}
+                    {entry.id_in_out}
+                  </div>
+                </td>
+                <td className="table-cell">
+                  <div className="max-w-xs">
+                    <div className="font-medium text-neutral-900 truncate" title={entry.description || 'No description'}>
+                      {entry.description || 'No description'}
+                    </div>
+                  </div>
+                </td>
+                <td className="table-cell">
+                  <div className={getPaymentTypeColor(entry.payment_type)}>
+                    <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      {entry.payment_type === 'incoming' ? (
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                      ) : (
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+                      )}
+                    </svg>
+                    {entry.payment_type.toUpperCase()}
                   </div>
                 </td>
                 <td className="table-cell text-right">
-                  {entry.debit > 0 ? (
-                    <div className="modern-badge from-error-500 to-error-600 text-white border-error-400/30">
-                      <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                      </svg>
-                      {formatCurrency(entry.debit)}
-                    </div>
-                  ) : (
-                    <span className="text-neutral-400 font-medium">—</span>
-                  )}
+                  <div className="font-semibold text-neutral-900">
+                    {formatCurrency(entry.amount)}
+                  </div>
                 </td>
-                <td className="table-cell text-right">
-                  {entry.credit > 0 ? (
-                    <div className="modern-badge from-success-500 to-success-600 text-white border-success-400/30">
-                      <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
-                      </svg>
-                      {formatCurrency(entry.credit)}
-                    </div>
-                  ) : (
-                    <span className="text-neutral-400 font-medium">—</span>
-                  )}
+                <td className="table-cell text-center">
+                  <div className={getPaymentStatusColor(entry.pay_status)}>
+                    {entry.pay_status.replace('_', ' ').toUpperCase()}
+                  </div>
+                </td>
+                <td className="table-cell text-center">
+                  <span className="text-neutral-600 text-sm capitalize">
+                    {entry.mode_of_pay.replace('_', ' ')}
+                  </span>
                 </td>
                 <td className="table-cell text-center">
                   <div className="flex items-center justify-center space-x-2">
                     <Link
-                      to={`/view/${entry._id}`}
+                      to={`/view/${entry.id}`}
                       className="p-2.5 text-primary-600 hover:text-primary-700 hover:bg-primary-50/80 backdrop-blur-sm rounded-2xl transition-all duration-300 shadow-soft hover:shadow-medium group"
                       title="View Details"
                     >
@@ -352,7 +385,7 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete 
                       </svg>
                     </Link>
                     <Link
-                      to={`/edit/${entry._id}`}
+                      to={`/edit/${entry.id}`}
                       className="p-2.5 text-accent-600 hover:text-accent-700 hover:bg-accent-50/80 backdrop-blur-sm rounded-2xl transition-all duration-300 shadow-soft hover:shadow-medium group"
                       title="Edit Entry"
                     >
@@ -361,7 +394,7 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete 
                       </svg>
                     </Link>
                     <button
-                      onClick={() => onDelete(entry._id)}
+                      onClick={() => onDelete(entry.id.toString())}
                       className="p-2.5 text-error-600 hover:text-error-700 hover:bg-error-50/80 backdrop-blur-sm rounded-2xl transition-all duration-300 shadow-soft hover:shadow-medium group"
                       title="Delete Entry"
                     >
@@ -376,17 +409,22 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete 
           </tbody>
           <tfoot className="bg-gradient-to-r from-neutral-50/95 to-neutral-100/95 backdrop-blur-sm border-t-2 border-neutral-300">
             <tr>
-              <td colSpan={3} className="px-6 py-5 text-base font-bold font-display text-neutral-800">
+              <td colSpan={4} className="px-6 py-5 text-base font-bold font-display text-neutral-800">
                 Total Summary
               </td>
               <td className="px-6 py-5 text-right">
-                <div className="modern-badge from-error-500 to-error-600 text-white border-error-400/30 text-base">
-                  {formatCurrency(totalDebit)}
+                <div className="modern-badge from-success-500 to-success-600 text-white border-success-400/30 text-base">
+                  Incoming: {formatCurrency(totalIncoming)}
                 </div>
               </td>
               <td className="px-6 py-5 text-right">
-                <div className="modern-badge from-success-500 to-success-600 text-white border-success-400/30 text-base">
-                  {formatCurrency(totalCredit)}
+                <div className="modern-badge from-error-500 to-error-600 text-white border-error-400/30 text-base">
+                  Outgoing: {formatCurrency(totalOutgoing)}
+                </div>
+              </td>
+              <td className="px-6 py-5 text-right">
+                <div className="modern-badge from-primary-500 to-primary-600 text-white border-primary-400/30 text-base">
+                  Net: {formatCurrency(totalIncoming - totalOutgoing)}
                 </div>
               </td>
               <td className="px-6 py-5"></td>
