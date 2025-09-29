@@ -14,8 +14,8 @@ const Search: React.FC<SearchProps> = ({ entries: propEntries = [] }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState<DaybookEntry[]>([]);
   const [allEntries, setAllEntries] = useState<DaybookEntry[]>(propEntries);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
   const [filters, setFilters] = useState({
     dateFrom: '',
     dateTo: '',
@@ -54,19 +54,20 @@ const Search: React.FC<SearchProps> = ({ entries: propEntries = [] }) => {
   // Perform search when search criteria change
   useEffect(() => {
     performSearch();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchTerm, filters, sortBy, sortOrder, allEntries]);
 
   const loadAllEntries = async () => {
     try {
-      setLoading(true);
-      setError(null);
+      setSearchLoading(true);
+      setSearchError(null);
       const entries = await daybookApi.getAllEntries();
       setAllEntries(entries);
     } catch (error) {
       console.error('Error loading entries:', error);
-      setError('Failed to load entries. Please try again.');
+      setSearchError('Failed to load entries. Please try again.');
     } finally {
-      setLoading(false);
+      setSearchLoading(false);
     }
   };
 
@@ -79,8 +80,8 @@ const Search: React.FC<SearchProps> = ({ entries: propEntries = [] }) => {
         return;
       }
 
-      setLoading(true);
-      setError(null);
+      setSearchLoading(true);
+      setSearchError(null);
 
       // Prepare API filters
       const apiFilters: any = {};
@@ -144,9 +145,9 @@ const Search: React.FC<SearchProps> = ({ entries: propEntries = [] }) => {
       resetPagination();
     } catch (error) {
       console.error('Search error:', error);
-      setError('Search failed. Please try again.');
+      setSearchError('Search failed. Please try again.');
     } finally {
-      setLoading(false);
+      setSearchLoading(false);
     }
   };
 
@@ -181,6 +182,22 @@ const Search: React.FC<SearchProps> = ({ entries: propEntries = [] }) => {
       ) : part
     );
   };
+
+  if (searchLoading && allEntries.length === 0) {
+    return (
+      <div className="bg-white rounded-lg shadow-md p-6">
+        <div className="animate-pulse">
+          <div className="h-8 bg-gray-200 rounded w-1/3 mb-6"></div>
+          <div className="h-12 bg-gray-200 rounded mb-4"></div>
+          <div className="space-y-4">
+            <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+            <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+            <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white rounded-lg shadow-md p-4 sm:p-6">
@@ -218,8 +235,36 @@ const Search: React.FC<SearchProps> = ({ entries: propEntries = [] }) => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
           </div>
+          {searchLoading && (
+            <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+              <svg className="animate-spin h-5 w-5 text-primary-500" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Error Display */}
+      {searchError && (
+        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+          <div className="flex items-center">
+            <svg className="w-5 h-5 text-red-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span className="text-red-700">{searchError}</span>
+            <button
+              onClick={() => setSearchError(null)}
+              className="ml-auto text-red-500 hover:text-red-700"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Advanced Filters */}
       {isAdvancedSearch && (

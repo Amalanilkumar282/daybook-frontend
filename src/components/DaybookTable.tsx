@@ -75,15 +75,16 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete 
     });
   };
 
-  const formatDateTime = (dateString: string) => {
-    return new Date(dateString).toLocaleString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
+  // Helper function for date formatting (currently using dateUtils.formatDate instead)
+  // const formatDateTime = (dateString: string) => {
+  //   return new Date(dateString).toLocaleString('en-US', {
+  //     year: 'numeric',
+  //     month: 'short',
+  //     day: 'numeric',
+  //     hour: '2-digit',
+  //     minute: '2-digit',
+  //   });
+  // };
 
   const handleSort = (field: SortField) => {
     if (field === sortField) {

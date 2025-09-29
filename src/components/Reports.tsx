@@ -44,6 +44,7 @@ const Reports: React.FC<ReportsProps> = ({ entries: propEntries = [] }) => {
       setEntries(propEntries);
       generateReport(propEntries);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [propEntries, dateRange, selectedReport]);
 
   const loadEntriesAndGenerateReport = async () => {

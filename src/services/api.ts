@@ -8,8 +8,7 @@ import {
   AuthResponse,
   User,
   PayType,
-  PayStatus,
-  ModeOfPay
+  PayStatus
 } from '../types/daybook';
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://day-book-backend.vercel.app/api';
