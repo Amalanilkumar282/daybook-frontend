@@ -1,23 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { DaybookEntry, PayType } from '../types/daybook';
+import { DaybookEntry, PayType, PayStatus } from '../types/daybook';
 import Pagination from './Pagination';
 import { usePagination } from '../hooks/usePagination';
 import { dateUtils, currencyUtils } from '../utils';
+import { daybookApi } from '../services/api';
 
 interface SearchProps {
-  entries: DaybookEntry[];
+  entries?: DaybookEntry[];
 }
 
-const Search: React.FC<SearchProps> = ({ entries }) => {
+const Search: React.FC<SearchProps> = ({ entries: propEntries = [] }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState<DaybookEntry[]>([]);
+  const [allEntries, setAllEntries] = useState<DaybookEntry[]>(propEntries);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState({
     dateFrom: '',
     dateTo: '',
     minAmount: '',
     maxAmount: '',
     type: 'all', // 'all', 'incoming', 'outgoing'
+    payStatus: 'all', // 'all', 'paid', 'un_paid'
   });
   const [sortBy, setSortBy] = useState<'date' | 'amount' | 'relevance'>('relevance');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
@@ -37,65 +42,113 @@ const Search: React.FC<SearchProps> = ({ entries }) => {
     initialItemsPerPage: 10 
   });
 
+  // Load all entries when component mounts
   useEffect(() => {
-    if (searchTerm.trim() === '' && Object.values(filters).every(value => value === '' || value === 'all')) {
-      setSearchResults([]);
-      return;
+    if (propEntries.length === 0) {
+      loadAllEntries();
+    } else {
+      setAllEntries(propEntries);
     }
+  }, [propEntries]);
 
-    let filteredResults = entries.filter(entry => {
-      // Text search
-      const textMatch = searchTerm.trim() === '' || 
-        (entry.description && entry.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        entry.id.toString().includes(searchTerm.toLowerCase());
+  // Perform search when search criteria change
+  useEffect(() => {
+    performSearch();
+  }, [searchTerm, filters, sortBy, sortOrder, allEntries]);
 
-      // Date filters
-      const dateMatch = (!filters.dateFrom || entry.created_at >= filters.dateFrom) &&
-        (!filters.dateTo || entry.created_at <= filters.dateTo);
+  const loadAllEntries = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const entries = await daybookApi.getAllEntries();
+      setAllEntries(entries);
+    } catch (error) {
+      console.error('Error loading entries:', error);
+      setError('Failed to load entries. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-      // Amount filters
-      const entryAmount = entry.amount;
-      const amountMatch = (!filters.minAmount || entryAmount >= parseFloat(filters.minAmount)) &&
-        (!filters.maxAmount || entryAmount <= parseFloat(filters.maxAmount));
-
-      // Type filter
-      const typeMatch = filters.type === 'all' ||
-        (filters.type === PayType.INCOMING && entry.id_in_out === PayType.INCOMING) ||
-        (filters.type === PayType.OUTGOING && entry.id_in_out === PayType.OUTGOING);
-
-      return textMatch && dateMatch && amountMatch && typeMatch;
-    });
-
-    // Sorting
-    filteredResults.sort((a, b) => {
-      let comparison = 0;
-      switch (sortBy) {
-        case 'date':
-          comparison = new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
-          break;
-        case 'amount':
-          comparison = a.amount - b.amount;
-          break;
-        case 'relevance':
-          // Simple relevance scoring based on search term position
-          if (searchTerm.trim()) {
-            const aScore = ((a.description && a.description.toLowerCase().indexOf(searchTerm.toLowerCase()) === 0) ? 2 : 1) +
-              (a.id.toString().indexOf(searchTerm.toLowerCase()) === 0 ? 1 : 0);
-            const bScore = ((b.description && b.description.toLowerCase().indexOf(searchTerm.toLowerCase()) === 0) ? 2 : 1) +
-              (b.id.toString().indexOf(searchTerm.toLowerCase()) === 0 ? 1 : 0);
-            comparison = bScore - aScore;
-          } else {
-            comparison = new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-          }
-          break;
+  const performSearch = async () => {
+    try {
+      // If no search criteria, clear results
+      if (searchTerm.trim() === '' && Object.values(filters).every(value => value === '' || value === 'all')) {
+        setSearchResults([]);
+        resetPagination();
+        return;
       }
 
-      return sortOrder === 'desc' ? -comparison : comparison;
-    });
+      setLoading(true);
+      setError(null);
 
-    setSearchResults(filteredResults);
-    resetPagination();
-  }, [searchTerm, filters, sortBy, sortOrder, entries, resetPagination]);
+      // Prepare API filters
+      const apiFilters: any = {};
+      
+      if (filters.dateFrom) {
+        apiFilters.dateFrom = filters.dateFrom;
+      }
+      if (filters.dateTo) {
+        apiFilters.dateTo = filters.dateTo;
+      }
+      if (filters.minAmount) {
+        apiFilters.minAmount = parseFloat(filters.minAmount);
+      }
+      if (filters.maxAmount) {
+        apiFilters.maxAmount = parseFloat(filters.maxAmount);
+      }
+      if (filters.type !== 'all') {
+        apiFilters.paymentType = filters.type as PayType;
+      }
+      if (filters.payStatus !== 'all') {
+        apiFilters.payStatus = filters.payStatus as 'paid' | 'un_paid';
+      }
+
+      // Use API search or filter local entries
+      let filteredResults: DaybookEntry[];
+      
+      if (searchTerm.trim() || Object.keys(apiFilters).length > 0) {
+        filteredResults = await daybookApi.searchEntries(searchTerm, apiFilters);
+      } else {
+        filteredResults = allEntries;
+      }
+
+      // Apply sorting
+      filteredResults.sort((a: DaybookEntry, b: DaybookEntry) => {
+        let comparison = 0;
+        switch (sortBy) {
+          case 'date':
+            comparison = new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+            break;
+          case 'amount':
+            comparison = a.amount - b.amount;
+            break;
+          case 'relevance':
+            // Simple relevance scoring based on search term position
+            if (searchTerm.trim()) {
+              const aScore = ((a.description && a.description.toLowerCase().indexOf(searchTerm.toLowerCase()) === 0) ? 2 : 1) +
+                (a.id.toString().indexOf(searchTerm.toLowerCase()) === 0 ? 1 : 0);
+              const bScore = ((b.description && b.description.toLowerCase().indexOf(searchTerm.toLowerCase()) === 0) ? 2 : 1) +
+                (b.id.toString().indexOf(searchTerm.toLowerCase()) === 0 ? 1 : 0);
+              comparison = bScore - aScore;
+            } else {
+              comparison = new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+            }
+            break;
+        }
+
+        return sortOrder === 'desc' ? -comparison : comparison;
+      });
+
+      setSearchResults(filteredResults);
+      resetPagination();
+    } catch (error) {
+      console.error('Search error:', error);
+      setError('Search failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleFilterChange = (field: string, value: string) => {
     setFilters(prev => ({ ...prev, [field]: value }));
@@ -109,6 +162,7 @@ const Search: React.FC<SearchProps> = ({ entries }) => {
       minAmount: '',
       maxAmount: '',
       type: 'all',
+      payStatus: 'all',
     });
     setSortBy('relevance');
     setSortOrder('desc');
@@ -215,15 +269,29 @@ const Search: React.FC<SearchProps> = ({ entries }) => {
 
             {/* Type Filter */}
             <div>
-              <label className="block text-sm font-medium text-dark-700 mb-1">Type</label>
+              <label className="block text-sm font-medium text-dark-700 mb-1">Payment Type</label>
               <select
                 value={filters.type}
                 onChange={(e) => handleFilterChange('type', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
               >
-                <option value="all">All</option>
+                <option value="all">All Types</option>
                 <option value={PayType.INCOMING}>Incoming</option>
                 <option value={PayType.OUTGOING}>Outgoing</option>
+              </select>
+            </div>
+
+            {/* Payment Status Filter */}
+            <div>
+              <label className="block text-sm font-medium text-dark-700 mb-1">Payment Status</label>
+              <select
+                value={filters.payStatus}
+                onChange={(e) => handleFilterChange('payStatus', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+              >
+                <option value="all">All Status</option>
+                <option value={PayStatus.PAID}>Paid</option>
+                <option value={PayStatus.UNPAID}>Unpaid</option>
               </select>
             </div>
 
