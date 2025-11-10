@@ -66,6 +66,23 @@ export const authUtils = {
     return userStr ? JSON.parse(userStr) : null;
   },
   
+  // Decode JWT token to see payload (for debugging)
+  decodeToken: (): any => {
+    const token = localStorage.getItem('daybook_token');
+    if (!token) return null;
+    try {
+      const base64Url = token.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+      }).join(''));
+      return JSON.parse(jsonPayload);
+    } catch (e) {
+      console.error('Failed to decode token:', e);
+      return null;
+    }
+  },
+  
   setAuth: (token: string, user: User): void => {
     localStorage.setItem('daybook_token', token);
     localStorage.setItem('daybook_user', JSON.stringify(user));
@@ -203,6 +220,18 @@ export const daybookApi = {
   // Create new daybook entry
   createEntry: async (data: DaybookFormData): Promise<DaybookEntry> => {
     try {
+      // Get current user for debugging
+      const currentUser = authUtils.getUser();
+      const tokenPayload = authUtils.decodeToken();
+      console.log('=== CREATE ENTRY DEBUG ===');
+      console.log('Current user from localStorage:', currentUser);
+      console.log('JWT token payload:', tokenPayload);
+      console.log('Data received:', { ...data, receipt: data.receipt ? 'FILE' : undefined });
+      console.log('Tenant being sent:', data.tenant);
+      console.log('User tenant:', currentUser?.tenant);
+      console.log('Token tenant:', tokenPayload?.tenant || tokenPayload?.user_metadata?.tenant);
+      console.log('Match:', data.tenant === currentUser?.tenant);
+      
       // If receipt file is present, use multipart/form-data
       if (data.receipt) {
         const formData = new FormData();
@@ -213,11 +242,17 @@ export const daybookApi = {
         
         if (data.mode_of_pay) formData.append('mode_of_pay', data.mode_of_pay);
         if (data.description) formData.append('description', data.description);
-        if (data.nurse_id) formData.append('nurse_id', data.nurse_id);
-        if (data.client_id) formData.append('client_id', data.client_id);
+        // Only add IDs if they exist and are not empty
+        if (data.nurse_id && data.nurse_id.trim() !== '') formData.append('nurse_id', data.nurse_id.trim());
+        if (data.client_id && data.client_id.trim() !== '') formData.append('client_id', data.client_id.trim());
         if (data.receipt) formData.append('receipt', data.receipt);
 
-        console.log('Creating entry with file upload, tenant:', data.tenant);
+        console.log('Form data keys:', Array.from(formData.keys()));
+        console.log('Checking FormData entries...');
+        Array.from(formData.keys()).forEach(key => {
+          const value = formData.get(key);
+          console.log(`  ${key}:`, value instanceof File ? 'FILE' : value);
+        });
         
         const response = await api.post('/daybook/create', formData, {
           headers: {
@@ -236,8 +271,9 @@ export const daybookApi = {
         
         if (data.mode_of_pay) payload.mode_of_pay = data.mode_of_pay;
         if (data.description) payload.description = data.description;
-        if (data.nurse_id) payload.nurse_id = data.nurse_id;
-        if (data.client_id) payload.client_id = data.client_id;
+        // Only add IDs if they exist and are not empty
+        if (data.nurse_id && data.nurse_id.trim() !== '') payload.nurse_id = data.nurse_id.trim();
+        if (data.client_id && data.client_id.trim() !== '') payload.client_id = data.client_id.trim();
 
         console.log('Creating entry (JSON):', payload);
 
@@ -245,7 +281,11 @@ export const daybookApi = {
         return response.data.data || response.data;
       }
     } catch (error: any) {
-      console.error('Create entry error:', error.response?.data);
+      console.error('=== CREATE ENTRY ERROR ===');
+      console.error('Full error:', error);
+      console.error('Response data:', error.response?.data);
+      console.error('Response status:', error.response?.status);
+      console.error('Response headers:', error.response?.headers);
       const errorMsg = error.response?.data?.error || error.response?.data?.message || 'Failed to create entry';
       throw new Error(errorMsg);
     }

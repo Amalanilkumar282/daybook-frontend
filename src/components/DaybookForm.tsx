@@ -64,14 +64,20 @@ const DaybookForm: React.FC<DaybookFormProps> = ({
       newErrors.tenant = 'Tenant is required';
     }
 
-    // Validate nurse_id for outgoing payments
-    if (formData.payment_type === PayType.OUTGOING && formData.nurse_id && formData.nurse_id.trim() === '') {
-      newErrors.nurse_id = 'Nurse ID cannot be empty for outgoing payments';
+    // Validate nurse_id format if provided (must be empty or valid UUID)
+    if (formData.payment_type === PayType.OUTGOING && formData.nurse_id && formData.nurse_id.trim() !== '') {
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(formData.nurse_id.trim())) {
+        newErrors.nurse_id = 'Nurse ID must be in UUID format or left empty';
+      }
     }
 
-    // Validate client_id for incoming payments
-    if (formData.payment_type === PayType.INCOMING && formData.client_id && formData.client_id.trim() === '') {
-      newErrors.client_id = 'Client ID cannot be empty for incoming payments';
+    // Validate client_id format if provided (must be empty or valid UUID)
+    if (formData.payment_type === PayType.INCOMING && formData.client_id && formData.client_id.trim() !== '') {
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(formData.client_id.trim())) {
+        newErrors.client_id = 'Client ID must be in UUID format or left empty';
+      }
     }
 
     setErrors(newErrors);
@@ -86,23 +92,36 @@ const DaybookForm: React.FC<DaybookFormProps> = ({
     }
 
     try {
+      console.log('=== FORM SUBMIT DEBUG ===');
       console.log('Current user:', currentUser);
+      console.log('User tenant:', currentUser?.tenant);
       console.log('Is admin:', isAdmin);
-      console.log('Form data before submit:', formData);
+      console.log('Form data tenant:', formData.tenant);
+      console.log('Token in localStorage:', localStorage.getItem('daybook_token')?.substring(0, 20) + '...');
       
-      // Ensure tenant is set (use current user's tenant if not admin)
+      // Prepare submit data
       const submitData: DaybookFormData = {
-        ...formData,
+        amount: formData.amount,
+        payment_type: formData.payment_type,
+        pay_status: formData.pay_status,
+        mode_of_pay: formData.mode_of_pay,
         tenant: isAdmin ? formData.tenant : (currentUser?.tenant || formData.tenant),
-        // Remove nurse_id for incoming payments
-        nurse_id: formData.payment_type === PayType.INCOMING ? undefined : formData.nurse_id || undefined,
-        // Remove client_id for outgoing payments
-        client_id: formData.payment_type === PayType.OUTGOING ? undefined : formData.client_id || undefined,
-        // Add receipt file if present
+        description: formData.description || undefined,
         receipt: receiptFile || undefined,
       };
 
-      console.log('Submit data prepared:', {
+      // Only add nurse_id if payment is outgoing AND it's not empty AND it's valid
+      if (formData.payment_type === PayType.OUTGOING && formData.nurse_id && formData.nurse_id.trim() !== '') {
+        submitData.nurse_id = formData.nurse_id.trim();
+      }
+
+      // Only add client_id if payment is incoming AND it's not empty AND it's valid
+      if (formData.payment_type === PayType.INCOMING && formData.client_id && formData.client_id.trim() !== '') {
+        submitData.client_id = formData.client_id.trim();
+      }
+
+      console.log('Tenant in submitData:', submitData.tenant);
+      console.log('Full submitData:', {
         ...submitData,
         receipt: submitData.receipt ? 'FILE PRESENT' : undefined
       });
@@ -262,36 +281,42 @@ const DaybookForm: React.FC<DaybookFormProps> = ({
         {formData.payment_type === PayType.INCOMING ? (
           <div>
             <label htmlFor="client_id" className="block text-sm font-medium text-dark-700 mb-2">
-              Client ID (Optional)
+              Client ID (Optional - UUID format required)
             </label>
             <input
               type="text"
               id="client_id"
               value={formData.client_id || ''}
               onChange={(e) => handleInputChange('client_id', e.target.value)}
-              placeholder="Enter Client ID (e.g., CLIENT_001)"
+              placeholder="Leave empty or enter UUID (e.g., 550e8400-e29b-41d4-a716-446655440000)"
               className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
                 errors.client_id ? 'border-red-500' : 'border-gray-300'
               }`}
             />
             {errors.client_id && <p className="mt-1 text-sm text-red-600">{errors.client_id}</p>}
+            <p className="mt-1 text-xs text-gray-500">
+              ⚠️ Backend requires UUID format. Leave empty if not using client management system.
+            </p>
           </div>
         ) : (
           <div>
             <label htmlFor="nurse_id" className="block text-sm font-medium text-dark-700 mb-2">
-              Nurse ID (Optional)
+              Nurse ID (Optional - UUID format required)
             </label>
             <input
               type="text"
               id="nurse_id"
               value={formData.nurse_id || ''}
               onChange={(e) => handleInputChange('nurse_id', e.target.value)}
-              placeholder="Enter Nurse ID (e.g., NURSE_123)"
+              placeholder="Leave empty or enter UUID (e.g., 550e8400-e29b-41d4-a716-446655440000)"
               className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
                 errors.nurse_id ? 'border-red-500' : 'border-gray-300'
               }`}
             />
             {errors.nurse_id && <p className="mt-1 text-sm text-red-600">{errors.nurse_id}</p>}
+            <p className="mt-1 text-xs text-gray-500">
+              ⚠️ Backend requires UUID format. Leave empty if not using nurse management system.
+            </p>
           </div>
         )}
 
