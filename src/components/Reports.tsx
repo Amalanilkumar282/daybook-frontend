@@ -102,8 +102,8 @@ const Reports: React.FC<ReportsProps> = ({ entries: propEntries = [] }) => {
     }
   };
 
-  const formatCurrency = (amount: number) => {
-    return currencyUtils.formatCurrency(amount);
+  const formatCurrency = (amount: number | undefined | null) => {
+    return currencyUtils.formatCurrency(amount || 0);
   };
 
   // Prepare chart data from entries
@@ -568,7 +568,11 @@ const Reports: React.FC<ReportsProps> = ({ entries: propEntries = [] }) => {
                       <div className="max-w-xs truncate">
                         {entry.description || 'No description'}
                       </div>
-                      <div className="text-xs text-gray-500">ID: {entry.id_in_out}</div>
+                      <div className="text-xs text-gray-500">
+                        {entry.client_id && `Client: ${entry.client_id}`}
+                        {entry.nurse_id && `Nurse: ${entry.nurse_id}`}
+                        {!entry.client_id && !entry.nurse_id && `ID: ${entry.id}`}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                       <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { DaybookEntry, PayType, PayStatus } from '../types/daybook';
 import Pagination from './Pagination';
 import { usePagination } from '../hooks/usePagination';
+import { authUtils } from '../services/api';
 
 interface DaybookTableProps {
   entries: DaybookEntry[];
@@ -10,12 +11,13 @@ interface DaybookTableProps {
   onDelete: (id: string) => void;
 }
 
-type SortField = 'created_at' | 'amount' | 'id_in_out' | 'payment_type';
+type SortField = 'created_at' | 'amount' | 'payment_type' | 'tenant';
 type SortDirection = 'asc' | 'desc';
 
 const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete }) => {
   const [sortField, setSortField] = useState<SortField>('created_at');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const isAdmin = authUtils.isAdmin();
 
   const sortedEntries = [...entries].sort((a, b) => {
     let aValue: any;
@@ -30,9 +32,9 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete 
         aValue = a.amount;
         bValue = b.amount;
         break;
-      case 'id_in_out':
-        aValue = a.id_in_out.toLowerCase();
-        bValue = b.id_in_out.toLowerCase();
+      case 'tenant':
+        aValue = a.tenant.toLowerCase();
+        bValue = b.tenant.toLowerCase();
         break;
       case 'payment_type':
         aValue = a.payment_type.toLowerCase();
@@ -61,9 +63,9 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete 
   });
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-IN', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'INR',
     }).format(amount);
   };
 
@@ -192,7 +194,7 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete 
                   </div>
                 </div>
                 <div className="modern-badge from-neutral-100 to-neutral-200 text-neutral-800 border-neutral-300/50 font-mono text-xs flex-shrink-0">
-                  {entry.id_in_out}
+                  ID: {entry.id}
                 </div>
               </div>
               
@@ -200,6 +202,22 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete 
                 <p className="text-xs xs:text-sm text-neutral-900 line-clamp-2">
                   {entry.description || 'No description'}
                 </p>
+                {entry.client_id && (
+                  <p className="text-xs text-neutral-600 mt-1">Client: {entry.client_id}</p>
+                )}
+                {entry.nurse_id && (
+                  <p className="text-xs text-neutral-600 mt-1">Nurse: {entry.nurse_id}</p>
+                )}
+                {entry.receipt && (
+                  <a 
+                    href={entry.receipt} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-xs text-blue-600 hover:text-blue-700 underline mt-1 inline-block"
+                  >
+                    View Receipt
+                  </a>
+                )}
               </div>
               
               <div className="flex flex-col xs:flex-row xs:justify-between xs:items-center gap-2 xs:gap-3 mb-2 xs:mb-3">
@@ -284,14 +302,19 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete 
                   {getSortIcon('created_at')}
                 </div>
               </th>
-              <th
-                className="table-header cursor-pointer hover:bg-neutral-100 transition-colors"
-                onClick={() => handleSort('id_in_out')}
-              >
-                <div className="flex items-center space-x-2">
-                  <span>ID In/Out</span>
-                  {getSortIcon('id_in_out')}
-                </div>
+              {isAdmin && (
+                <th
+                  className="table-header cursor-pointer hover:bg-neutral-100 transition-colors"
+                  onClick={() => handleSort('tenant')}
+                >
+                  <div className="flex items-center space-x-2">
+                    <span>Tenant</span>
+                    {getSortIcon('tenant')}
+                  </div>
+                </th>
+              )}
+              <th className="table-header">
+                Client/Nurse ID
               </th>
               <th className="table-header">
                 Description
@@ -321,6 +344,9 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete 
                 Mode
               </th>
               <th className="table-header text-center">
+                Receipt
+              </th>
+              <th className="table-header text-center">
                 Actions
               </th>
             </tr>
@@ -334,10 +360,27 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete 
                     <span className="text-xs text-neutral-500">{new Date(entry.created_at).toLocaleDateString('en-US', { weekday: 'short' })}</span>
                   </div>
                 </td>
+                {isAdmin && (
+                  <td className="table-cell">
+                    <div className="modern-badge from-blue-100 to-blue-200 text-blue-800 border-blue-300/50">
+                      {entry.tenant}
+                    </div>
+                  </td>
+                )}
                 <td className="table-cell">
-                  <div className="modern-badge from-neutral-100 to-neutral-200 text-neutral-800 border-neutral-300/50 font-mono">
-                    {entry.id_in_out}
-                  </div>
+                  {entry.client_id && (
+                    <div className="text-sm text-neutral-700">
+                      <span className="text-xs text-neutral-500">Client:</span> {entry.client_id}
+                    </div>
+                  )}
+                  {entry.nurse_id && (
+                    <div className="text-sm text-neutral-700">
+                      <span className="text-xs text-neutral-500">Nurse:</span> {entry.nurse_id}
+                    </div>
+                  )}
+                  {!entry.client_id && !entry.nurse_id && (
+                    <span className="text-neutral-400 text-sm">-</span>
+                  )}
                 </td>
                 <td className="table-cell">
                   <div className="max-w-xs">
@@ -372,6 +415,20 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete 
                   <span className="text-neutral-600 text-sm capitalize">
                     {entry.mode_of_pay.replace('_', ' ')}
                   </span>
+                </td>
+                <td className="table-cell text-center">
+                  {entry.receipt ? (
+                    <a 
+                      href={entry.receipt} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:text-blue-700 text-sm underline"
+                    >
+                      View
+                    </a>
+                  ) : (
+                    <span className="text-neutral-400 text-sm">-</span>
+                  )}
                 </td>
                 <td className="table-cell text-center">
                   <div className="flex items-center justify-center space-x-2">
@@ -410,7 +467,7 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete 
           </tbody>
           <tfoot className="bg-gradient-to-r from-neutral-50/95 to-neutral-100/95 backdrop-blur-sm border-t-2 border-neutral-300">
             <tr>
-              <td colSpan={4} className="px-6 py-5 text-base font-bold font-display text-neutral-800">
+              <td colSpan={isAdmin ? 5 : 4} className="px-6 py-5 text-base font-bold font-display text-neutral-800">
                 Total Summary
               </td>
               <td className="px-6 py-5 text-right">
@@ -423,7 +480,7 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete 
                   Outgoing: {formatCurrency(totalOutgoing)}
                 </div>
               </td>
-              <td className="px-6 py-5 text-right">
+              <td className="px-6 py-5 text-right" colSpan={2}>
                 <div className="modern-badge from-primary-500 to-primary-600 text-white border-primary-400/30 text-base">
                   Net: {formatCurrency(totalIncoming - totalOutgoing)}
                 </div>

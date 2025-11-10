@@ -15,32 +15,54 @@ export enum ModeOfPay {
   ACCOUNT_TRANSFER = 'account_transfer'
 }
 
+export enum Tenant {
+  TATA_NURSING = 'TATANursing',
+  DEARCARE = 'Dearcare',
+  DEARCARE_ACADEMY = 'DearcareAcademy'
+}
+
+export enum UserRole {
+  ADMIN = 'admin',
+  ACCOUNTANT = 'accountant',
+  STAFF = 'staff'
+}
+
 // Main interfaces
 export interface DaybookEntry {
   id: number;
   created_at: string;
-  id_in_out: string;
   amount: number;
   payment_type: PayType;
   pay_status: PayStatus;
   description?: string;
   mode_of_pay: ModeOfPay;
+  tenant: Tenant;
+  nurse_id?: string;
+  client_id?: string;
+  receipt?: string;
 }
 
 export interface DaybookFormData {
-  id_in_out: string;
   amount: number;
   payment_type: PayType;
   pay_status: PayStatus;
   mode_of_pay: ModeOfPay;
+  tenant: Tenant;
   description?: string;
+  nurse_id?: string;
+  client_id?: string;
+  receipt?: File;
 }
 
 // Authentication interfaces
 export interface User {
   id: string;
   email: string;
+  role: UserRole;
+  tenant?: Tenant;
   created_at: string;
+  updated_at?: string;
+  last_sign_in_at?: string;
 }
 
 export interface LoginCredentials {
@@ -52,12 +74,39 @@ export interface RegisterCredentials {
   email: string;
   password: string;
   confirmPassword: string;
+  role: UserRole;
+  tenant: Tenant;
+}
+
+export interface CreateAdminCredentials {
+  email: string;
+  password: string;
+  confirmPassword: string;
+  tenant?: Tenant;
 }
 
 export interface AuthResponse {
   message: string;
   token: string;
   user: User;
+}
+
+// Summary data from backend /api/daybook/summary/amounts
+export interface SummaryAmountsResponse {
+  total_paid_amount: number;
+  total_pending_amount: number;
+  total_entries: number;
+  paid_entries_count: number;
+  pending_entries_count: number;
+}
+
+// Revenue data from backend /api/daybook/revenue/net
+export interface RevenueNetResponse {
+  total_incoming: number;
+  total_outgoing: number;
+  net_revenue: number;
+  incoming_count: number;
+  outgoing_count: number;
 }
 
 export interface SummaryData {
