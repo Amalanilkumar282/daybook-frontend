@@ -418,11 +418,18 @@ export const daybookApi = {
   // Get summary data for dashboard (calculated from entries)
   getSummary: async (): Promise<SummaryData> => {
     try {
+      console.log('=== GET SUMMARY DEBUG ===');
       const today = new Date();
       const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
       const oneMonthAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
       const formatDate = (date: Date): string => date.toISOString().split('T')[0];
+
+      console.log('Date ranges:', {
+        today: formatDate(today),
+        week: `${formatDate(oneWeekAgo)} to ${formatDate(today)}`,
+        month: `${formatDate(oneMonthAgo)} to ${formatDate(today)}`
+      });
 
       // Fetch data for each period
       const [todayRevenue, weekRevenue, monthRevenue] = await Promise.all([
@@ -431,7 +438,13 @@ export const daybookApi = {
         daybookApi.getNetRevenue({ start_date: formatDate(oneMonthAgo), end_date: formatDate(today) }),
       ]);
 
-      return {
+      console.log('Revenue data received:', {
+        today: todayRevenue,
+        week: weekRevenue,
+        month: monthRevenue
+      });
+
+      const summary = {
         today: {
           incoming: todayRevenue.total_incoming,
           outgoing: todayRevenue.total_outgoing,
@@ -448,7 +461,13 @@ export const daybookApi = {
           net: monthRevenue.net_revenue,
         },
       };
+
+      console.log('Summary prepared:', summary);
+      return summary;
     } catch (error: any) {
+      console.error('=== GET SUMMARY ERROR ===');
+      console.error('Error:', error);
+      console.error('Response:', error.response?.data);
       throw new Error(error.message || 'Failed to fetch summary data');
     }
   },

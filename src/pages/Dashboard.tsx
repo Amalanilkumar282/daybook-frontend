@@ -30,46 +30,29 @@ const Dashboard: React.FC = () => {
       
       // Fetch entries and summary data
       console.log('DEBUG: Calling API...');
-      const entriesData = await daybookApi.getAllEntries();
-      const summaryResponse = await daybookApi.getSummary();
+      const [entriesData, summaryResponse] = await Promise.all([
+        daybookApi.getAllEntries(),
+        daybookApi.getSummary()
+      ]);
 
-      console.log('DEBUG: Data received:', { entries: entriesData.length, summary: summaryResponse });
+      console.log('DEBUG: Entries received:', entriesData.length);
+      console.log('DEBUG: Summary received:', summaryResponse);
+      
       setEntries(entriesData);
       setSummaryData(summaryResponse);
-    } catch (error) {
-      console.error('Error fetching data:', error);
-      setError('Failed to load data. Using fallback data for demo.');
       
-      // Set fallback data for development
-      const fallbackEntries: DaybookEntry[] = [
-        {
-          id: 1,
-          created_at: '2025-06-30T08:00:00.000Z',
-          id_in_out: PayType.OUTGOING,
-          amount: 100,
-          payment_type: PayType.OUTGOING,
-          pay_status: PayStatus.PAID,
-          mode_of_pay: ModeOfPay.CASH,
-          description: 'Sample Entry 1'
-        },
-        {
-          id: 2,
-          created_at: '2025-06-29T14:30:00.000Z',
-          id_in_out: PayType.INCOMING,
-          amount: 200,
-          payment_type: PayType.INCOMING,
-          pay_status: PayStatus.PAID,
-          mode_of_pay: ModeOfPay.UPI,
-          description: 'Sample Entry 2'
-        }
-      ];
+      console.log('DEBUG: State updated successfully');
+    } catch (error: any) {
+      console.error('=== DASHBOARD FETCH ERROR ===');
+      console.error('Error details:', error);
+      console.error('Error message:', error.message);
+      console.error('Error response:', error.response?.data);
       
-      setEntries(fallbackEntries);
-      setSummaryData({
-        today: { incoming: 200, outgoing: 100, net: 100 },
-        week: { incoming: 200, outgoing: 100, net: 100 },
-        month: { incoming: 200, outgoing: 100, net: 100 },
-      });
+      setError(`Failed to load dashboard data: ${error.message}`);
+      
+      // Don't set fallback data - let the user see the actual error
+      setEntries([]);
+      setSummaryData(null);
     } finally {
       setLoading(false);
       setSummaryLoading(false);
@@ -100,10 +83,11 @@ const Dashboard: React.FC = () => {
   const openDeleteModal = (id: string) => {
     const entry = entries.find(e => e.id.toString() === id);
     if (entry) {
+      const entryType = entry.payment_type === PayType.INCOMING ? 'Incoming' : 'Outgoing';
       setDeleteModal({
         isOpen: true,
         entryId: entry.id.toString(),
-        entryDetails: `${entry.description || 'No description'} (${entry.id_in_out})`
+        entryDetails: `${entry.description || 'No description'} (${entryType})`
       });
     }
   };
