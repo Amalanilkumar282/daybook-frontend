@@ -66,14 +66,19 @@ export const dateUtils = {
 // Number/Currency utilities
 export const currencyUtils = {
   // Format number as currency
-  formatCurrency: (amount: number, currencyCode: string = 'USD'): string => {
-    const currency = CURRENCIES.find(c => c.code === currencyCode);
-    const symbol = currency?.symbol || '$';
+  formatCurrency: (amount: number | undefined | null, currencyCode: string = 'INR'): string => {
+    // Handle undefined, null, or NaN values
+    if (amount === undefined || amount === null || isNaN(amount)) {
+      return '₹0.00';
+    }
     
-    return `${symbol}${amount.toLocaleString('en-US', {
+    // Use INR currency formatting
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
-    })}`;
+    }).format(amount);
   },
 
   // Parse currency string to number

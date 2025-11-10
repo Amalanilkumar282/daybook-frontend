@@ -12,6 +12,7 @@ import ViewEntry from './pages/ViewEntry';
 import SearchPage from './pages/SearchPage';
 import ReportsPage from './pages/ReportsPage';
 import SettingsPage from './pages/SettingsPage';
+import DebugAuth from './pages/DebugAuth';
 import NotFound from './pages/NotFound';
 import { authUtils } from './services/api';
 import './App.css';
@@ -77,6 +78,11 @@ function App() {
                 <Route path="/settings" element={
                   <ProtectedRoute>
                     <SettingsPage />
+                  </ProtectedRoute>
+                } />
+                <Route path="/debug-auth" element={
+                  <ProtectedRoute>
+                    <DebugAuth />
                   </ProtectedRoute>
                 } />
                 <Route path="*" element={<NotFound />} />

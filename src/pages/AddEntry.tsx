@@ -15,6 +15,7 @@ const AddEntry: React.FC = () => {
       setIsLoading(true);
       setError(null);
       
+      console.log('Submitting entry data:', data);
       await daybookApi.createEntry(data);
       setSuccess(true);
       
@@ -24,7 +25,11 @@ const AddEntry: React.FC = () => {
       }, 1500);
     } catch (error: any) {
       console.error('Error creating entry:', error);
-      setError(error.response?.data?.message || 'Failed to create entry. Please try again.');
+      const errorMessage = error.response?.data?.error || 
+                          error.response?.data?.message || 
+                          error.message || 
+                          'Failed to create entry. Please try again.';
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
