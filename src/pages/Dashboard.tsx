@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { DaybookEntry, PayType, PayStatus, ModeOfPay, SummaryData } from '../types/daybook';
+import { DaybookEntry, PayType, SummaryData } from '../types/daybook';
 import { daybookApi } from '../services/api';
 import SummaryCards from '../components/SummaryCards';
 import DaybookTable from '../components/DaybookTable';

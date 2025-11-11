@@ -18,13 +18,7 @@ const VALIDATION_RULES = {
   },
 };
 
-// Simple currency list (inline to avoid circular imports)
-const CURRENCIES = [
-  { code: 'USD', symbol: '$', name: 'US Dollar' },
-  { code: 'EUR', symbol: '€', name: 'Euro' },
-  { code: 'GBP', symbol: '£', name: 'British Pound' },
-  { code: 'CAD', symbol: 'C$', name: 'Canadian Dollar' },
-];
+// (Removed unused CURRENCIES list - keep inline utilities small and focused)
 
 // Date utilities
 export const dateUtils = {
