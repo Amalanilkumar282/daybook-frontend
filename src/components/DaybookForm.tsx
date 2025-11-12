@@ -205,7 +205,7 @@ const DaybookForm: React.FC<DaybookFormProps> = ({
                 id="amount"
                 step="0.01"
                 min="0"
-                value={formData.amount}
+                value={formData.amount || ''}
                 onChange={(e) => handleInputChange('amount', parseFloat(e.target.value) || 0)}
                 placeholder="0.00"
                 className={`w-full pl-8 pr-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${

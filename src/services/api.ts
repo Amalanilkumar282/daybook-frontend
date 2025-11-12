@@ -254,11 +254,7 @@ export const daybookApi = {
           console.log(`  ${key}:`, value instanceof File ? 'FILE' : value);
         });
         
-        const response = await api.post('/daybook/create', formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        });
+        const response = await api.post('/daybook/create', formData);
         return response.data.data || response.data;
       } else {
         // Use JSON for non-file uploads
@@ -307,11 +303,7 @@ export const daybookApi = {
         if (data.client_id) formData.append('client_id', data.client_id);
         if (data.receipt) formData.append('receipt', data.receipt);
 
-        const response = await api.put(`/daybook/update/${id}`, formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        });
+        const response = await api.put(`/daybook/update/${id}`, formData);
         return response.data.data || response.data;
       } else {
         const response = await api.put(`/daybook/update/${id}`, data);
@@ -419,50 +411,54 @@ export const daybookApi = {
   getSummary: async (): Promise<SummaryData> => {
     try {
       console.log('=== GET SUMMARY DEBUG ===');
-      const today = new Date();
-      const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-      const oneMonthAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-
-      const formatDate = (date: Date): string => date.toISOString().split('T')[0];
-
+      
+      // Fetch all entries and calculate summary client-side
+      const entries = await daybookApi.getAllEntries();
+      console.log('Total entries fetched:', entries.length);
+      
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const oneWeekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+      const oneMonthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+      
       console.log('Date ranges:', {
-        today: formatDate(today),
-        week: `${formatDate(oneWeekAgo)} to ${formatDate(today)}`,
-        month: `${formatDate(oneMonthAgo)} to ${formatDate(today)}`
+        today: today.toISOString().split('T')[0],
+        weekStart: oneWeekAgo.toISOString().split('T')[0],
+        monthStart: oneMonthAgo.toISOString().split('T')[0]
       });
-
-      // Fetch data for each period
-      const [todayRevenue, weekRevenue, monthRevenue] = await Promise.all([
-        daybookApi.getNetRevenue({ start_date: formatDate(today), end_date: formatDate(today) }),
-        daybookApi.getNetRevenue({ start_date: formatDate(oneWeekAgo), end_date: formatDate(today) }),
-        daybookApi.getNetRevenue({ start_date: formatDate(oneMonthAgo), end_date: formatDate(today) }),
-      ]);
-
-      console.log('Revenue data received:', {
-        today: todayRevenue,
-        week: weekRevenue,
-        month: monthRevenue
-      });
-
-      const summary = {
-        today: {
-          incoming: todayRevenue.total_incoming,
-          outgoing: todayRevenue.total_outgoing,
-          net: todayRevenue.net_revenue,
-        },
-        week: {
-          incoming: weekRevenue.total_incoming,
-          outgoing: weekRevenue.total_outgoing,
-          net: weekRevenue.net_revenue,
-        },
-        month: {
-          incoming: monthRevenue.total_incoming,
-          outgoing: monthRevenue.total_outgoing,
-          net: monthRevenue.net_revenue,
-        },
+      
+      // Helper function to check if entry is within date range
+      const isWithinRange = (entryDate: string, startDate: Date, endDate: Date): boolean => {
+        const entry = new Date(entryDate);
+        return entry >= startDate && entry <= endDate;
       };
-
-      console.log('Summary prepared:', summary);
+      
+      // Calculate summary for a date range
+      const calculateSummary = (startDate: Date, endDate: Date) => {
+        const filteredEntries = entries.filter(entry => 
+          isWithinRange(entry.created_at, startDate, endDate)
+        );
+        
+        const incoming = filteredEntries
+          .filter(entry => entry.payment_type === PayType.INCOMING)
+          .reduce((sum, entry) => sum + entry.amount, 0);
+          
+        const outgoing = filteredEntries
+          .filter(entry => entry.payment_type === PayType.OUTGOING)
+          .reduce((sum, entry) => sum + entry.amount, 0);
+          
+        const net = incoming - outgoing;
+        
+        return { incoming, outgoing, net };
+      };
+      
+      const summary = {
+        today: calculateSummary(today, new Date(today.getTime() + 24 * 60 * 60 * 1000 - 1)), // End of today
+        week: calculateSummary(oneWeekAgo, now),
+        month: calculateSummary(oneMonthAgo, now),
+      };
+      
+      console.log('Summary calculated:', summary);
       return summary;
     } catch (error: any) {
       console.error('=== GET SUMMARY ERROR ===');
