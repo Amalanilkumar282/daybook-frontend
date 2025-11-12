@@ -17,7 +17,7 @@ import {
 } from 'recharts';
 import Pagination from './Pagination';
 import { usePagination } from '../hooks/usePagination';
-import { reportsApi, daybookApi } from '../services/api';
+import { reportsApi, daybookApi, nursesClientsApi } from '../services/api';
 import { currencyUtils, dateUtils } from '../utils';
 
 interface ReportsProps {
@@ -35,9 +35,31 @@ const Reports: React.FC<ReportsProps> = ({ entries: propEntries = [] }) => {
   const [error, setError] = useState<string | null>(null);
   const [reportData, setReportData] = useState<any>(null);
   const [entries, setEntries] = useState<DaybookEntry[]>(propEntries);
+  const [nursesMap, setNursesMap] = useState<Map<string, any>>(new Map());
+  const [clientsMap, setClientsMap] = useState<Map<string, any>>(new Map());
 
   // Load entries and generate report when component mounts or date range changes
   useEffect(() => {
+    // Fetch nurses and clients for name display
+    const fetchNursesAndClients = async () => {
+      try {
+        const [nurses, clients] = await Promise.all([
+          nursesClientsApi.getNurses().catch(() => []),
+          nursesClientsApi.getClients().catch(() => [])
+        ]);
+        
+        const nursesMap = new Map(nurses.map(n => [n.nurse_id.toString(), n]));
+        const clientsMap = new Map(clients.map(c => [c.id, c]));
+        
+        setNursesMap(nursesMap);
+        setClientsMap(clientsMap);
+      } catch (error) {
+        console.error('Failed to fetch nurse/client data:', error);
+      }
+    };
+    
+    fetchNursesAndClients();
+    
     if (propEntries.length === 0) {
       loadEntriesAndGenerateReport();
     } else {
@@ -104,6 +126,20 @@ const Reports: React.FC<ReportsProps> = ({ entries: propEntries = [] }) => {
 
   const formatCurrency = (amount: number | undefined | null) => {
     return currencyUtils.formatCurrency(amount || 0);
+  };
+  
+  // Helper function to get nurse name
+  const getNurseName = (nurseId: string | undefined): string => {
+    if (!nurseId) return '';
+    const nurse = nursesMap.get(nurseId);
+    return nurse ? (nurse.full_name || `${nurse.first_name} ${nurse.last_name}`.trim()) : '';
+  };
+  
+  // Helper function to get client name
+  const getClientName = (clientId: string | undefined): string => {
+    if (!clientId) return '';
+    const client = clientsMap.get(clientId);
+    return client ? (client.registration_number || '') : '';
   };
 
   // Prepare chart data from entries
@@ -568,9 +604,9 @@ const Reports: React.FC<ReportsProps> = ({ entries: propEntries = [] }) => {
                       <div className="max-w-xs truncate">
                         {entry.description || 'No description'}
                       </div>
-                      <div className="text-xs text-gray-500">
-                        {entry.client_id && `Client: ${entry.client_id}`}
-                        {entry.nurse_id && `Nurse: ${entry.nurse_id}`}
+                      <div className="text-xs text-gray-500 mt-1">
+                        {entry.client_id && getClientName(entry.client_id) && `Client: ${getClientName(entry.client_id)}`}
+                        {entry.nurse_id && getNurseName(entry.nurse_id) && `Nurse: ${getNurseName(entry.nurse_id)}`}
                         {!entry.client_id && !entry.nurse_id && `ID: ${entry.id}`}
                       </div>
                     </td>

@@ -468,7 +468,7 @@ export const daybookApi = {
     }
   },
 
-  // Search entries (client-side filtering)
+  // Search entries (client-side filtering with enhanced nurse/client search)
   searchEntries: async (query: string, filters?: { 
     dateFrom?: string, 
     dateTo?: string, 
@@ -481,17 +481,63 @@ export const daybookApi = {
     try {
       let entries = await daybookApi.getAllEntries();
       
-      // Text search
+      // Text search with enhanced functionality
       if (query.trim()) {
         const searchTerm = query.toLowerCase();
-        entries = entries.filter(entry => 
-          (entry.nurse_id && entry.nurse_id.toLowerCase().includes(searchTerm)) ||
-          (entry.client_id && entry.client_id.toLowerCase().includes(searchTerm)) ||
-          (entry.description && entry.description.toLowerCase().includes(searchTerm)) ||
-          entry.payment_type.toLowerCase().includes(searchTerm) ||
-          entry.mode_of_pay.toLowerCase().includes(searchTerm) ||
-          entry.tenant.toLowerCase().includes(searchTerm)
-        );
+        
+        // Fetch nurses and clients data for better searching
+        let nursesData: any[] = [];
+        let clientsData: any[] = [];
+        
+        try {
+          [nursesData, clientsData] = await Promise.all([
+            nursesClientsApi.getNurses().catch(() => []),
+            nursesClientsApi.getClients().catch(() => [])
+          ]);
+        } catch (error) {
+          console.warn('Could not fetch nurse/client data for search');
+        }
+        
+        entries = entries.filter(entry => {
+          // Search in basic fields
+          const basicMatch = 
+            (entry.description && entry.description.toLowerCase().includes(searchTerm)) ||
+            entry.id.toString().toLowerCase().includes(searchTerm) ||
+            entry.payment_type.toLowerCase().includes(searchTerm) ||
+            entry.mode_of_pay.toLowerCase().includes(searchTerm) ||
+            entry.tenant.toLowerCase().includes(searchTerm) ||
+            entry.amount.toString().includes(searchTerm);
+          
+          if (basicMatch) return true;
+          
+          // Search in nurse data if nurse_id exists
+          if (entry.nurse_id && nursesData.length > 0) {
+            const nurse = nursesData.find(n => n.nurse_id.toString() === entry.nurse_id);
+            if (nurse) {
+              const nurseMatch = 
+                (nurse.full_name && nurse.full_name.toLowerCase().includes(searchTerm)) ||
+                (nurse.first_name && nurse.first_name.toLowerCase().includes(searchTerm)) ||
+                (nurse.last_name && nurse.last_name.toLowerCase().includes(searchTerm)) ||
+                (nurse.nurse_reg_no && nurse.nurse_reg_no.toLowerCase().includes(searchTerm)) ||
+                (nurse.phone_number && nurse.phone_number.includes(searchTerm));
+              if (nurseMatch) return true;
+            }
+          }
+          
+          // Search in client data if client_id exists
+          if (entry.client_id && clientsData.length > 0) {
+            const client = clientsData.find(c => c.id === entry.client_id);
+            if (client) {
+              const clientMatch = 
+                (client.registration_number && client.registration_number.toLowerCase().includes(searchTerm)) ||
+                (client.client_type && client.client_type.toLowerCase().includes(searchTerm)) ||
+                (client.client_category && client.client_category.toLowerCase().includes(searchTerm));
+              if (clientMatch) return true;
+            }
+          }
+          
+          return false;
+        });
       }
       
       // Apply filters
@@ -618,28 +664,96 @@ export const reportsApi = {
 
   generateSummaryReport: async (startDate: string, endDate: string) => {
     try {
-      const [summary, revenue, entries] = await Promise.all([
-        daybookApi.getSummaryAmounts({ start_date: startDate, end_date: endDate }),
-        daybookApi.getNetRevenue({ start_date: startDate, end_date: endDate }),
-        daybookApi.getEntriesByDateRange(startDate, endDate)
-      ]);
+      // Fetch entries for the date range
+      const entries = await daybookApi.getEntriesByDateRange(startDate, endDate);
+      
+      // Calculate all metrics from entries
+      const totalEntries = entries.length;
+      
+      const paidEntries = entries.filter(e => e.pay_status === PayStatus.PAID).length;
+      const unpaidEntries = entries.filter(e => e.pay_status === PayStatus.UNPAID).length;
+      
+      const totalIncoming = entries
+        .filter(e => e.payment_type === PayType.INCOMING)
+        .reduce((sum, e) => sum + e.amount, 0);
+      
+      const totalOutgoing = entries
+        .filter(e => e.payment_type === PayType.OUTGOING)
+        .reduce((sum, e) => sum + e.amount, 0);
+      
+      const netAmount = totalIncoming - totalOutgoing;
+      
+      const totalPaidAmount = entries
+        .filter(e => e.pay_status === PayStatus.PAID)
+        .reduce((sum, e) => sum + e.amount, 0);
+      
+      const totalPendingAmount = entries
+        .filter(e => e.pay_status === PayStatus.UNPAID)
+        .reduce((sum, e) => sum + e.amount, 0);
       
       return {
         period: { startDate, endDate },
-        totalEntries: summary.total_entries,
-        paidEntries: summary.paid_entries_count,
-        unpaidEntries: summary.pending_entries_count,
-        totalIncoming: revenue.total_incoming,
-        totalOutgoing: revenue.total_outgoing,
-        netAmount: revenue.net_revenue,
-        totalPaidAmount: summary.total_paid_amount,
-        totalPendingAmount: summary.total_pending_amount,
+        totalEntries,
+        paidEntries,
+        unpaidEntries,
+        totalIncoming,
+        totalOutgoing,
+        netAmount,
+        totalPaidAmount,
+        totalPendingAmount,
         entries
       };
     } catch (error: any) {
       throw new Error(error.message || 'Failed to generate summary report');
     }
   }
+};
+
+// Nurses and Clients API
+export const nursesClientsApi = {
+  // Fetch all nurses with caching
+  getNurses: async (): Promise<any[]> => {
+    try {
+      const response = await axios.get('https://day-book-backend.vercel.app/api/Daybook/nurses');
+      return response.data.data || [];
+    } catch (error: any) {
+      console.error('Failed to fetch nurses:', error);
+      throw new Error(error.response?.data?.message || 'Failed to fetch nurses');
+    }
+  },
+
+  // Fetch all clients with caching
+  getClients: async (): Promise<any[]> => {
+    try {
+      const response = await axios.get('https://day-book-backend.vercel.app/api/Daybook/clients');
+      return response.data.data || [];
+    } catch (error: any) {
+      console.error('Failed to fetch clients:', error);
+      throw new Error(error.response?.data?.message || 'Failed to fetch clients');
+    }
+  },
+
+  // Get nurse by ID
+  getNurseById: async (nurseId: number): Promise<any | null> => {
+    try {
+      const nurses = await nursesClientsApi.getNurses();
+      return nurses.find(nurse => nurse.nurse_id === nurseId) || null;
+    } catch (error: any) {
+      console.error('Failed to fetch nurse by ID:', error);
+      return null;
+    }
+  },
+
+  // Get client by ID
+  getClientById: async (clientId: string): Promise<any | null> => {
+    try {
+      const clients = await nursesClientsApi.getClients();
+      return clients.find(client => client.id === clientId) || null;
+    } catch (error: any) {
+      console.error('Failed to fetch client by ID:', error);
+      return null;
+    }
+  },
 };
 
 // Settings API - Local storage based settings
