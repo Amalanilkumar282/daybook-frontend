@@ -545,18 +545,16 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete 
                       Total Summary
                     </td>
                     <td className="px-6 py-5 text-right">
-                      <div className="modern-badge from-success-500 to-success-600 text-white border-success-400/30 text-sm">
-                        ₹{formatCurrency(totalIncoming).replace('₹', '')}
+                      <div className="modern-badge from-success-500 to-success-600 text-white border-success-400/30 text-sm whitespace-nowrap">
+                        In: ₹{formatCurrency(totalIncoming).replace('₹', '')}
                       </div>
                     </td>
-                    <td className="px-6 py-5"></td>
-                    <td className="px-6 py-5"></td>
-                    <td className="px-6 py-5 text-center">
-                      <div className="flex flex-col gap-1">
-                        <div className="modern-badge from-error-500 to-error-600 text-white border-error-400/30 text-xs">
+                    <td className="px-6 py-5" colSpan={3}>
+                      <div className="flex items-center justify-center gap-3">
+                        <div className="modern-badge from-error-500 to-error-600 text-white border-error-400/30 text-sm whitespace-nowrap">
                           Out: {formatCurrency(totalOutgoing)}
                         </div>
-                        <div className="modern-badge from-primary-500 to-primary-600 text-white border-primary-400/30 text-xs">
+                        <div className="modern-badge from-primary-500 to-primary-600 text-white border-primary-400/30 text-sm whitespace-nowrap">
                           Net: {formatCurrency(totalIncoming - totalOutgoing)}
                         </div>
                       </div>
