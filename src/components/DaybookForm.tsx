@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { DaybookFormData, DaybookEntry, PayType, PayStatus, ModeOfPay, Tenant } from '../types/daybook';
-import { authUtils } from '../services/api';
+import { authUtils, nursesClientsApi } from '../services/api';
+import AutocompleteSelect, { AutocompleteOption } from './AutocompleteSelect';
 
 interface DaybookFormProps {
   initialData?: DaybookEntry;
@@ -33,6 +34,54 @@ const DaybookForm: React.FC<DaybookFormProps> = ({
 
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  
+  // Nurses and Clients state
+  const [nurses, setNurses] = useState<AutocompleteOption[]>([]);
+  const [clients, setClients] = useState<AutocompleteOption[]>([]);
+  const [isLoadingNurses, setIsLoadingNurses] = useState(false);
+  const [isLoadingClients, setIsLoadingClients] = useState(false);
+  const [selectedNurseId, setSelectedNurseId] = useState<number | string>('');
+  const [selectedClientId, setSelectedClientId] = useState<string>('');
+
+  // Fetch nurses and clients on component mount
+  useEffect(() => {
+    const fetchNurses = async () => {
+      setIsLoadingNurses(true);
+      try {
+        const nursesData = await nursesClientsApi.getNurses();
+        const nursesOptions: AutocompleteOption[] = nursesData.map(nurse => ({
+          id: nurse.nurse_id,
+          label: nurse.full_name || `${nurse.first_name} ${nurse.last_name}`,
+          sublabel: `Reg: ${nurse.nurse_reg_no} | Phone: ${nurse.phone_number} | Status: ${nurse.status}`,
+        }));
+        setNurses(nursesOptions);
+      } catch (error) {
+        console.error('Error fetching nurses:', error);
+      } finally {
+        setIsLoadingNurses(false);
+      }
+    };
+
+    const fetchClients = async () => {
+      setIsLoadingClients(true);
+      try {
+        const clientsData = await nursesClientsApi.getClients();
+        const clientsOptions: AutocompleteOption[] = clientsData.map(client => ({
+          id: client.id,
+          label: client.registration_number,
+          sublabel: `Type: ${client.client_type} | Category: ${client.client_category} | Status: ${client.status}`,
+        }));
+        setClients(clientsOptions);
+      } catch (error) {
+        console.error('Error fetching clients:', error);
+      } finally {
+        setIsLoadingClients(false);
+      }
+    };
+
+    fetchNurses();
+    fetchClients();
+  }, []);
 
   useEffect(() => {
     if (initialData) {
@@ -46,6 +95,14 @@ const DaybookForm: React.FC<DaybookFormProps> = ({
         nurse_id: initialData.nurse_id || '',
         client_id: initialData.client_id || '',
       });
+      
+      // Set selected IDs for autocomplete
+      if (initialData.nurse_id) {
+        setSelectedNurseId(initialData.nurse_id);
+      }
+      if (initialData.client_id) {
+        setSelectedClientId(initialData.client_id);
+      }
     }
   }, [initialData]);
 
@@ -62,22 +119,6 @@ const DaybookForm: React.FC<DaybookFormProps> = ({
 
     if (!formData.tenant) {
       newErrors.tenant = 'Tenant is required';
-    }
-
-    // Validate nurse_id format if provided (must be empty or valid UUID)
-    if (formData.payment_type === PayType.OUTGOING && formData.nurse_id && formData.nurse_id.trim() !== '') {
-      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-      if (!uuidRegex.test(formData.nurse_id.trim())) {
-        newErrors.nurse_id = 'Nurse ID must be in UUID format or left empty';
-      }
-    }
-
-    // Validate client_id format if provided (must be empty or valid UUID)
-    if (formData.payment_type === PayType.INCOMING && formData.client_id && formData.client_id.trim() !== '') {
-      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-      if (!uuidRegex.test(formData.client_id.trim())) {
-        newErrors.client_id = 'Client ID must be in UUID format or left empty';
-      }
     }
 
     setErrors(newErrors);
@@ -110,14 +151,14 @@ const DaybookForm: React.FC<DaybookFormProps> = ({
         receipt: receiptFile || undefined,
       };
 
-      // Only add nurse_id if payment is outgoing AND it's not empty AND it's valid
-      if (formData.payment_type === PayType.OUTGOING && formData.nurse_id && formData.nurse_id.trim() !== '') {
-        submitData.nurse_id = formData.nurse_id.trim();
+      // Add nurse_id if payment is outgoing and a nurse is selected
+      if (formData.payment_type === PayType.OUTGOING && selectedNurseId) {
+        submitData.nurse_id = selectedNurseId.toString();
       }
 
-      // Only add client_id if payment is incoming AND it's not empty AND it's valid
-      if (formData.payment_type === PayType.INCOMING && formData.client_id && formData.client_id.trim() !== '') {
-        submitData.client_id = formData.client_id.trim();
+      // Add client_id if payment is incoming and a client is selected
+      if (formData.payment_type === PayType.INCOMING && selectedClientId) {
+        submitData.client_id = selectedClientId;
       }
 
       console.log('Tenant in submitData:', submitData.tenant);
@@ -145,6 +186,8 @@ const DaybookForm: React.FC<DaybookFormProps> = ({
     });
     setReceiptFile(null);
     setErrors({});
+    setSelectedNurseId('');
+    setSelectedClientId('');
   };
 
   const handleInputChange = (field: keyof DaybookFormData, value: string | number) => {
@@ -205,7 +248,7 @@ const DaybookForm: React.FC<DaybookFormProps> = ({
                 id="amount"
                 step="0.01"
                 min="0"
-                value={formData.amount}
+                value={formData.amount || ''}
                 onChange={(e) => handleInputChange('amount', parseFloat(e.target.value) || 0)}
                 placeholder="0.00"
                 className={`w-full pl-8 pr-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
@@ -279,45 +322,33 @@ const DaybookForm: React.FC<DaybookFormProps> = ({
 
         {/* Conditional ID fields based on payment type */}
         {formData.payment_type === PayType.INCOMING ? (
-          <div>
-            <label htmlFor="client_id" className="block text-sm font-medium text-dark-700 mb-2">
-              Client ID (Optional - UUID format required)
-            </label>
-            <input
-              type="text"
-              id="client_id"
-              value={formData.client_id || ''}
-              onChange={(e) => handleInputChange('client_id', e.target.value)}
-              placeholder="Leave empty or enter UUID (e.g., 550e8400-e29b-41d4-a716-446655440000)"
-              className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
-                errors.client_id ? 'border-red-500' : 'border-gray-300'
-              }`}
-            />
-            {errors.client_id && <p className="mt-1 text-sm text-red-600">{errors.client_id}</p>}
-            <p className="mt-1 text-xs text-gray-500">
-              ⚠️ Backend requires UUID format. Leave empty if not using client management system.
-            </p>
-          </div>
+          <AutocompleteSelect
+            options={clients}
+            value={selectedClientId}
+            onChange={(value) => {
+              setSelectedClientId(value as string);
+              setFormData(prev => ({ ...prev, client_id: value as string }));
+            }}
+            label="Select Client"
+            placeholder="Search by registration number, type, or status..."
+            error={errors.client_id}
+            isLoading={isLoadingClients}
+            maxVisibleOptions={8}
+          />
         ) : (
-          <div>
-            <label htmlFor="nurse_id" className="block text-sm font-medium text-dark-700 mb-2">
-              Nurse ID (Optional - UUID format required)
-            </label>
-            <input
-              type="text"
-              id="nurse_id"
-              value={formData.nurse_id || ''}
-              onChange={(e) => handleInputChange('nurse_id', e.target.value)}
-              placeholder="Leave empty or enter UUID (e.g., 550e8400-e29b-41d4-a716-446655440000)"
-              className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
-                errors.nurse_id ? 'border-red-500' : 'border-gray-300'
-              }`}
-            />
-            {errors.nurse_id && <p className="mt-1 text-sm text-red-600">{errors.nurse_id}</p>}
-            <p className="mt-1 text-xs text-gray-500">
-              ⚠️ Backend requires UUID format. Leave empty if not using nurse management system.
-            </p>
-          </div>
+          <AutocompleteSelect
+            options={nurses}
+            value={selectedNurseId}
+            onChange={(value) => {
+              setSelectedNurseId(value);
+              setFormData(prev => ({ ...prev, nurse_id: value.toString() }));
+            }}
+            label="Select Nurse"
+            placeholder="Search by name, registration number, or phone..."
+            error={errors.nurse_id}
+            isLoading={isLoadingNurses}
+            maxVisibleOptions={8}
+          />
         )}
 
         {/* Description */}

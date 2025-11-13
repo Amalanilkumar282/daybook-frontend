@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { DaybookEntry, PayType, PayStatus, ModeOfPay, SummaryData } from '../types/daybook';
+import { DaybookEntry, PayType, SummaryData } from '../types/daybook';
 import { daybookApi } from '../services/api';
 import SummaryCards from '../components/SummaryCards';
 import DaybookTable from '../components/DaybookTable';
@@ -16,6 +16,45 @@ const Dashboard: React.FC = () => {
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Helper function to calculate summary from entries
+  const calculateSummaryFromEntries = (entries: DaybookEntry[]): SummaryData => {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const oneWeekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const oneMonthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+    
+    // Helper function to check if entry is within date range
+    const isWithinRange = (entryDate: string, startDate: Date, endDate: Date): boolean => {
+      const entry = new Date(entryDate);
+      return entry >= startDate && entry <= endDate;
+    };
+    
+    // Calculate summary for a date range
+    const calculateSummary = (startDate: Date, endDate: Date) => {
+      const filteredEntries = entries.filter(entry => 
+        isWithinRange(entry.created_at, startDate, endDate)
+      );
+      
+      const incoming = filteredEntries
+        .filter(entry => entry.payment_type === PayType.INCOMING)
+        .reduce((sum, entry) => sum + entry.amount, 0);
+        
+      const outgoing = filteredEntries
+        .filter(entry => entry.payment_type === PayType.OUTGOING)
+        .reduce((sum, entry) => sum + entry.amount, 0);
+        
+      const net = incoming - outgoing;
+      
+      return { incoming, outgoing, net };
+    };
+    
+    return {
+      today: calculateSummary(today, new Date(today.getTime() + 24 * 60 * 60 * 1000 - 1)), // End of today
+      week: calculateSummary(oneWeekAgo, now),
+      month: calculateSummary(oneMonthAgo, now),
+    };
+  };
+
   useEffect(() => {
     console.log('DEBUG: Dashboard useEffect running');
     fetchData();
@@ -28,15 +67,14 @@ const Dashboard: React.FC = () => {
       setSummaryLoading(true);
       setError(null);
       
-      // Fetch entries and summary data
+      // Fetch entries
       console.log('DEBUG: Calling API...');
-      const [entriesData, summaryResponse] = await Promise.all([
-        daybookApi.getAllEntries(),
-        daybookApi.getSummary()
-      ]);
-
+      const entriesData = await daybookApi.getAllEntries();
       console.log('DEBUG: Entries received:', entriesData.length);
-      console.log('DEBUG: Summary received:', summaryResponse);
+      
+      // Calculate summary from entries
+      const summaryResponse = calculateSummaryFromEntries(entriesData);
+      console.log('DEBUG: Summary calculated:', summaryResponse);
       
       setEntries(entriesData);
       setSummaryData(summaryResponse);
@@ -65,11 +103,12 @@ const Dashboard: React.FC = () => {
       await daybookApi.deleteEntry(id);
       
       // Remove from local state
-      setEntries(entries.filter(entry => entry.id.toString() !== id));
+      const updatedEntries = entries.filter(entry => entry.id.toString() !== id);
+      setEntries(updatedEntries);
       
-      // Refresh summary data
-      const summaryResponse = await daybookApi.getSummary();
-      setSummaryData(summaryResponse);
+      // Recalculate summary from updated entries
+      const updatedSummary = calculateSummaryFromEntries(updatedEntries);
+      setSummaryData(updatedSummary);
       
       setDeleteModal({ isOpen: false, entryId: '', entryDetails: '' });
     } catch (error) {

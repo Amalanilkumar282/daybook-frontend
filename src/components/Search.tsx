@@ -4,7 +4,7 @@ import { DaybookEntry, PayType, PayStatus } from '../types/daybook';
 import Pagination from './Pagination';
 import { usePagination } from '../hooks/usePagination';
 import { dateUtils, currencyUtils } from '../utils';
-import { daybookApi } from '../services/api';
+import { daybookApi, nursesClientsApi } from '../services/api';
 
 interface SearchProps {
   entries?: DaybookEntry[];
@@ -27,6 +27,8 @@ const Search: React.FC<SearchProps> = ({ entries: propEntries = [] }) => {
   const [sortBy, setSortBy] = useState<'date' | 'amount' | 'relevance'>('relevance');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [isAdvancedSearch, setIsAdvancedSearch] = useState(false);
+  const [nursesMap, setNursesMap] = useState<Map<string, any>>(new Map());
+  const [clientsMap, setClientsMap] = useState<Map<string, any>>(new Map());
 
   const {
     currentPage,
@@ -49,6 +51,26 @@ const Search: React.FC<SearchProps> = ({ entries: propEntries = [] }) => {
     } else {
       setAllEntries(propEntries);
     }
+    
+    // Fetch nurses and clients for name display
+    const fetchNursesAndClients = async () => {
+      try {
+        const [nurses, clients] = await Promise.all([
+          nursesClientsApi.getNurses().catch(() => []),
+          nursesClientsApi.getClients().catch(() => [])
+        ]);
+        
+        const nursesMap = new Map(nurses.map(n => [n.nurse_id.toString(), n]));
+        const clientsMap = new Map(clients.map(c => [c.id, c]));
+        
+        setNursesMap(nursesMap);
+        setClientsMap(clientsMap);
+      } catch (error) {
+        console.error('Failed to fetch nurse/client data:', error);
+      }
+    };
+    
+    fetchNursesAndClients();
   }, [propEntries]);
 
   // Perform search when search criteria change
@@ -181,6 +203,20 @@ const Search: React.FC<SearchProps> = ({ entries: propEntries = [] }) => {
         <span key={index} className="bg-yellow-200 font-semibold">{part}</span>
       ) : part
     );
+  };
+  
+  // Helper function to get nurse name
+  const getNurseName = (nurseId: string | undefined): string => {
+    if (!nurseId) return '';
+    const nurse = nursesMap.get(nurseId);
+    return nurse ? (nurse.full_name || `${nurse.first_name} ${nurse.last_name}`.trim()) : '';
+  };
+  
+  // Helper function to get client name
+  const getClientName = (clientId: string | undefined): string => {
+    if (!clientId) return '';
+    const client = clientsMap.get(clientId);
+    return client ? (client.registration_number || '') : '';
   };
 
   if (searchLoading && allEntries.length === 0) {
@@ -419,10 +455,10 @@ const Search: React.FC<SearchProps> = ({ entries: propEntries = [] }) => {
                     <div className="flex items-center space-x-3 xs:space-x-4 min-w-0 flex-shrink">
                       <div className="flex-shrink-0">
                         <div className={`w-8 h-8 xs:w-10 xs:h-10 rounded-full flex items-center justify-center ${
-                          entry.id_in_out === PayType.OUTGOING ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'
+                          entry.payment_type === PayType.OUTGOING ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'
                         }`}>
                           <svg className="w-4 h-4 xs:w-5 xs:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            {entry.id_in_out === PayType.OUTGOING ? (
+                            {entry.payment_type === PayType.OUTGOING ? (
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16l-4-4m0 0l4-4m-4 4h18" />
                             ) : (
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
@@ -437,14 +473,24 @@ const Search: React.FC<SearchProps> = ({ entries: propEntries = [] }) => {
                         <p className="text-xs xs:text-sm text-dark-600 truncate">
                           Entry ID: {highlightText(entry.id.toString(), searchTerm)} • {dateUtils.formatDate(entry.created_at)}
                         </p>
+                        {entry.client_id && getClientName(entry.client_id) && (
+                          <p className="text-xs text-dark-600 mt-1">
+                            Client: {highlightText(getClientName(entry.client_id), searchTerm)}
+                          </p>
+                        )}
+                        {entry.nurse_id && getNurseName(entry.nurse_id) && (
+                          <p className="text-xs text-dark-600 mt-1">
+                            Nurse: {highlightText(getNurseName(entry.nurse_id), searchTerm)}
+                          </p>
+                        )}
                       </div>
                     </div>
 
                     <div className="text-left xs:text-right flex-shrink-0">
-                      <div className={`text-sm xs:text-base sm:text-lg font-bold ${entry.id_in_out === PayType.OUTGOING ? 'text-red-600' : 'text-green-600'} break-all xs:break-normal`}>
+                      <div className={`text-sm xs:text-base sm:text-lg font-bold ${entry.payment_type === PayType.OUTGOING ? 'text-red-600' : 'text-green-600'} break-all xs:break-normal`}>
                         {currencyUtils.formatCurrency(entry.amount)}
                         <span className="text-xs ml-1">
-                          {entry.id_in_out === PayType.OUTGOING ? 'OUT' : 'IN'}
+                          {entry.payment_type === PayType.OUTGOING ? 'OUT' : 'IN'}
                         </span>
                       </div>
                     </div>

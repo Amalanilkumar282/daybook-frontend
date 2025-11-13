@@ -11,7 +11,6 @@ import EditEntry from './pages/EditEntry';
 import ViewEntry from './pages/ViewEntry';
 import SearchPage from './pages/SearchPage';
 import ReportsPage from './pages/ReportsPage';
-import SettingsPage from './pages/SettingsPage';
 import DebugAuth from './pages/DebugAuth';
 import NotFound from './pages/NotFound';
 import { authUtils } from './services/api';
@@ -73,11 +72,6 @@ function App() {
                 <Route path="/reports" element={
                   <ProtectedRoute>
                     <ReportsPage />
-                  </ProtectedRoute>
-                } />
-                <Route path="/settings" element={
-                  <ProtectedRoute>
-                    <SettingsPage />
                   </ProtectedRoute>
                 } />
                 <Route path="/debug-auth" element={

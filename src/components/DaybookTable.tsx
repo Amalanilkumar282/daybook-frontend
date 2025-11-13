@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { DaybookEntry, PayType, PayStatus } from '../types/daybook';
 import Pagination from './Pagination';
 import { usePagination } from '../hooks/usePagination';
-import { authUtils } from '../services/api';
+import { authUtils, nursesClientsApi } from '../services/api';
 
 interface DaybookTableProps {
   entries: DaybookEntry[];
@@ -17,7 +17,46 @@ type SortDirection = 'asc' | 'desc';
 const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete }) => {
   const [sortField, setSortField] = useState<SortField>('created_at');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const [nursesMap, setNursesMap] = useState<Map<string, any>>(new Map());
+  const [clientsMap, setClientsMap] = useState<Map<string, any>>(new Map());
   const isAdmin = authUtils.isAdmin();
+
+  // Fetch nurses and clients data for displaying names
+  useEffect(() => {
+    const fetchNursesAndClients = async () => {
+      try {
+        const [nurses, clients] = await Promise.all([
+          nursesClientsApi.getNurses().catch(() => []),
+          nursesClientsApi.getClients().catch(() => [])
+        ]);
+        
+        // Create maps for quick lookup
+        const nursesMap = new Map(nurses.map(n => [n.nurse_id.toString(), n]));
+        const clientsMap = new Map(clients.map(c => [c.id, c]));
+        
+        setNursesMap(nursesMap);
+        setClientsMap(clientsMap);
+      } catch (error) {
+        console.error('Failed to fetch nurse/client data:', error);
+      }
+    };
+    
+    fetchNursesAndClients();
+  }, []);
+  
+  // Helper function to get nurse name
+  const getNurseName = (nurseId: string | undefined): string => {
+    if (!nurseId) return '';
+    const nurse = nursesMap.get(nurseId);
+    return nurse ? (nurse.full_name || `${nurse.first_name} ${nurse.last_name}`.trim()) : nurseId;
+  };
+  
+  // Helper function to get client name
+  const getClientName = (clientId: string | undefined): string => {
+    if (!clientId) return '';
+    const client = clientsMap.get(clientId);
+    return client ? (client.registration_number || clientId) : clientId;
+  };
 
   const sortedEntries = [...entries].sort((a, b) => {
     let aValue: any;
@@ -203,10 +242,14 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete 
                   {entry.description || 'No description'}
                 </p>
                 {entry.client_id && (
-                  <p className="text-xs text-neutral-600 mt-1">Client: {entry.client_id}</p>
+                  <p className="text-xs text-neutral-600 mt-1">
+                    <span className="font-medium">Client:</span> {getClientName(entry.client_id)}
+                  </p>
                 )}
                 {entry.nurse_id && (
-                  <p className="text-xs text-neutral-600 mt-1">Nurse: {entry.nurse_id}</p>
+                  <p className="text-xs text-neutral-600 mt-1">
+                    <span className="font-medium">Nurse:</span> {getNurseName(entry.nurse_id)}
+                  </p>
                 )}
                 {entry.receipt && (
                   <a 
@@ -370,12 +413,14 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete 
                 <td className="table-cell">
                   {entry.client_id && (
                     <div className="text-sm text-neutral-700">
-                      <span className="text-xs text-neutral-500">Client:</span> {entry.client_id}
+                      <div className="font-medium">{getClientName(entry.client_id)}</div>
+                      <div className="text-xs text-neutral-500">Client ID: {entry.client_id.substring(0, 8)}...</div>
                     </div>
                   )}
                   {entry.nurse_id && (
                     <div className="text-sm text-neutral-700">
-                      <span className="text-xs text-neutral-500">Nurse:</span> {entry.nurse_id}
+                      <div className="font-medium">{getNurseName(entry.nurse_id)}</div>
+                      <div className="text-xs text-neutral-500">Nurse ID: {entry.nurse_id}</div>
                     </div>
                   )}
                   {!entry.client_id && !entry.nurse_id && (
