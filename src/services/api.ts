@@ -223,14 +223,20 @@ export const daybookApi = {
       // Get current user for debugging
       const currentUser = authUtils.getUser();
       const tokenPayload = authUtils.decodeToken();
+      const isAdmin = authUtils.isAdmin();
+      
+      // Determine the tenant to use: admin can override, non-admin uses their tenant
+      const tenantToUse = isAdmin ? data.tenant : (currentUser?.tenant || data.tenant);
+      
       console.log('=== CREATE ENTRY DEBUG ===');
       console.log('Current user from localStorage:', currentUser);
       console.log('JWT token payload:', tokenPayload);
+      console.log('Is Admin:', isAdmin);
       console.log('Data received:', { ...data, receipt: data.receipt ? 'FILE' : undefined });
-      console.log('Tenant being sent:', data.tenant);
+      console.log('Tenant from form:', data.tenant);
       console.log('User tenant:', currentUser?.tenant);
       console.log('Token tenant:', tokenPayload?.tenant || tokenPayload?.user_metadata?.tenant);
-      console.log('Match:', data.tenant === currentUser?.tenant);
+      console.log('Tenant to use:', tenantToUse);
       
       // If receipt file is present, use multipart/form-data
       if (data.receipt) {
@@ -238,14 +244,14 @@ export const daybookApi = {
         formData.append('amount', data.amount.toString());
         formData.append('payment_type', data.payment_type);
         formData.append('pay_status', data.pay_status);
-        formData.append('tenant', data.tenant);
+        formData.append('tenant', tenantToUse);
         
         if (data.mode_of_pay) formData.append('mode_of_pay', data.mode_of_pay);
         if (data.description) formData.append('description', data.description);
         // Only add IDs if they exist and are not empty
         if (data.nurse_id && data.nurse_id.trim() !== '') formData.append('nurse_id', data.nurse_id.trim());
         if (data.client_id && data.client_id.trim() !== '') formData.append('client_id', data.client_id.trim());
-        if (data.receipt) formData.append('receipt', data.receipt);
+        formData.append('receipt', data.receipt);
 
         console.log('Form data keys:', Array.from(formData.keys()));
         console.log('Checking FormData entries...');
@@ -254,7 +260,12 @@ export const daybookApi = {
           console.log(`  ${key}:`, value instanceof File ? 'FILE' : value);
         });
         
-        const response = await api.post('/daybook/create', formData);
+        // Send FormData with proper headers (let browser set Content-Type with boundary)
+        const response = await api.post('/daybook/create', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
         return response.data.data || response.data;
       } else {
         // Use JSON for non-file uploads
@@ -262,7 +273,7 @@ export const daybookApi = {
           amount: data.amount,
           payment_type: data.payment_type,
           pay_status: data.pay_status,
-          tenant: data.tenant,
+          tenant: tenantToUse,
         };
         
         if (data.mode_of_pay) payload.mode_of_pay = data.mode_of_pay;
@@ -290,23 +301,40 @@ export const daybookApi = {
   // Update daybook entry
   updateEntry: async (id: string, data: Partial<DaybookFormData>): Promise<DaybookEntry> => {
     try {
+      const currentUser = authUtils.getUser();
+      const isAdmin = authUtils.isAdmin();
+      
+      // Determine the tenant to use: admin can override, non-admin uses their tenant
+      const tenantToUse = isAdmin && data.tenant ? data.tenant : (currentUser?.tenant || data.tenant);
+      
       // If receipt file is present, use multipart/form-data
       if (data.receipt) {
         const formData = new FormData();
         if (data.amount !== undefined) formData.append('amount', data.amount.toString());
         if (data.payment_type) formData.append('payment_type', data.payment_type);
         if (data.pay_status) formData.append('pay_status', data.pay_status);
-        if (data.tenant) formData.append('tenant', data.tenant);
+        if (tenantToUse) formData.append('tenant', tenantToUse);
         if (data.mode_of_pay) formData.append('mode_of_pay', data.mode_of_pay);
         if (data.description) formData.append('description', data.description);
         if (data.nurse_id) formData.append('nurse_id', data.nurse_id);
         if (data.client_id) formData.append('client_id', data.client_id);
-        if (data.receipt) formData.append('receipt', data.receipt);
+        formData.append('receipt', data.receipt);
 
-        const response = await api.put(`/daybook/update/${id}`, formData);
+        // Send FormData with proper headers (let browser set Content-Type with boundary)
+        const response = await api.put(`/daybook/update/${id}`, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
         return response.data.data || response.data;
       } else {
-        const response = await api.put(`/daybook/update/${id}`, data);
+        // For JSON updates, ensure tenant is set correctly
+        const payload = { ...data };
+        if (tenantToUse) {
+          payload.tenant = tenantToUse;
+        }
+        
+        const response = await api.put(`/daybook/update/${id}`, payload);
         return response.data.data || response.data;
       }
     } catch (error: any) {

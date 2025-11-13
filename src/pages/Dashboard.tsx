@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { DaybookEntry, PayType, SummaryData } from '../types/daybook';
 import { daybookApi } from '../services/api';
@@ -55,12 +55,7 @@ const Dashboard: React.FC = () => {
     };
   };
 
-  useEffect(() => {
-    console.log('DEBUG: Dashboard useEffect running');
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     console.log('DEBUG: Fetching data...');
     try {
       setLoading(true);
@@ -95,7 +90,12 @@ const Dashboard: React.FC = () => {
       setLoading(false);
       setSummaryLoading(false);
     }
-  };
+  }, []); // Empty dependency array since it doesn't depend on any props or state
+
+  useEffect(() => {
+    console.log('DEBUG: Dashboard useEffect running');
+    fetchData();
+  }, [fetchData]);
 
   const handleDelete = async (id: string) => {
     try {
