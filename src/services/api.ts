@@ -241,6 +241,7 @@ export const daybookApi = {
       // If receipt file is present, use multipart/form-data
       if (data.receipt) {
         const formData = new FormData();
+        // Send amount as number (FormData will convert to string)
         formData.append('amount', data.amount.toString());
         formData.append('payment_type', data.payment_type);
         formData.append('pay_status', data.pay_status);
@@ -270,6 +271,7 @@ export const daybookApi = {
       } else {
         // Use JSON for non-file uploads
         const payload: any = {
+          // Send amount as number
           amount: data.amount,
           payment_type: data.payment_type,
           pay_status: data.pay_status,
@@ -310,6 +312,7 @@ export const daybookApi = {
       // If receipt file is present, use multipart/form-data
       if (data.receipt) {
         const formData = new FormData();
+        // Send amount as number (FormData will convert to string)
         if (data.amount !== undefined) formData.append('amount', data.amount.toString());
         if (data.payment_type) formData.append('payment_type', data.payment_type);
         if (data.pay_status) formData.append('pay_status', data.pay_status);
@@ -329,7 +332,8 @@ export const daybookApi = {
         return response.data.data || response.data;
       } else {
         // For JSON updates, ensure tenant is set correctly
-        const payload = { ...data };
+        const payload: any = { ...data };
+        // Amount remains as number, no conversion needed
         if (tenantToUse) {
           payload.tenant = tenantToUse;
         }

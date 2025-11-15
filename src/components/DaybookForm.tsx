@@ -262,24 +262,37 @@ const DaybookForm: React.FC<DaybookFormProps> = ({
           {/* Amount */}
           <div>
             <label htmlFor="amount" className="block text-sm font-medium text-dark-700 mb-2">
-              Amount *
+              Amount (Whole Numbers Only) *
             </label>
             <div className="relative">
               <span className="absolute left-3 top-2 text-gray-500">₹</span>
               <input
-                type="number"
+                type="text"
                 id="amount"
-                step="0.01"
-                min="0"
-                value={formData.amount || ''}
-                onChange={(e) => handleInputChange('amount', parseFloat(e.target.value) || 0)}
-                placeholder="0.00"
+                inputMode="numeric"
+                value={formData.amount === 0 ? '' : formData.amount}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  // Only allow empty string or positive integers
+                  if (value === '' || /^[1-9]\d*$/.test(value)) {
+                    handleInputChange('amount', value === '' ? 0 : parseInt(value, 10));
+                  } else if (value === '0') {
+                    handleInputChange('amount', 0);
+                  }
+                }}
+                placeholder="1000"
+                style={{ 
+                  MozAppearance: 'textfield',
+                  WebkitAppearance: 'none',
+                  appearance: 'none'
+                }}
                 className={`w-full pl-8 pr-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
                   errors.amount ? 'border-red-500' : 'border-gray-300'
                 }`}
               />
             </div>
             {errors.amount && <p className="mt-1 text-sm text-red-600">{errors.amount}</p>}
+            <p className="mt-1 text-xs text-gray-500">Enter amount in whole rupees only (no decimals)</p>
           </div>
         </div>
 
