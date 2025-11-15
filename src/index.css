@@ -44,6 +44,18 @@ code {
   transition: all 0.2s ease-in-out;
 }
 
+/* Remove spinner arrows from number inputs */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
 /* Custom utility classes */
 @layer components {
   .card {

@@ -249,9 +249,8 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete 
           </div>
           <div className="divide-y divide-neutral-100">
             {paginatedEntries.map((entry) => (
-              <Link
+              <div
                 key={entry.id}
-                to={`/view/${entry.id}`}
                 className="block p-3 xs:p-4 hover:bg-neutral-50/50 transition-colors active:bg-neutral-100/50"
               >
                 <div className="flex justify-between items-start mb-2 xs:mb-3">
@@ -340,7 +339,7 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete 
                     </svg>
                   </button>
                 </div>
-              </Link>
+              </div>
             ))}
           </div>
 
