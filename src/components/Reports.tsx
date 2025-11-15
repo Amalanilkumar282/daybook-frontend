@@ -30,7 +30,7 @@ const Reports: React.FC<ReportsProps> = ({ entries: propEntries = [] }) => {
     endDate: new Date().toISOString().split('T')[0],
   });
 
-  const [selectedReport, setSelectedReport] = useState<'summary' | 'profit-loss' | 'cash-flow'>('summary');
+  const selectedReport: 'summary' | 'profit-loss' | 'cash-flow' = 'summary';
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [reportData, setReportData] = useState<any>(null);
@@ -67,7 +67,7 @@ const Reports: React.FC<ReportsProps> = ({ entries: propEntries = [] }) => {
       generateReport(propEntries);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [propEntries, dateRange, selectedReport]);
+  }, [propEntries, dateRange]);
 
   const loadEntriesAndGenerateReport = async () => {
     try {
@@ -77,7 +77,12 @@ const Reports: React.FC<ReportsProps> = ({ entries: propEntries = [] }) => {
       // Get entries based on date range
       let entries: DaybookEntry[];
       if (dateRange.startDate && dateRange.endDate) {
-        entries = await daybookApi.getEntriesByDateRange(dateRange.startDate, dateRange.endDate);
+        // Add one day to end date to include entries on the end date
+        const adjustedEndDate = new Date(dateRange.endDate);
+        adjustedEndDate.setDate(adjustedEndDate.getDate() + 1);
+        const endDateInclusive = adjustedEndDate.toISOString().split('T')[0];
+        
+        entries = await daybookApi.getEntriesByDateRange(dateRange.startDate, endDateInclusive);
       } else if (dateRange.startDate) {
         entries = await daybookApi.getEntriesFromDate(dateRange.startDate);
       } else {
@@ -99,23 +104,13 @@ const Reports: React.FC<ReportsProps> = ({ entries: propEntries = [] }) => {
       setLoading(true);
       setError(null);
 
-      switch (selectedReport) {
-        case 'profit-loss':
-          const profitLossData = await reportsApi.generateProfitLoss(dateRange.startDate, dateRange.endDate);
-          setReportData(profitLossData);
-          break;
-        
-        case 'cash-flow':
-          const cashFlowData = await reportsApi.generateCashFlow(dateRange.startDate, dateRange.endDate);
-          setReportData(cashFlowData);
-          break;
-        
-        case 'summary':
-        default:
-          const summaryData = await reportsApi.generateSummaryReport(dateRange.startDate, dateRange.endDate);
-          setReportData(summaryData);
-          break;
-      }
+      // Add one day to end date to include entries on the end date
+      const adjustedEndDate = new Date(dateRange.endDate);
+      adjustedEndDate.setDate(adjustedEndDate.getDate() + 1);
+      const endDateInclusive = adjustedEndDate.toISOString().split('T')[0];
+
+      const summaryData = await reportsApi.generateSummaryReport(dateRange.startDate, endDateInclusive);
+      setReportData(summaryData);
     } catch (error) {
       console.error('Error generating report:', error);
       setError('Failed to generate report. Please try again.');
@@ -259,20 +254,7 @@ const Reports: React.FC<ReportsProps> = ({ entries: propEntries = [] }) => {
           </button>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <div>
-            <label className="block text-sm font-medium text-dark-700 mb-2">Report Type</label>
-            <select
-              value={selectedReport}
-              onChange={(e) => setSelectedReport(e.target.value as any)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-            >
-              <option value="summary">Summary Report</option>
-              <option value="profit-loss">Profit & Loss Statement</option>
-              <option value="cash-flow">Cash Flow Statement</option>
-            </select>
-          </div>
-          
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           <div>
             <label className="block text-sm font-medium text-dark-700 mb-2">Start Date</label>
             <input
@@ -496,91 +478,7 @@ const Reports: React.FC<ReportsProps> = ({ entries: propEntries = [] }) => {
               </div>
             )}
 
-            {selectedReport === 'profit-loss' && (
-              <div>
-                <h3 className="text-xl font-bold text-dark-900 mb-4">Profit & Loss Statement</h3>
-                <p className="text-dark-600 mb-6">
-                  For the period {new Date(dateRange.startDate).toLocaleDateString()} to {new Date(dateRange.endDate).toLocaleDateString()}
-                </p>
-                
-                <div className="space-y-6">
-                  {/* Revenue Section */}
-                  <div>
-                    <h4 className="text-lg font-semibold text-dark-800 mb-3 text-green-700">Revenue (Incoming)</h4>
-                    <div className="bg-green-50 p-4 rounded-lg">
-                      <div className="flex justify-between py-2 font-bold text-lg">
-                        <span className="text-dark-800">Total Revenue</span>
-                        <span className="text-green-600">{formatCurrency(reportData.revenue)}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Expenses Section */}
-                  <div>
-                    <h4 className="text-lg font-semibold text-dark-800 mb-3 text-red-700">Expenses (Outgoing)</h4>
-                    <div className="bg-red-50 p-4 rounded-lg">
-                      <div className="flex justify-between py-2 font-bold text-lg">
-                        <span className="text-dark-800">Total Expenses</span>
-                        <span className="text-red-600">{formatCurrency(reportData.expenses)}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Net Income */}
-                  <div className="bg-gray-50 p-4 rounded-lg border-2 border-gray-300">
-                    <div className="flex justify-between items-center">
-                      <span className="text-xl font-bold text-dark-900">Net Income</span>
-                      <span className={`text-xl font-bold ${reportData.netIncome >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        {formatCurrency(Math.abs(reportData.netIncome))} {reportData.netIncome >= 0 ? 'Profit' : 'Loss'}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {selectedReport === 'cash-flow' && (
-              <div>
-                <h3 className="text-xl font-bold text-dark-900 mb-4">Cash Flow Statement</h3>
-                <p className="text-dark-600 mb-6">
-                  For the period {new Date(dateRange.startDate).toLocaleDateString()} to {new Date(dateRange.endDate).toLocaleDateString()}
-                </p>
-                
-                <div className="space-y-6">
-                  {/* Cash Inflows */}
-                  <div>
-                    <h4 className="text-lg font-semibold text-dark-800 mb-3 text-green-700">Cash Inflows (Paid Incoming)</h4>
-                    <div className="bg-green-50 p-4 rounded-lg">
-                      <div className="flex justify-between py-2 font-bold">
-                        <span className="text-dark-800">Total Cash Inflows</span>
-                        <span className="text-green-600">{formatCurrency(reportData.inflows)}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Cash Outflows */}
-                  <div>
-                    <h4 className="text-lg font-semibold text-dark-800 mb-3 text-red-700">Cash Outflows (Paid Outgoing)</h4>
-                    <div className="bg-red-50 p-4 rounded-lg">
-                      <div className="flex justify-between py-2 font-bold">
-                        <span className="text-dark-800">Total Cash Outflows</span>
-                        <span className="text-red-600">{formatCurrency(reportData.outflows)}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Net Cash Flow */}
-                  <div className="bg-gray-50 p-4 rounded-lg border-2 border-gray-300">
-                    <div className="flex justify-between items-center">
-                      <span className="text-xl font-bold text-dark-900">Net Cash Flow</span>
-                      <span className={`text-xl font-bold ${reportData.netCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        {formatCurrency(Math.abs(reportData.netCashFlow))} {reportData.netCashFlow >= 0 ? 'Inflow' : 'Outflow'}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
+            {/* Removed profit-loss and cash-flow sections per requirements (only summary report shown) */}
           </>
         )}
 

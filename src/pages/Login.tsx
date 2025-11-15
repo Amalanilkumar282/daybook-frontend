@@ -26,6 +26,8 @@ const Login: React.FC = () => {
 
     try {
       await authApi.login(formData);
+      // Trigger storage event to update navbar visibility
+      window.dispatchEvent(new Event('storage'));
       navigate('/');
     } catch (error: any) {
       setError(error.message);
