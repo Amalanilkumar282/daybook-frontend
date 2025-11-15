@@ -554,12 +554,17 @@ export const daybookApi = {
           
           // Search in client data if client_id exists
           if (entry.client_id && clientsData.length > 0) {
-            const client = clientsData.find(c => c.id === entry.client_id);
+            const client = clientsData.find(c => c.client_id === entry.client_id);
             if (client) {
               const clientMatch = 
-                (client.registration_number && client.registration_number.toLowerCase().includes(searchTerm)) ||
-                (client.client_type && client.client_type.toLowerCase().includes(searchTerm)) ||
-                (client.client_category && client.client_category.toLowerCase().includes(searchTerm));
+                (client.patient_name && client.patient_name.toLowerCase().includes(searchTerm)) ||
+                (client.requestor_name && client.requestor_name.toLowerCase().includes(searchTerm)) ||
+                (client.requestor_phone && client.requestor_phone.includes(searchTerm)) ||
+                (client.patient_phone && client.patient_phone && client.patient_phone.includes(searchTerm)) ||
+                (client.requestor_email && client.requestor_email.toLowerCase().includes(searchTerm)) ||
+                (client.service_required && client.service_required.toLowerCase().includes(searchTerm)) ||
+                (client.patient_city && client.patient_city.toLowerCase().includes(searchTerm)) ||
+                (client.requestor_city && client.requestor_city.toLowerCase().includes(searchTerm));
               if (clientMatch) return true;
             }
           }
@@ -776,7 +781,7 @@ export const nursesClientsApi = {
   getClientById: async (clientId: string): Promise<any | null> => {
     try {
       const clients = await nursesClientsApi.getClients();
-      return clients.find(client => client.id === clientId) || null;
+      return clients.find(client => client.client_id === clientId) || null;
     } catch (error: any) {
       console.error('Failed to fetch client by ID:', error);
       return null;

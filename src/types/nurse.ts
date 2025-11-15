@@ -31,19 +31,36 @@ export interface Nurse {
 }
 
 export interface Client {
-  id: string;
-  client_type: string;
-  client_category: string;
-  status: string;
-  general_notes: string;
-  created_at: string;
-  updated_at: string;
-  rejection_reason: string | null;
-  otp_preference: string | null;
-  duty_period: string;
-  duty_period_reason: string;
-  registration_number: string;
-  prev_registration_number: string | null;
+  client_id: string;
+  requestor_name: string;
+  requestor_phone: string;
+  requestor_email: string;
+  relation_to_patient: string;
+  patient_name: string;
+  patient_age: string;
+  patient_gender: string | null;
+  patient_phone: string | null;
+  complete_address: string | null;
+  service_required: string;
+  care_duration: string;
+  start_date: string;
+  preferred_caregiver_gender: string;
+  requestor_profile_pic: string | null;
+  patient_profile_pic: string | null;
+  patient_address: string;
+  patient_pincode: string;
+  patient_district: string;
+  patient_city: string;
+  requestor_address: string;
+  requestor_job_details: string | null;
+  requestor_emergency_phone: string | null;
+  requestor_pincode: string;
+  requestor_district: string;
+  requestor_city: string;
+  requestor_state: string;
+  patient_state: string | null;
+  patient_location_link: string | null;
+  requestor_location_link: string | null;
 }
 
 export interface NursesResponse {
