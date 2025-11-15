@@ -212,8 +212,8 @@ const Search: React.FC<SearchProps> = ({ entries: propEntries = [] }) => {
     return nurse ? (nurse.full_name || `${nurse.first_name} ${nurse.last_name}`.trim()) : '';
   };
   
-  // Helper function to get client info
-  const getClientInfo = (clientId: string | undefined): string => {
+  // Helper function to get client name
+  const getClientName = (clientId: string | undefined): string => {
     if (!clientId) return '';
     const client = clientsMap.get(clientId);
     if (!client) return '';
