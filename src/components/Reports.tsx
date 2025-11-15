@@ -77,7 +77,12 @@ const Reports: React.FC<ReportsProps> = ({ entries: propEntries = [] }) => {
       // Get entries based on date range
       let entries: DaybookEntry[];
       if (dateRange.startDate && dateRange.endDate) {
-        entries = await daybookApi.getEntriesByDateRange(dateRange.startDate, dateRange.endDate);
+        // Add one day to end date to include entries on the end date
+        const adjustedEndDate = new Date(dateRange.endDate);
+        adjustedEndDate.setDate(adjustedEndDate.getDate() + 1);
+        const endDateInclusive = adjustedEndDate.toISOString().split('T')[0];
+        
+        entries = await daybookApi.getEntriesByDateRange(dateRange.startDate, endDateInclusive);
       } else if (dateRange.startDate) {
         entries = await daybookApi.getEntriesFromDate(dateRange.startDate);
       } else {
@@ -99,7 +104,12 @@ const Reports: React.FC<ReportsProps> = ({ entries: propEntries = [] }) => {
       setLoading(true);
       setError(null);
 
-      const summaryData = await reportsApi.generateSummaryReport(dateRange.startDate, dateRange.endDate);
+      // Add one day to end date to include entries on the end date
+      const adjustedEndDate = new Date(dateRange.endDate);
+      adjustedEndDate.setDate(adjustedEndDate.getDate() + 1);
+      const endDateInclusive = adjustedEndDate.toISOString().split('T')[0];
+
+      const summaryData = await reportsApi.generateSummaryReport(dateRange.startDate, endDateInclusive);
       setReportData(summaryData);
     } catch (error) {
       console.error('Error generating report:', error);
