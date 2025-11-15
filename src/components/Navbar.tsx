@@ -10,6 +10,12 @@ const Navbar: React.FC = () => {
 
   const user = authUtils.getUser();
 
+  // Close mobile menu and user menu on route change
+  React.useEffect(() => {
+    setIsMobileMenuOpen(false);
+    setShowUserMenu(false);
+  }, [location.pathname]);
+
   const isActive = (path: string) => {
     return location.pathname === path;
   };
@@ -60,7 +66,7 @@ const Navbar: React.FC = () => {
   };
 
   return (
-    <nav className="glass-card sticky top-0 z-50 border-0 border-b border-neutral-200/30">
+    <nav className="glass-card border-0 border-b border-neutral-200/30 w-full">
       <div className="container-wide">
         <div className="flex justify-between items-center h-14 xs:h-16 sm:h-20">
           {/* Logo */}
@@ -113,7 +119,7 @@ const Navbar: React.FC = () => {
               </button>
               
               {showUserMenu && (
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-neutral-200 py-1 z-50">
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-neutral-200 py-1 z-[10001]">
                   <div className="px-4 py-2 border-b border-neutral-100">
                     <p className="text-sm font-medium text-neutral-900">{user?.email}</p>
                     <p className="text-xs text-neutral-500">Logged in</p>
@@ -162,7 +168,7 @@ const Navbar: React.FC = () => {
 
         {/* Mobile Navigation Menu */}
         {isMobileMenuOpen && (
-          <div className="lg:hidden absolute top-full left-0 right-0 bg-white/95 backdrop-blur-md border-t border-neutral-200/50 shadow-strong rounded-b-2xl xs:rounded-b-3xl">
+          <div className="lg:hidden absolute top-full left-0 right-0 bg-white/95 backdrop-blur-md border-t border-neutral-200/50 shadow-strong rounded-b-2xl xs:rounded-b-3xl z-[10000]">
             <div className="px-3 xs:px-4 py-4 xs:py-6 space-y-2 xs:space-y-3">
               <Link to="/" className={mobileNavLinkClass('/')} onClick={closeMobileMenu}>
                 <div className="flex items-center space-x-2 xs:space-x-3">

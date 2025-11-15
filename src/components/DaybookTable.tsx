@@ -46,10 +46,14 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete 
   }, []);
   
   // Helper function to get nurse name
-  const getNurseName = (nurseId: string | undefined): string => {
+  const getNurseName = (nurseId: string | number | undefined): string => {
     if (!nurseId) return '';
-    const nurse = nursesMap.get(nurseId);
-    return nurse ? (nurse.full_name || `${nurse.first_name} ${nurse.last_name}`.trim()) : nurseId;
+    const nurseIdString = nurseId.toString();
+    const nurse = nursesMap.get(nurseIdString);
+    if (nurse) {
+      return nurse.full_name || `${nurse.first_name} ${nurse.last_name}`.trim();
+    }
+    return `Nurse ID: ${nurseId}`;
   };
   
   // Helper function to get client name
