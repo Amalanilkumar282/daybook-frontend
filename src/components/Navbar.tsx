@@ -119,10 +119,13 @@ const Navbar: React.FC = () => {
               </button>
               
               {showUserMenu && (
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-neutral-200 py-1 z-[10001]">
+                <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-lg border border-neutral-200 py-1 z-[10001]">
                   <div className="px-4 py-2 border-b border-neutral-100">
-                    <p className="text-sm font-medium text-neutral-900">{user?.email}</p>
-                    <p className="text-xs text-neutral-500">Logged in</p>
+                    <p className="text-sm font-medium text-neutral-900 truncate" title={user?.email}>{user?.email}</p>
+                    {user?.tenant && (
+                      <p className="text-xs font-medium text-primary-600 mt-0.5">{user.tenant}</p>
+                    )}
+                    <p className="text-xs text-neutral-500 mt-0.5">Logged in</p>
                   </div>
                   <button
                     onClick={handleLogout}
@@ -210,11 +213,14 @@ const Navbar: React.FC = () => {
 
               <div className="px-2 py-2">
                 <div className="flex items-center space-x-3 px-3 py-2">
-                  <div className="w-6 h-6 bg-gradient-to-r from-primary-500 to-primary-600 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                  <div className="w-6 h-6 bg-gradient-to-r from-primary-500 to-primary-600 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
                     {user?.email.charAt(0).toUpperCase()}
                   </div>
-                  <div>
-                    <p className="text-sm font-medium text-neutral-900">{user?.email}</p>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-neutral-900 truncate" title={user?.email}>{user?.email}</p>
+                    {user?.tenant && (
+                      <p className="text-xs font-medium text-primary-600">{user.tenant}</p>
+                    )}
                     <p className="text-xs text-neutral-500">Logged in</p>
                   </div>
                 </div>
