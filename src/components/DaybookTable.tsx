@@ -33,7 +33,7 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete 
         
         // Create maps for quick lookup
         const nursesMap = new Map(nurses.map(n => [n.nurse_id.toString(), n]));
-        const clientsMap = new Map(clients.map(c => [c.id, c]));
+        const clientsMap = new Map(clients.map(c => [c.client_id, c]));
         
         setNursesMap(nursesMap);
         setClientsMap(clientsMap);
@@ -56,7 +56,28 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete 
   const getClientName = (clientId: string | undefined): string => {
     if (!clientId) return '';
     const client = clientsMap.get(clientId);
-    return client ? (client.registration_number || clientId) : clientId;
+    if (!client) return clientId;
+    
+    const patientName = client.patient_name?.trim();
+    const requestorName = client.requestor_name?.trim();
+    
+    // If no patient name, use requestor name
+    if (!patientName) {
+      return requestorName || clientId;
+    }
+    
+    // If no requestor name, use patient name
+    if (!requestorName) {
+      return patientName;
+    }
+    
+    // If both names are the same, show only once
+    if (patientName.toLowerCase() === requestorName.toLowerCase()) {
+      return patientName;
+    }
+    
+    // If both names are different, show both
+    return `${patientName} (${requestorName})`;
   };
 
   const sortedEntries = [...entries].sort((a, b) => {

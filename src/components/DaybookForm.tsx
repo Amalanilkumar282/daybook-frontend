@@ -66,11 +66,34 @@ const DaybookForm: React.FC<DaybookFormProps> = ({
       setIsLoadingClients(true);
       try {
         const clientsData = await nursesClientsApi.getClients();
-        const clientsOptions: AutocompleteOption[] = clientsData.map(client => ({
-          id: client.id,
-          label: client.registration_number,
-          sublabel: `Type: ${client.client_type} | Category: ${client.client_category} | Status: ${client.status}`,
-        }));
+        const clientsOptions: AutocompleteOption[] = clientsData.map(client => {
+          const patientName = client.patient_name?.trim();
+          const requestorName = client.requestor_name?.trim();
+          
+          let displayName: string;
+          // If no patient name, use requestor name
+          if (!patientName) {
+            displayName = requestorName || 'Unknown';
+          }
+          // If no requestor name, use patient name
+          else if (!requestorName) {
+            displayName = patientName;
+          }
+          // If both names are the same, show only once
+          else if (patientName.toLowerCase() === requestorName.toLowerCase()) {
+            displayName = patientName;
+          }
+          // If both names are different, show both
+          else {
+            displayName = `${patientName} (${requestorName})`;
+          }
+          
+          return {
+            id: client.client_id,
+            label: displayName,
+            sublabel: `Service: ${client.service_required} | Gender: ${client.preferred_caregiver_gender || 'N/A'} | Location: ${client.patient_city || client.requestor_city}`,
+          };
+        });
         setClients(clientsOptions);
       } catch (error) {
         console.error('Error fetching clients:', error);
