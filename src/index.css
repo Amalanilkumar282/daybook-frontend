@@ -102,6 +102,23 @@ code {
     @apply inline-flex items-center px-3 py-1 rounded-2xl text-xs font-bold bg-gradient-to-r shadow-soft border;
   }
 
+  /* Z-index hierarchy */
+  .z-navbar {
+    z-index: 9999;
+  }
+
+  .z-modal {
+    z-index: 10000;
+  }
+
+  .z-dropdown {
+    z-index: 10001;
+  }
+
+  .z-tooltip {
+    z-index: 10002;
+  }
+
   /* Responsive Container Classes */
   .container-responsive {
     @apply w-full mx-auto px-3 xs:px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16 3xl:px-20;

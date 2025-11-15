@@ -18,7 +18,24 @@ import './App.css';
 
 function App() {
   console.log('App component rendered');
-  const isAuthenticated = authUtils.isAuthenticated();
+  const [isAuthenticated, setIsAuthenticated] = React.useState(authUtils.isAuthenticated());
+  
+  // Update authentication state on route changes
+  React.useEffect(() => {
+    const checkAuth = () => {
+      setIsAuthenticated(authUtils.isAuthenticated());
+    };
+    
+    // Check auth status whenever the component updates
+    checkAuth();
+    
+    // Also listen for storage events (for logout in other tabs)
+    window.addEventListener('storage', checkAuth);
+    
+    return () => {
+      window.removeEventListener('storage', checkAuth);
+    };
+  }, []);
   
   return (
     <ErrorBoundary>
@@ -31,12 +48,16 @@ function App() {
             <div className="absolute bottom-0 right-0 w-64 h-64 xs:w-80 xs:h-80 sm:w-96 sm:h-96 bg-accent-200/10 rounded-full blur-3xl"></div>
           </div>
           
+          {/* Navbar - Always visible for authenticated users */}
           {isAuthenticated && (
             <ErrorBoundary>
-              <Navbar />
+              <div className="sticky top-0 z-[9999] w-full">
+                <Navbar />
+              </div>
             </ErrorBoundary>
           )}
-          <main className="content-responsive relative z-10 animate-fade-in">
+          
+          <main className="content-responsive relative z-[1] animate-fade-in">
             <ErrorBoundary>
               <Routes>
                 {/* Public routes */}
