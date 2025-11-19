@@ -262,37 +262,37 @@ const DaybookForm: React.FC<DaybookFormProps> = ({
           {/* Amount */}
           <div>
             <label htmlFor="amount" className="block text-sm font-medium text-dark-700 mb-2">
-              Amount (Whole Numbers Only) *
+              Amount *
             </label>
             <div className="relative">
               <span className="absolute left-3 top-2 text-gray-500">₹</span>
               <input
-                type="text"
+                type="number"
                 id="amount"
-                inputMode="numeric"
+                step="0.01"
+                min="0"
                 value={formData.amount === 0 ? '' : formData.amount}
                 onChange={(e) => {
                   const value = e.target.value;
-                  // Only allow empty string or positive integers
-                  if (value === '' || /^[1-9]\d*$/.test(value)) {
-                    handleInputChange('amount', value === '' ? 0 : parseInt(value, 10));
-                  } else if (value === '0') {
+                  // Allow only numbers with up to 2 decimals (e.g., 123, 123.4, 123.45)
+                  const allowed = /^(\d+(\.\d{0,2})?)?$/;
+                  if (value === '') {
                     handleInputChange('amount', 0);
+                  } else if (allowed.test(value)) {
+                    const numValue = parseFloat(value);
+                    if (!isNaN(numValue) && numValue >= 0) {
+                      handleInputChange('amount', numValue);
+                    }
                   }
                 }}
-                placeholder="1000"
-                style={{ 
-                  MozAppearance: 'textfield',
-                  WebkitAppearance: 'none',
-                  appearance: 'none'
-                }}
+                placeholder="1000.00"
                 className={`w-full pl-8 pr-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
                   errors.amount ? 'border-red-500' : 'border-gray-300'
                 }`}
               />
             </div>
             {errors.amount && <p className="mt-1 text-sm text-red-600">{errors.amount}</p>}
-            <p className="mt-1 text-xs text-gray-500">Enter amount in whole rupees only (no decimals)</p>
+            <p className="mt-1 text-xs text-gray-500">Enter amount (decimals allowed, e.g., 1500.50)</p>
           </div>
         </div>
 
