@@ -274,9 +274,11 @@ const DaybookForm: React.FC<DaybookFormProps> = ({
                 value={formData.amount === 0 ? '' : formData.amount}
                 onChange={(e) => {
                   const value = e.target.value;
+                  // Allow only numbers with up to 2 decimals (e.g., 123, 123.4, 123.45)
+                  const allowed = /^(\d+(\.\d{0,2})?)?$/;
                   if (value === '') {
                     handleInputChange('amount', 0);
-                  } else {
+                  } else if (allowed.test(value)) {
                     const numValue = parseFloat(value);
                     if (!isNaN(numValue) && numValue >= 0) {
                       handleInputChange('amount', numValue);
