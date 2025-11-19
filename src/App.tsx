@@ -11,6 +11,7 @@ import EditEntry from './pages/EditEntry';
 import ViewEntry from './pages/ViewEntry';
 import SearchPage from './pages/SearchPage';
 import ReportsPage from './pages/ReportsPage';
+import PersonalFinance from './pages/PersonalFinance';
 import DebugAuth from './pages/DebugAuth';
 import NotFound from './pages/NotFound';
 import { authUtils } from './services/api';
@@ -92,6 +93,11 @@ function App() {
               <Route path="/reports" element={
                 <ProtectedRoute>
                   <ReportsPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/personal-finance" element={
+                <ProtectedRoute>
+                  <PersonalFinance />
                 </ProtectedRoute>
               } />
               <Route path="/debug-auth" element={
