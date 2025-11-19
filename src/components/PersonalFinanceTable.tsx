@@ -30,8 +30,29 @@ const PersonalFinanceTable: React.FC<PersonalFinanceTableProps> = ({
 }) => {
   if (loading) {
     return (
-      <div className="flex justify-center items-center py-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="overflow-x-auto shadow-md rounded-lg">
+        <div className="bg-white p-6">
+          <div className="animate-pulse space-y-4">
+            {/* Table header skeleton */}
+            <div className="flex space-x-4 pb-4 border-b">
+              <div className="h-4 bg-gray-200 rounded w-24"></div>
+              <div className="h-4 bg-gray-200 rounded w-24"></div>
+              <div className="h-4 bg-gray-200 rounded w-32"></div>
+              <div className="h-4 bg-gray-200 rounded flex-1"></div>
+              <div className="h-4 bg-gray-200 rounded w-20"></div>
+            </div>
+            {/* Table rows skeleton */}
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="flex space-x-4 py-4">
+                <div className="h-4 bg-gray-200 rounded w-24"></div>
+                <div className="h-6 bg-gray-200 rounded w-24"></div>
+                <div className="h-4 bg-gray-200 rounded w-32"></div>
+                <div className="h-4 bg-gray-200 rounded flex-1"></div>
+                <div className="h-4 bg-gray-200 rounded w-20"></div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }

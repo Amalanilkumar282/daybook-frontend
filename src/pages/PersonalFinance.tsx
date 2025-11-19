@@ -125,6 +125,54 @@ const PersonalFinance: React.FC = () => {
     }
   };
 
+  // Show loading skeleton while data is being fetched
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-8 max-w-7xl">
+        <div className="animate-pulse">
+          {/* Header Skeleton */}
+          <div className="mb-8">
+            <div className="h-8 bg-gray-200 rounded w-64 mb-2"></div>
+            <div className="h-4 bg-gray-200 rounded w-96"></div>
+          </div>
+
+          {/* Summary Cards Skeleton */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="bg-white rounded-lg shadow-lg p-6">
+                <div className="h-4 bg-gray-200 rounded w-24 mb-4"></div>
+                <div className="h-8 bg-gray-200 rounded w-32"></div>
+              </div>
+            ))}
+          </div>
+
+          {/* Form Skeleton */}
+          <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+            <div className="h-6 bg-gray-200 rounded w-32 mb-4"></div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div className="h-10 bg-gray-200 rounded"></div>
+              <div className="h-10 bg-gray-200 rounded"></div>
+            </div>
+            <div className="h-24 bg-gray-200 rounded mb-4"></div>
+            <div className="flex justify-end">
+              <div className="h-10 bg-gray-200 rounded w-32"></div>
+            </div>
+          </div>
+
+          {/* Table Skeleton */}
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="h-6 bg-gray-200 rounded w-48 mb-6"></div>
+            <div className="space-y-4">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="h-16 bg-gray-200 rounded"></div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
       {/* Header */}
