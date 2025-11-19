@@ -1,12 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { PersonalEntry } from '../types/personal';
 import { dateUtils, currencyUtils } from '../utils';
 import Pagination from './Pagination';
 
+type SortField = 'created_at' | 'paytype' | 'amount';
+type SortDirection = 'asc' | 'desc';
+
 interface PersonalFinanceTableProps {
   entries: PersonalEntry[];
   onEdit: (entry: PersonalEntry) => void;
-  onDelete: (id: number) => void;
+  onDelete: (entry: PersonalEntry) => void;
   loading?: boolean;
   currentPage: number;
   itemsPerPage: number;
@@ -28,6 +31,63 @@ const PersonalFinanceTable: React.FC<PersonalFinanceTableProps> = ({
   onPageChange,
   onItemsPerPageChange
 }) => {
+  const [sortField, setSortField] = useState<SortField>('created_at');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+
+  const handleSort = (field: SortField) => {
+    if (field === sortField) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  const getSortIcon = (field: SortField) => {
+    if (sortField !== field) {
+      return (
+        <svg className="w-4 h-4 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+        </svg>
+      );
+    }
+    
+    return sortDirection === 'asc' ? (
+      <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+      </svg>
+    ) : (
+      <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+      </svg>
+    );
+  };
+
+  const sortedEntries = [...entries].sort((a, b) => {
+    let aValue: any;
+    let bValue: any;
+
+    switch (sortField) {
+      case 'created_at':
+        aValue = new Date(a.created_at);
+        bValue = new Date(b.created_at);
+        break;
+      case 'amount':
+        aValue = a.amount;
+        bValue = b.amount;
+        break;
+      case 'paytype':
+        aValue = a.paytype.toLowerCase();
+        bValue = b.paytype.toLowerCase();
+        break;
+      default:
+        return 0;
+    }
+
+    if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+    if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+    return 0;
+  });
   if (loading) {
     return (
       <div className="overflow-x-auto shadow-md rounded-lg">
@@ -89,14 +149,32 @@ const PersonalFinanceTable: React.FC<PersonalFinanceTableProps> = ({
             <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
               Actions
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Date
+            <th 
+              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
+              onClick={() => handleSort('created_at')}
+            >
+              <div className="flex items-center space-x-1">
+                <span>Date</span>
+                {getSortIcon('created_at')}
+              </div>
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Type
+            <th 
+              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
+              onClick={() => handleSort('paytype')}
+            >
+              <div className="flex items-center space-x-1">
+                <span>Type</span>
+                {getSortIcon('paytype')}
+              </div>
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Amount
+            <th 
+              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
+              onClick={() => handleSort('amount')}
+            >
+              <div className="flex items-center space-x-1">
+                <span>Amount</span>
+                {getSortIcon('amount')}
+              </div>
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               Description
@@ -104,7 +182,7 @@ const PersonalFinanceTable: React.FC<PersonalFinanceTableProps> = ({
           </tr>
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
-          {entries.map((entry) => (
+          {sortedEntries.map((entry) => (
             <tr key={entry.id} className="hover:bg-gray-50 transition-colors">
               <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium space-x-2">
                 <button
@@ -128,11 +206,7 @@ const PersonalFinanceTable: React.FC<PersonalFinanceTableProps> = ({
                   </svg>
                 </button>
                 <button
-                  onClick={() => {
-                    if (window.confirm('Are you sure you want to delete this entry?')) {
-                      onDelete(entry.id);
-                    }
-                  }}
+                  onClick={() => onDelete(entry)}
                   className="text-red-600 hover:text-red-900 transition-colors"
                   title="Delete entry"
                 >

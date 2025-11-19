@@ -3,6 +3,7 @@ import { personalFinanceApi } from '../services/api';
 import { PersonalEntry, PersonalEntryFormData } from '../types/personal';
 import PersonalFinanceForm from '../components/PersonalFinanceForm';
 import PersonalFinanceTable from '../components/PersonalFinanceTable';
+import ConfirmModal from '../components/ConfirmModal';
 import { currencyUtils } from '../utils';
 import { usePagination } from '../hooks/usePagination';
 
@@ -10,6 +11,8 @@ const PersonalFinance: React.FC = () => {
   const [entries, setEntries] = useState<PersonalEntry[]>([]);
   const [editingEntry, setEditingEntry] = useState<PersonalEntry | null>(null);
   const [loading, setLoading] = useState(true);
+  const [deleteModal, setDeleteModal] = useState({ isOpen: false, entryId: 0, entryDetails: '' });
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const [summary, setSummary] = useState({
     totalIncoming: 0,
     totalOutgoing: 0,
@@ -86,15 +89,32 @@ const PersonalFinance: React.FC = () => {
 
   const handleDeleteEntry = async (id: number) => {
     try {
+      setDeleteLoading(true);
       await personalFinanceApi.deletePersonalEntry(id);
       setSuccessMessage('Entry deleted successfully!');
       await fetchEntries();
+      setDeleteModal({ isOpen: false, entryId: 0, entryDetails: '' });
       
       // Clear success message after 3 seconds
       setTimeout(() => setSuccessMessage(null), 3000);
     } catch (error: any) {
       setErrorMessage(error.message || 'Failed to delete entry');
+    } finally {
+      setDeleteLoading(false);
     }
+  };
+
+  const openDeleteModal = (entry: PersonalEntry) => {
+    const entryType = entry.paytype === 'incoming' ? 'Incoming' : 'Outgoing';
+    setDeleteModal({
+      isOpen: true,
+      entryId: entry.id,
+      entryDetails: `${entry.description || 'No description'} (${entryType})`
+    });
+  };
+
+  const closeDeleteModal = () => {
+    setDeleteModal({ isOpen: false, entryId: 0, entryDetails: '' });
   };
 
   const handleEditClick = (entry: PersonalEntry) => {
@@ -276,7 +296,7 @@ const PersonalFinance: React.FC = () => {
         <PersonalFinanceTable
           entries={paginatedData}
           onEdit={handleEditClick}
-          onDelete={handleDeleteEntry}
+          onDelete={openDeleteModal}
           loading={loading}
           currentPage={currentPage}
           itemsPerPage={itemsPerPage}
@@ -286,6 +306,18 @@ const PersonalFinance: React.FC = () => {
           onItemsPerPageChange={handleItemsPerPageChange}
         />
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={deleteModal.isOpen}
+        onConfirm={() => handleDeleteEntry(deleteModal.entryId)}
+        title="Delete Entry"
+        message={`Are you sure you want to delete "${deleteModal.entryDetails}"? This action cannot be undone.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        isLoading={deleteLoading}
+        onCancel={closeDeleteModal}
+      />
     </div>
   );
 };
