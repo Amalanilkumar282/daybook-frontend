@@ -1,12 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { PersonalEntry } from '../types/personal';
 import { dateUtils, currencyUtils } from '../utils';
 import Pagination from './Pagination';
 
+type SortField = 'created_at' | 'paytype' | 'amount';
+type SortDirection = 'asc' | 'desc';
+
 interface PersonalFinanceTableProps {
   entries: PersonalEntry[];
   onEdit: (entry: PersonalEntry) => void;
-  onDelete: (id: number) => void;
+  onDelete: (entry: PersonalEntry) => void;
   loading?: boolean;
   currentPage: number;
   itemsPerPage: number;
@@ -28,6 +31,63 @@ const PersonalFinanceTable: React.FC<PersonalFinanceTableProps> = ({
   onPageChange,
   onItemsPerPageChange
 }) => {
+  const [sortField, setSortField] = useState<SortField>('created_at');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+
+  const handleSort = (field: SortField) => {
+    if (field === sortField) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  const getSortIcon = (field: SortField) => {
+    if (sortField !== field) {
+      return (
+        <svg className="w-4 h-4 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+        </svg>
+      );
+    }
+    
+    return sortDirection === 'asc' ? (
+      <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+      </svg>
+    ) : (
+      <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+      </svg>
+    );
+  };
+
+  const sortedEntries = [...entries].sort((a, b) => {
+    let aValue: any;
+    let bValue: any;
+
+    switch (sortField) {
+      case 'created_at':
+        aValue = new Date(a.created_at);
+        bValue = new Date(b.created_at);
+        break;
+      case 'amount':
+        aValue = a.amount;
+        bValue = b.amount;
+        break;
+      case 'paytype':
+        aValue = a.paytype.toLowerCase();
+        bValue = b.paytype.toLowerCase();
+        break;
+      default:
+        return 0;
+    }
+
+    if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+    if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+    return 0;
+  });
   if (loading) {
     return (
       <div className="overflow-x-auto shadow-md rounded-lg">
@@ -86,26 +146,86 @@ const PersonalFinanceTable: React.FC<PersonalFinanceTableProps> = ({
       <table className="min-w-full divide-y divide-gray-200">
         <thead className="bg-gray-50">
           <tr>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Date
+            <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
+              Actions
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Type
+            <th 
+              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
+              onClick={() => handleSort('created_at')}
+            >
+              <div className="flex items-center space-x-1">
+                <span>Date</span>
+                {getSortIcon('created_at')}
+              </div>
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Amount
+            <th 
+              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
+              onClick={() => handleSort('paytype')}
+            >
+              <div className="flex items-center space-x-1">
+                <span>Type</span>
+                {getSortIcon('paytype')}
+              </div>
+            </th>
+            <th 
+              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
+              onClick={() => handleSort('amount')}
+            >
+              <div className="flex items-center space-x-1">
+                <span>Amount</span>
+                {getSortIcon('amount')}
+              </div>
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               Description
             </th>
-            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Actions
-            </th>
           </tr>
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
-          {entries.map((entry) => (
+          {sortedEntries.map((entry) => (
             <tr key={entry.id} className="hover:bg-gray-50 transition-colors">
+              <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium space-x-2">
+                <button
+                  onClick={() => onEdit(entry)}
+                  className="text-blue-600 hover:text-blue-900 transition-colors"
+                  title="Edit entry"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5 inline"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                    />
+                  </svg>
+                </button>
+                <button
+                  onClick={() => onDelete(entry)}
+                  className="text-red-600 hover:text-red-900 transition-colors"
+                  title="Delete entry"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5 inline"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                    />
+                  </svg>
+                </button>
+              </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                 {dateUtils.formatDate(entry.created_at)}
               </td>
@@ -136,52 +256,6 @@ const PersonalFinanceTable: React.FC<PersonalFinanceTableProps> = ({
               </td>
               <td className="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">
                 {entry.description || '-'}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                <button
-                  onClick={() => onEdit(entry)}
-                  className="text-blue-600 hover:text-blue-900 transition-colors"
-                  title="Edit entry"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-5 w-5 inline"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                    />
-                  </svg>
-                </button>
-                <button
-                  onClick={() => {
-                    if (window.confirm('Are you sure you want to delete this entry?')) {
-                      onDelete(entry.id);
-                    }
-                  }}
-                  className="text-red-600 hover:text-red-900 transition-colors"
-                  title="Delete entry"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-5 w-5 inline"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                    />
-                  </svg>
-                </button>
               </td>
             </tr>
           ))}
