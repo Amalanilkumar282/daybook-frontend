@@ -14,6 +14,10 @@ import {
   PayStatus,
   Tenant
 } from '../types/daybook';
+import {
+  PersonalEntry,
+  PersonalEntryFormData
+} from '../types/personal';
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://day-book-backend.vercel.app/api';
 
@@ -839,6 +843,109 @@ export const settingsApi = {
       return new Blob([jsonContent], { type: 'application/json;charset=utf-8;' });
     } catch (error: any) {
       throw new Error(error.message || 'Failed to export data');
+    }
+  }
+};
+
+// Personal Finance API - Complete CRUD operations
+export const personalFinanceApi = {
+  // Get all personal finance entries
+  getPersonalEntries: async (): Promise<PersonalEntry[]> => {
+    try {
+      const response = await api.get('/personal/');
+      return response.data.data || [];
+    } catch (error: any) {
+      throw new Error(error.response?.data?.error || error.response?.data?.message || 'Failed to fetch personal entries');
+    }
+  },
+
+  // Create new personal finance entry
+  createPersonalEntry: async (data: PersonalEntryFormData): Promise<PersonalEntry> => {
+    try {
+      const payload = {
+        paytype: data.paytype,
+        amount: typeof data.amount === 'string' ? parseFloat(data.amount) : data.amount,
+        description: data.description
+      };
+      
+      const response = await api.post('/personal/', payload);
+      return response.data.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.error || error.response?.data?.message || 'Failed to create personal entry');
+    }
+  },
+
+  // Update personal finance entry
+  updatePersonalEntry: async (id: number, data: PersonalEntryFormData): Promise<PersonalEntry> => {
+    try {
+      const payload = {
+        paytype: data.paytype,
+        amount: typeof data.amount === 'string' ? parseFloat(data.amount) : data.amount,
+        description: data.description
+      };
+      
+      const response = await api.put(`/personal/${id}`, payload);
+      return response.data.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.error || error.response?.data?.message || 'Failed to update personal entry');
+    }
+  },
+
+  // Delete personal finance entry
+  deletePersonalEntry: async (id: number): Promise<void> => {
+    try {
+      await api.delete(`/personal/${id}`);
+    } catch (error: any) {
+      throw new Error(error.response?.data?.error || error.response?.data?.message || 'Failed to delete personal entry');
+    }
+  },
+
+  // Calculate summary from entries
+  getPersonalSummary: async (): Promise<{ totalIncoming: number; totalOutgoing: number; balance: number; entryCount: number }> => {
+    try {
+      const entries = await personalFinanceApi.getPersonalEntries();
+      
+      const totalIncoming = entries
+        .filter(entry => entry.paytype === 'incoming')
+        .reduce((sum, entry) => sum + entry.amount, 0);
+      
+      const totalOutgoing = entries
+        .filter(entry => entry.paytype === 'outgoing')
+        .reduce((sum, entry) => sum + entry.amount, 0);
+      
+      const balance = totalIncoming - totalOutgoing;
+      
+      return {
+        totalIncoming,
+        totalOutgoing,
+        balance,
+        entryCount: entries.length
+      };
+    } catch (error: any) {
+      throw new Error(error.message || 'Failed to fetch personal summary');
+    }
+  },
+
+  // Export to CSV
+  exportPersonalToCsv: async (): Promise<Blob> => {
+    try {
+      const entries = await personalFinanceApi.getPersonalEntries();
+      
+      const headers = ['ID', 'Date', 'Type', 'Amount', 'Description'];
+      const csvContent = [
+        headers.join(','),
+        ...entries.map(entry => [
+          entry.id.toString(),
+          entry.created_at,
+          entry.paytype,
+          entry.amount.toString(),
+          `"${entry.description || ''}"`
+        ].join(','))
+      ].join('\n');
+      
+      return new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    } catch (error: any) {
+      throw new Error(error.message || 'Failed to export personal finance data');
     }
   }
 };
