@@ -111,8 +111,8 @@ const DaybookForm: React.FC<DaybookFormProps> = ({
       setFormData({
         amount: initialData.amount,
         payment_type: initialData.payment_type,
-        pay_status: initialData.pay_status,
-        mode_of_pay: initialData.mode_of_pay,
+        pay_status: initialData.pay_status || PayStatus.PAID,
+        mode_of_pay: initialData.mode_of_pay || ModeOfPay.CASH,
         tenant: initialData.tenant,
         description: initialData.description || '',
         nurse_id: initialData.nurse_id || '',
