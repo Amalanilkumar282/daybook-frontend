@@ -542,9 +542,11 @@ const Reports: React.FC<ReportsProps> = ({ entries: propEntries = [] }) => {
                       <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
                         entry.pay_status === PayStatus.PAID 
                           ? 'bg-green-100 text-green-800' 
-                          : 'bg-yellow-100 text-yellow-800'
+                          : entry.pay_status === PayStatus.UNPAID
+                          ? 'bg-yellow-100 text-yellow-800'
+                          : 'bg-gray-100 text-gray-800'
                       }`}>
-                        {entry.pay_status === PayStatus.PAID ? 'Paid' : 'Unpaid'}
+                        {entry.pay_status === PayStatus.PAID ? 'Paid' : entry.pay_status === PayStatus.UNPAID ? 'Unpaid' : 'N/A'}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-right">
