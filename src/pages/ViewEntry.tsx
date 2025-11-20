@@ -131,7 +131,8 @@ const ViewEntry: React.FC = () => {
     return type === PayType.INCOMING ? 'text-green-600 bg-green-100' : 'text-red-600 bg-red-100';
   };
 
-  const getPaymentStatusColor = (status: PayStatus) => {
+  const getPaymentStatusColor = (status: PayStatus | null | undefined) => {
+    if (!status) return 'text-neutral-600 bg-neutral-100';
     return status === PayStatus.PAID ? 'text-green-600 bg-green-100' : 'text-orange-600 bg-orange-100';
   };
 
@@ -164,7 +165,7 @@ const ViewEntry: React.FC = () => {
         <div className="bg-primary-500 text-white p-6">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-xl font-semibold">{entry.id_in_out}</h2>
+              <h2 className="text-xl font-semibold">Entry #{entry.id}</h2>
               <p className="text-primary-100 mt-1">{formatDate(entry.created_at)}</p>
             </div>
             <div className="text-right">
@@ -188,11 +189,6 @@ const ViewEntry: React.FC = () => {
               <div>
                 <label className="block text-sm font-medium text-neutral-600 mb-1">Date Created</label>
                 <p className="text-neutral-900 font-medium">{formatDate(entry.created_at)}</p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-neutral-600 mb-1">ID In/Out</label>
-                <p className="text-neutral-900 font-medium font-mono">{entry.id_in_out}</p>
               </div>
 
               <div>
@@ -223,14 +219,14 @@ const ViewEntry: React.FC = () => {
               <div className="bg-gray-50 p-4 rounded-lg">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Payment Status</label>
                 <span className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${getPaymentStatusColor(entry.pay_status)}`}>
-                  {entry.pay_status.replace('_', ' ').toUpperCase()}
+                  {entry.pay_status ? entry.pay_status.replace('_', ' ').toUpperCase() : 'N/A'}
                 </span>
               </div>
 
               <div className="bg-gray-50 p-4 rounded-lg">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Mode of Payment</label>
                 <p className="text-gray-900 font-medium capitalize">
-                  {entry.mode_of_pay.replace('_', ' ')}
+                  {entry.mode_of_pay ? entry.mode_of_pay.replace('_', ' ') : 'N/A'}
                 </p>
               </div>
             </div>

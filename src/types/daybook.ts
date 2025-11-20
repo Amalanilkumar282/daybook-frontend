@@ -33,13 +33,13 @@ export interface DaybookEntry {
   created_at: string;
   amount: number;
   payment_type: PayType;
-  pay_status: PayStatus;
-  description?: string;
-  mode_of_pay: ModeOfPay;
+  pay_status: PayStatus | null;
+  description?: string | null;
+  mode_of_pay: ModeOfPay | null;
   tenant: Tenant;
-  nurse_id?: string;
-  client_id?: string;
-  receipt?: string;
+  nurse_id?: string | null;
+  client_id?: string | null;
+  receipt?: string | null;
 }
 
 export interface DaybookFormData {
