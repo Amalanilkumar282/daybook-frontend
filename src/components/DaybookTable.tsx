@@ -193,7 +193,8 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete 
       : 'modern-badge from-error-500 to-error-600 text-white border-error-400/30';
   };
 
-  const getPaymentStatusColor = (status: PayStatus) => {
+  const getPaymentStatusColor = (status: PayStatus | null | undefined) => {
+    if (!status) return 'modern-badge from-neutral-500 to-neutral-600 text-white border-neutral-400/30';
     return status === PayStatus.PAID
       ? 'modern-badge from-green-500 to-green-600 text-white border-green-400/30'
       : 'modern-badge from-orange-500 to-orange-600 text-white border-orange-400/30';
@@ -298,9 +299,9 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete 
                     </div>
                     <div className="text-xs flex items-center gap-2">
                       <span className={getPaymentStatusColor(entry.pay_status)}>
-                        {entry.pay_status.replace('_', ' ').toUpperCase()}
+                        {entry.pay_status ? entry.pay_status.replace('_', ' ').toUpperCase() : 'N/A'}
                       </span>
-                      <span className="text-neutral-600">{entry.mode_of_pay}</span>
+                      <span className="text-neutral-600">{entry.mode_of_pay ? entry.mode_of_pay.replace('_', ' ') : 'N/A'}</span>
                     </div>
                   </div>
                 </div>
@@ -537,12 +538,12 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete 
                       </td>
                       <td className="table-cell text-center">
                         <div className={getPaymentStatusColor(entry.pay_status)}>
-                          {entry.pay_status.replace('_', ' ').toUpperCase()}
+                          {entry.pay_status ? entry.pay_status.replace('_', ' ').toUpperCase() : 'N/A'}
                         </div>
                       </td>
                       <td className="table-cell text-center">
                         <span className="text-neutral-600 text-sm capitalize">
-                          {entry.mode_of_pay.replace('_', ' ')}
+                          {entry.mode_of_pay ? entry.mode_of_pay.replace('_', ' ') : 'N/A'}
                         </span>
                       </td>
                       <td className="table-cell text-center">
