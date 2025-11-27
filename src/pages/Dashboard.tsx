@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { DaybookEntry, PayType, SummaryData } from '../types/daybook';
+import { DaybookEntry, PayType, PayStatus, SummaryData } from '../types/daybook';
 import { daybookApi } from '../services/api';
 import SummaryCards from '../components/SummaryCards';
 import DaybookTable from '../components/DaybookTable';
@@ -15,6 +15,24 @@ const Dashboard: React.FC = () => {
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, entryId: '', entryDetails: '' });
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Search state
+  const [isSearchExpanded, setIsSearchExpanded] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [searchResults, setSearchResults] = useState<DaybookEntry[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const [isAdvancedSearch, setIsAdvancedSearch] = useState(false);
+  const [filters, setFilters] = useState({
+    dateFrom: '',
+    dateTo: '',
+    minAmount: '',
+    maxAmount: '',
+    type: 'all',
+    payStatus: 'all',
+  });
+  const [sortBy, setSortBy] = useState<'date' | 'amount' | 'relevance'>('relevance');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   // Helper function to calculate summary from entries
   const calculateSummaryFromEntries = (entries: DaybookEntry[]): SummaryData => {
@@ -97,6 +115,117 @@ const Dashboard: React.FC = () => {
     fetchData();
   }, [fetchData]);
 
+  // Perform search when search criteria change
+  useEffect(() => {
+    if (isSearchExpanded) {
+      performSearch();
+    }
+  }, [searchTerm, filters, sortBy, sortOrder, isSearchExpanded]);
+
+  const performSearch = async () => {
+    try {
+      // If no search criteria, clear results
+      if (searchTerm.trim() === '' && Object.values(filters).every(value => value === '' || value === 'all')) {
+        setSearchResults([]);
+        return;
+      }
+
+      setSearchLoading(true);
+      setSearchError(null);
+
+      // Prepare API filters
+      const apiFilters: any = {};
+      
+      if (filters.dateFrom) {
+        apiFilters.dateFrom = filters.dateFrom;
+      }
+      if (filters.dateTo) {
+        apiFilters.dateTo = filters.dateTo;
+      }
+      if (filters.minAmount) {
+        apiFilters.minAmount = parseFloat(filters.minAmount);
+      }
+      if (filters.maxAmount) {
+        apiFilters.maxAmount = parseFloat(filters.maxAmount);
+      }
+      if (filters.type !== 'all') {
+        apiFilters.paymentType = filters.type as PayType;
+      }
+      if (filters.payStatus !== 'all') {
+        apiFilters.payStatus = filters.payStatus as 'paid' | 'un_paid';
+      }
+
+      // Use API search or filter local entries
+      let filteredResults: DaybookEntry[];
+      
+      if (searchTerm.trim() || Object.keys(apiFilters).length > 0) {
+        filteredResults = await daybookApi.searchEntries(searchTerm, apiFilters);
+      } else {
+        filteredResults = entries;
+      }
+
+      // Apply sorting
+      filteredResults.sort((a: DaybookEntry, b: DaybookEntry) => {
+        let comparison = 0;
+        switch (sortBy) {
+          case 'date':
+            comparison = new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+            break;
+          case 'amount':
+            comparison = a.amount - b.amount;
+            break;
+          case 'relevance':
+            if (searchTerm.trim()) {
+              const aScore = ((a.description && a.description.toLowerCase().indexOf(searchTerm.toLowerCase()) === 0) ? 2 : 1) +
+                (a.id.toString().indexOf(searchTerm.toLowerCase()) === 0 ? 1 : 0);
+              const bScore = ((b.description && b.description.toLowerCase().indexOf(searchTerm.toLowerCase()) === 0) ? 2 : 1) +
+                (b.id.toString().indexOf(searchTerm.toLowerCase()) === 0 ? 1 : 0);
+              comparison = bScore - aScore;
+            } else {
+              comparison = new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+            }
+            break;
+        }
+
+        return sortOrder === 'desc' ? -comparison : comparison;
+      });
+
+      setSearchResults(filteredResults);
+    } catch (error) {
+      console.error('Search error:', error);
+      setSearchError('Search failed. Please try again.');
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
+  const handleFilterChange = (field: string, value: string) => {
+    setFilters(prev => ({ ...prev, [field]: value }));
+  };
+
+  const clearFilters = () => {
+    setSearchTerm('');
+    setFilters({
+      dateFrom: '',
+      dateTo: '',
+      minAmount: '',
+      maxAmount: '',
+      type: 'all',
+      payStatus: 'all',
+    });
+    setSortBy('relevance');
+    setSortOrder('desc');
+    setSearchResults([]);
+  };
+
+  const toggleSearchPanel = () => {
+    const newExpandedState = !isSearchExpanded;
+    setIsSearchExpanded(newExpandedState);
+    if (!newExpandedState) {
+      clearFilters();
+    }
+  };
+
   const handleDelete = async (id: string) => {
     try {
       setDeleteLoading(true);
@@ -136,6 +265,13 @@ const Dashboard: React.FC = () => {
   };
 
   console.log('DEBUG: Dashboard render - loading:', loading, 'entries:', entries.length, 'summaryData:', summaryData);
+
+  // Determine which entries to display
+  const displayEntries = isSearchExpanded && (searchTerm.trim() !== '' || Object.values(filters).some(v => v !== '' && v !== 'all'))
+    ? searchResults
+    : entries;
+
+  const hasActiveSearch = isSearchExpanded && (searchTerm.trim() !== '' || Object.values(filters).some(v => v !== '' && v !== 'all'));
 
   if (loading) {
     console.log('DEBUG: Dashboard showing loading state');
@@ -224,62 +360,357 @@ const Dashboard: React.FC = () => {
         />
       </div>
 
-      {/* Recent Entries */}
+      {/* Integrated Search Panel */}
+      <div className="card mb-8 overflow-hidden transition-all duration-300">
+        {/* Search Toggle Header */}
+        <div 
+          className="p-4 xs:p-6 border-b border-neutral-200/50 cursor-pointer hover:bg-neutral-50/50 transition-colors"
+          onClick={toggleSearchPanel}
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
+                isSearchExpanded ? 'bg-primary-500 text-white shadow-glow' : 'bg-neutral-100 text-neutral-600'
+              }`}>
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-lg sm:text-xl font-bold text-neutral-900">Search & Filter Entries</h3>
+                <p className="text-sm text-neutral-600">
+                  {isSearchExpanded ? 'Click to collapse search panel' : 'Click to expand and search entries'}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-3">
+              {hasActiveSearch && (
+                <div className="hidden sm:flex items-center space-x-2 px-3 py-1.5 bg-primary-100 rounded-lg">
+                  <div className="w-2 h-2 bg-primary-500 rounded-full animate-pulse"></div>
+                  <span className="text-sm font-semibold text-primary-700">
+                    {searchResults.length} result{searchResults.length !== 1 ? 's' : ''}
+                  </span>
+                </div>
+              )}
+              <svg 
+                className={`w-6 h-6 text-neutral-400 transition-transform duration-300 ${
+                  isSearchExpanded ? 'rotate-180' : ''
+                }`} 
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        {/* Search Panel Content */}
+        <div 
+          className={`transition-all duration-300 ease-in-out ${
+            isSearchExpanded ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0 overflow-hidden'
+          }`}
+        >
+          <div className="p-4 xs:p-6 bg-gradient-to-br from-neutral-50 to-white">
+            {/* Search Input */}
+            <div className="mb-4">
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Search by description, entry ID, nurse name, or client name..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-12 pr-4 py-3 sm:py-4 border-2 border-neutral-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all text-sm sm:text-base shadow-sm hover:shadow-md"
+                />
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <svg className="h-5 w-5 sm:h-6 sm:w-6 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+                {searchLoading && (
+                  <div className="absolute inset-y-0 right-0 pr-4 flex items-center">
+                    <svg className="animate-spin h-5 w-5 text-primary-500" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Advanced Search Toggle */}
+            <div className="flex items-center justify-between mb-4">
+              <button
+                onClick={() => setIsAdvancedSearch(!isAdvancedSearch)}
+                className="flex items-center space-x-2 text-primary-600 hover:text-primary-700 font-medium transition-colors"
+              >
+                <svg className={`w-5 h-5 transition-transform ${isAdvancedSearch ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+                <span className="text-sm sm:text-base">{isAdvancedSearch ? 'Hide' : 'Show'} Advanced Filters</span>
+              </button>
+              {(searchTerm || Object.values(filters).some(v => v !== '' && v !== 'all')) && (
+                <button
+                  onClick={clearFilters}
+                  className="px-4 py-2 bg-neutral-200 hover:bg-neutral-300 text-neutral-700 rounded-xl font-medium transition-colors text-sm"
+                >
+                  Clear All
+                </button>
+              )}
+            </div>
+
+            {/* Advanced Filters */}
+            {isAdvancedSearch && (
+              <div className="bg-white p-4 sm:p-6 rounded-xl border border-neutral-200 shadow-sm space-y-4 animate-fade-in">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {/* Date Range */}
+                  <div>
+                    <label className="block text-sm font-semibold text-neutral-700 mb-2">From Date</label>
+                    <input
+                      type="date"
+                      value={filters.dateFrom}
+                      onChange={(e) => handleFilterChange('dateFrom', e.target.value)}
+                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-neutral-700 mb-2">To Date</label>
+                    <input
+                      type="date"
+                      value={filters.dateTo}
+                      onChange={(e) => handleFilterChange('dateTo', e.target.value)}
+                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+                    />
+                  </div>
+
+                  {/* Amount Range */}
+                  <div>
+                    <label className="block text-sm font-semibold text-neutral-700 mb-2">Min Amount (₹)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={filters.minAmount}
+                      onChange={(e) => handleFilterChange('minAmount', e.target.value)}
+                      placeholder="0.00"
+                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-neutral-700 mb-2">Max Amount (₹)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={filters.maxAmount}
+                      onChange={(e) => handleFilterChange('maxAmount', e.target.value)}
+                      placeholder="0.00"
+                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+                    />
+                  </div>
+
+                  {/* Type Filter */}
+                  <div>
+                    <label className="block text-sm font-semibold text-neutral-700 mb-2">Payment Type</label>
+                    <select
+                      value={filters.type}
+                      onChange={(e) => handleFilterChange('type', e.target.value)}
+                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+                    >
+                      <option value="all">All Types</option>
+                      <option value={PayType.INCOMING}>Incoming</option>
+                      <option value={PayType.OUTGOING}>Outgoing</option>
+                    </select>
+                  </div>
+
+                  {/* Payment Status Filter */}
+                  <div>
+                    <label className="block text-sm font-semibold text-neutral-700 mb-2">Payment Status</label>
+                    <select
+                      value={filters.payStatus}
+                      onChange={(e) => handleFilterChange('payStatus', e.target.value)}
+                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+                    >
+                      <option value="all">All Status</option>
+                      <option value={PayStatus.PAID}>Paid</option>
+                      <option value={PayStatus.UNPAID}>Unpaid</option>
+                    </select>
+                  </div>
+
+                  {/* Sort Options */}
+                  <div>
+                    <label className="block text-sm font-semibold text-neutral-700 mb-2">Sort By</label>
+                    <select
+                      value={sortBy}
+                      onChange={(e) => setSortBy(e.target.value as 'date' | 'amount' | 'relevance')}
+                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+                    >
+                      <option value="relevance">Relevance</option>
+                      <option value="date">Date</option>
+                      <option value="amount">Amount</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-neutral-700 mb-2">Sort Order</label>
+                    <div className="flex items-center space-x-4 pt-2">
+                      <label className="flex items-center cursor-pointer">
+                        <input
+                          type="radio"
+                          name="sortOrder"
+                          value="desc"
+                          checked={sortOrder === 'desc'}
+                          onChange={(e) => setSortOrder(e.target.value as 'asc' | 'desc')}
+                          className="text-primary-600 focus:ring-primary-500"
+                        />
+                        <span className="ml-2 text-sm text-neutral-700">Descending</span>
+                      </label>
+                      <label className="flex items-center cursor-pointer">
+                        <input
+                          type="radio"
+                          name="sortOrder"
+                          value="asc"
+                          checked={sortOrder === 'asc'}
+                          onChange={(e) => setSortOrder(e.target.value as 'asc' | 'desc')}
+                          className="text-primary-600 focus:ring-primary-500"
+                        />
+                        <span className="ml-2 text-sm text-neutral-700">Ascending</span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Search Error Display */}
+            {searchError && (
+              <div className="mt-4 p-4 bg-error-50 border border-error-200 rounded-xl animate-slide-up">
+                <div className="flex items-center">
+                  <svg className="w-5 h-5 text-error-500 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span className="text-error-700 text-sm flex-1">{searchError}</span>
+                  <button
+                    onClick={() => setSearchError(null)}
+                    className="ml-auto text-error-500 hover:text-error-700 transition-colors"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Search Results Summary */}
+            {hasActiveSearch && (
+              <div className="mt-4 p-4 bg-primary-50 border border-primary-200 rounded-xl">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <svg className="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span className="text-sm sm:text-base font-semibold text-primary-700">
+                      Found {searchResults.length} matching entr{searchResults.length !== 1 ? 'ies' : 'y'}
+                    </span>
+                  </div>
+                  {searchTerm && (
+                    <span className="text-xs sm:text-sm text-primary-600">
+                      for "{searchTerm}"
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Recent Entries / Search Results */}
       <div className="card">
         <div className="p-4 xs:p-6 sm:p-8 border-b border-neutral-200/50">
           <div className="flex flex-col xs:flex-row xs:items-center xs:justify-between gap-3 xs:gap-4">
             <div>
-              <h2 className="text-xl xs:text-2xl sm:text-3xl font-bold font-display text-neutral-900 mb-1 xs:mb-2">Recent Entries</h2>
-              <p className="text-sm xs:text-base text-neutral-600 font-medium">Latest daybook transactions and financial records</p>
+              <h2 className="text-xl xs:text-2xl sm:text-3xl font-bold font-display text-neutral-900 mb-1 xs:mb-2">
+                {hasActiveSearch ? 'Search Results' : 'Recent Entries'}
+              </h2>
+              <p className="text-sm xs:text-base text-neutral-600 font-medium">
+                {hasActiveSearch 
+                  ? `Showing ${displayEntries.length} matching transaction${displayEntries.length !== 1 ? 's' : ''}`
+                  : 'Latest daybook transactions and financial records'
+                }
+              </p>
             </div>
-            <Link
-              to="/search"
-              className="btn-secondary text-xs xs:text-sm flex items-center space-x-2 shadow-glow w-full xs:w-auto justify-center xs:justify-start"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              <span>View All</span>
-            </Link>
+            {!hasActiveSearch && (
+              <Link
+                to="/search"
+                className="btn-secondary text-xs xs:text-sm flex items-center space-x-2 shadow-glow w-full xs:w-auto justify-center xs:justify-start"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <span>Advanced Search Page</span>
+              </Link>
+            )}
           </div>
         </div>
         
         <div className="p-3 xs:p-4 sm:p-6">
-          {entries.length === 0 && !loading ? (
-            <div className="text-center py-8 xs:py-12 sm:py-16">
-              <div className="w-16 h-16 xs:w-20 xs:h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-neutral-100 to-neutral-200 rounded-3xl flex items-center justify-center mx-auto mb-4 xs:mb-6">
-                <svg className="w-8 h-8 xs:w-10 xs:h-10 sm:w-12 sm:h-12 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-              </div>
-              <h3 className="text-base xs:text-lg sm:text-xl font-semibold font-display text-neutral-800 mb-2">No entries yet</h3>
-              <p className="text-sm xs:text-base text-neutral-600 mb-6 xs:mb-8 max-w-sm xs:max-w-md mx-auto px-4">Start managing your finances by creating your first daybook entry. Track income, expenses, and transactions with ease.</p>
-              <div className="flex flex-col xs:flex-row gap-3 xs:gap-4 justify-center px-4">
-                <Link
-                  to="/add"
-                  className="btn-primary flex items-center justify-center space-x-2 text-sm xs:text-base"
-                >
-                  <svg className="w-4 h-4 xs:w-5 xs:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+          {displayEntries.length === 0 && !loading && !searchLoading ? (
+            hasActiveSearch ? (
+              <div className="text-center py-8 xs:py-12 sm:py-16">
+                <div className="w-16 h-16 xs:w-20 xs:h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-neutral-100 to-neutral-200 rounded-3xl flex items-center justify-center mx-auto mb-4 xs:mb-6">
+                  <svg className="w-8 h-8 xs:w-10 xs:h-10 sm:w-12 sm:h-12 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
-                  <span>Create First Entry</span>
-                </Link>
-                <Link
-                  to="/reports"
-                  className="btn-secondary flex items-center justify-center space-x-2 text-sm xs:text-base"
+                </div>
+                <h3 className="text-base xs:text-lg sm:text-xl font-semibold font-display text-neutral-800 mb-2">No results found</h3>
+                <p className="text-sm xs:text-base text-neutral-600 mb-6 xs:mb-8 max-w-sm xs:max-w-md mx-auto px-4">
+                  No entries match your search criteria. Try adjusting your search terms or filters.
+                </p>
+                <button
+                  onClick={clearFilters}
+                  className="btn-primary text-sm xs:text-base"
                 >
-                  <svg className="w-4 h-4 xs:w-5 xs:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                  </svg>
-                  <span>View Reports</span>
-                </Link>
+                  Clear Search
+                </button>
               </div>
-            </div>
+            ) : (
+              <div className="text-center py-8 xs:py-12 sm:py-16">
+                <div className="w-16 h-16 xs:w-20 xs:h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-neutral-100 to-neutral-200 rounded-3xl flex items-center justify-center mx-auto mb-4 xs:mb-6">
+                  <svg className="w-8 h-8 xs:w-10 xs:h-10 sm:w-12 sm:h-12 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+                <h3 className="text-base xs:text-lg sm:text-xl font-semibold font-display text-neutral-800 mb-2">No entries yet</h3>
+                <p className="text-sm xs:text-base text-neutral-600 mb-6 xs:mb-8 max-w-sm xs:max-w-md mx-auto px-4">Start managing your finances by creating your first daybook entry. Track income, expenses, and transactions with ease.</p>
+                <div className="flex flex-col xs:flex-row gap-3 xs:gap-4 justify-center px-4">
+                  <Link
+                    to="/add"
+                    className="btn-primary flex items-center justify-center space-x-2 text-sm xs:text-base"
+                  >
+                    <svg className="w-4 h-4 xs:w-5 xs:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                    <span>Create First Entry</span>
+                  </Link>
+                  <Link
+                    to="/reports"
+                    className="btn-secondary flex items-center justify-center space-x-2 text-sm xs:text-base"
+                  >
+                    <svg className="w-4 h-4 xs:w-5 xs:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                    <span>View Reports</span>
+                  </Link>
+                </div>
+              </div>
+            )
           ) : (
             <DaybookTable 
-              entries={entries} 
+              entries={displayEntries}
               onDelete={openDeleteModal}
-              loading={loading}
+              loading={loading || searchLoading}
+              searchTerm={searchTerm}
             />
           )}
         </div>

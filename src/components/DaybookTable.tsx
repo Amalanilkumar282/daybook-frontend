@@ -9,18 +9,39 @@ interface DaybookTableProps {
   entries: DaybookEntry[];
   loading: boolean;
   onDelete: (id: string) => void;
+  searchTerm?: string;
 }
 
 type SortField = 'created_at' | 'amount' | 'payment_type' | 'tenant';
 type SortDirection = 'asc' | 'desc';
 
-const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete }) => {
+const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete, searchTerm = '' }) => {
   const [sortField, setSortField] = useState<SortField>('created_at');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [nursesMap, setNursesMap] = useState<Map<string, any>>(new Map());
   const [clientsMap, setClientsMap] = useState<Map<string, any>>(new Map());
   const navigate = useNavigate();
   const isAdmin = authUtils.isAdmin();
+
+  // Helper function to highlight search term
+  const highlightText = (text: string | undefined, search: string) => {
+    if (!text || !search.trim()) return text || '';
+    
+    const regex = new RegExp(`(${search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+    const parts = text.split(regex);
+    
+    return (
+      <>
+        {parts.map((part, index) => 
+          regex.test(part) ? (
+            <mark key={index} className="bg-yellow-200 text-neutral-900 px-0.5 rounded font-semibold">{part}</mark>
+          ) : (
+            <span key={index}>{part}</span>
+          )
+        )}
+      </>
+    );
+  };
 
   // Fetch nurses and clients data for displaying names
   useEffect(() => {
@@ -270,16 +291,16 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete 
                 
                 <div className="mb-2 xs:mb-3">
                   <p className="text-xs xs:text-sm text-neutral-900 line-clamp-2">
-                    {entry.description || 'No description'}
+                    {highlightText(entry.description || 'No description', searchTerm)}
                   </p>
                   {entry.client_id && (
                     <p className="text-xs text-neutral-600 mt-1">
-                      <span className="font-medium">Client:</span> {getClientName(entry.client_id)}
+                      <span className="font-medium">Client:</span> {highlightText(getClientName(entry.client_id), searchTerm)}
                     </p>
                   )}
                   {entry.nurse_id && (
                     <p className="text-xs text-neutral-600 mt-1">
-                      <span className="font-medium">Nurse:</span> {getNurseName(entry.nurse_id)}
+                      <span className="font-medium">Nurse:</span> {highlightText(getNurseName(entry.nurse_id), searchTerm)}
                     </p>
                   )}
                   {entry.receipt && (
@@ -515,20 +536,20 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete 
                       <td className="table-cell">
                         <div className="max-w-xs">
                           <div className="font-medium text-neutral-900 truncate" title={entry.description || 'No description'}>
-                            {entry.description || 'No description'}
+                            {highlightText(entry.description || 'No description', searchTerm)}
                           </div>
                         </div>
                       </td>
                       <td className="table-cell">
                         {entry.client_id && (
                           <div className="text-sm text-neutral-700">
-                            <div className="font-medium">{getClientName(entry.client_id)}</div>
+                            <div className="font-medium">{highlightText(getClientName(entry.client_id), searchTerm)}</div>
                             <div className="text-xs text-neutral-500">Client</div>
                           </div>
                         )}
                         {entry.nurse_id && (
                           <div className="text-sm text-neutral-700">
-                            <div className="font-medium">{getNurseName(entry.nurse_id)}</div>
+                            <div className="font-medium">{highlightText(getNurseName(entry.nurse_id), searchTerm)}</div>
                             <div className="text-xs text-neutral-500">Nurse</div>
                           </div>
                         )}
