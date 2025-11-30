@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { DaybookFormData, DaybookEntry, PayType, PayStatus, ModeOfPay, Tenant } from '../types/daybook';
+import { DaybookFormData, DaybookEntry, PayType, PayStatus, ModeOfPay, Tenant, PaymentTypeSpecific } from '../types/daybook';
 import { authUtils, nursesClientsApi } from '../services/api';
 import AutocompleteSelect, { AutocompleteOption } from './AutocompleteSelect';
 
@@ -28,6 +28,8 @@ const DaybookForm: React.FC<DaybookFormProps> = ({
     mode_of_pay: ModeOfPay.CASH,
     tenant: currentUser?.tenant || Tenant.TATA_NURSING,
     description: '',
+    payment_type_specific: undefined,
+    payment_description: '',
     nurse_id: '',
     client_id: '',
   });
@@ -115,6 +117,8 @@ const DaybookForm: React.FC<DaybookFormProps> = ({
         mode_of_pay: initialData.mode_of_pay || ModeOfPay.CASH,
         tenant: initialData.tenant,
         description: initialData.description || '',
+        payment_type_specific: initialData.payment_type_specific || undefined,
+        payment_description: initialData.payment_description || '',
         nurse_id: initialData.nurse_id || '',
         client_id: initialData.client_id || '',
       });
@@ -171,6 +175,8 @@ const DaybookForm: React.FC<DaybookFormProps> = ({
         mode_of_pay: formData.mode_of_pay,
         tenant: isAdmin ? formData.tenant : (currentUser?.tenant || formData.tenant),
         description: formData.description || undefined,
+        payment_type_specific: formData.payment_type_specific || undefined,
+        payment_description: formData.payment_description || undefined,
         receipt: receiptFile || undefined,
       };
 
@@ -204,6 +210,8 @@ const DaybookForm: React.FC<DaybookFormProps> = ({
       mode_of_pay: ModeOfPay.CASH,
       tenant: currentUser?.tenant || Tenant.TATA_NURSING,
       description: '',
+      payment_type_specific: undefined,
+      payment_description: '',
       nurse_id: '',
       client_id: '',
     });
@@ -334,14 +342,73 @@ const DaybookForm: React.FC<DaybookFormProps> = ({
           </div>
         </div>
 
-        {/* Tenant - show only for admin */}
-        {isAdmin && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 lg:gap-6">
+          {/* Payment Type Specific */}
           <div>
-            <label htmlFor="tenant" className="block text-sm font-medium text-dark-700 mb-2">
+            <label htmlFor="payment_type_specific" className="block text-sm font-medium text-dark-700 mb-2">
+              Payment Category
+            </label>
+            <select
+              id="payment_type_specific"
+              value={formData.payment_type_specific || ''}
+              onChange={(e) => handleInputChange('payment_type_specific', e.target.value as PaymentTypeSpecific)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            >
+              <option value="">Select Category (Optional)</option>
+              <option value={PaymentTypeSpecific.CLIENT_PAYMENT_RECEIVED}>Client Payment Received</option>
+              <option value={PaymentTypeSpecific.NURSE_SALARY_PAID}>Nurse Salary Paid</option>
+              <option value={PaymentTypeSpecific.OFFICE_EXPENSES_PAID}>Office Expenses Paid</option>
+              <option value={PaymentTypeSpecific.STUDENT_FEE_RECEIVED}>Student Fee Received</option>
+            </select>
+          </div>
+
+          {/* Tenant - show only for admin */}
+          {isAdmin && (
+            <div>
+              <label htmlFor="tenant" className="block text-sm font-medium text-dark-700 mb-2">
+                Tenant *
+              </label>
+              <select
+                id="tenant"
+                value={formData.tenant}
+                onChange={(e) => handleInputChange('tenant', e.target.value as Tenant)}
+                className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
+                  errors.tenant ? 'border-red-500' : 'border-gray-300'
+                }`}
+              >
+                <option value={Tenant.TATA_NURSING}>TATA Nursing</option>
+                <option value={Tenant.DEARCARE}>Dearcare</option>
+                <option value={Tenant.DEARCARE_ACADEMY}>Dearcare Academy</option>
+              </select>
+              {errors.tenant && <p className="mt-1 text-sm text-red-600">{errors.tenant}</p>}
+            </div>
+          )}
+        </div>
+
+        {/* Payment Description */}
+        <div>
+          <label htmlFor="payment_description" className="block text-sm font-medium text-dark-700 mb-2">
+            Payment Description
+          </label>
+          <textarea
+            id="payment_description"
+            rows={2}
+            value={formData.payment_description || ''}
+            onChange={(e) => handleInputChange('payment_description', e.target.value)}
+            placeholder="Detailed payment description (optional)"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+          />
+          <p className="mt-1 text-xs text-gray-500">Provide additional context about this payment</p>
+        </div>
+
+        {/* Tenant - show only for admin when not already shown */}
+        {isAdmin && (
+          <div className="sm:hidden">
+            <label htmlFor="tenant_mobile" className="block text-sm font-medium text-dark-700 mb-2">
               Tenant *
             </label>
             <select
-              id="tenant"
+              id="tenant_mobile"
               value={formData.tenant}
               onChange={(e) => handleInputChange('tenant', e.target.value as Tenant)}
               className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${

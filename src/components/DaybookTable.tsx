@@ -9,18 +9,39 @@ interface DaybookTableProps {
   entries: DaybookEntry[];
   loading: boolean;
   onDelete: (id: string) => void;
+  searchTerm?: string;
 }
 
 type SortField = 'created_at' | 'amount' | 'payment_type' | 'tenant';
 type SortDirection = 'asc' | 'desc';
 
-const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete }) => {
+const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete, searchTerm = '' }) => {
   const [sortField, setSortField] = useState<SortField>('created_at');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [nursesMap, setNursesMap] = useState<Map<string, any>>(new Map());
   const [clientsMap, setClientsMap] = useState<Map<string, any>>(new Map());
   const navigate = useNavigate();
   const isAdmin = authUtils.isAdmin();
+
+  // Helper function to highlight search term
+  const highlightText = (text: string | undefined, search: string) => {
+    if (!text || !search.trim()) return text || '';
+    
+    const regex = new RegExp(`(${search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+    const parts = text.split(regex);
+    
+    return (
+      <>
+        {parts.map((part, index) => 
+          regex.test(part) ? (
+            <mark key={index} className="bg-yellow-200 text-neutral-900 px-0.5 rounded font-semibold">{part}</mark>
+          ) : (
+            <span key={index}>{part}</span>
+          )
+        )}
+      </>
+    );
+  };
 
   // Fetch nurses and clients data for displaying names
   useEffect(() => {
@@ -270,16 +291,16 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete 
                 
                 <div className="mb-2 xs:mb-3">
                   <p className="text-xs xs:text-sm text-neutral-900 line-clamp-2">
-                    {entry.description || 'No description'}
+                    {highlightText(entry.description || 'No description', searchTerm)}
                   </p>
                   {entry.client_id && (
                     <p className="text-xs text-neutral-600 mt-1">
-                      <span className="font-medium">Client:</span> {getClientName(entry.client_id)}
+                      <span className="font-medium">Client:</span> {highlightText(getClientName(entry.client_id), searchTerm)}
                     </p>
                   )}
                   {entry.nurse_id && (
                     <p className="text-xs text-neutral-600 mt-1">
-                      <span className="font-medium">Nurse:</span> {getNurseName(entry.nurse_id)}
+                      <span className="font-medium">Nurse:</span> {highlightText(getNurseName(entry.nurse_id), searchTerm)}
                     </p>
                   )}
                   {entry.receipt && (
@@ -382,9 +403,6 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete 
               <table className="min-w-full divide-y divide-neutral-200/50">
                 <thead className="bg-gradient-to-r from-neutral-50/90 to-neutral-100/90 backdrop-blur-sm sticky top-0 z-10">
                   <tr>
-                    <th className="table-header text-center w-32">
-                      Actions
-                    </th>
                     <th
                       className="table-header cursor-pointer hover:bg-neutral-100 transition-colors"
                       onClick={() => handleSort('created_at')}
@@ -438,6 +456,9 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete 
                     <th className="table-header text-center">
                       Receipt
                     </th>
+                    <th className="table-header text-center w-32">
+                      Actions
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-neutral-100 bg-white/80">
@@ -447,6 +468,85 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete 
                       className="table-row cursor-pointer hover:bg-blue-50/30"
                       onClick={() => navigate(`/view/${entry.id}`)}
                     >
+                      <td className="table-cell font-medium">
+                        <div className="flex flex-col">
+                          <span className="text-neutral-900">{formatDate(entry.created_at)}</span>
+                          <span className="text-xs text-neutral-500">{new Date(entry.created_at).toLocaleDateString('en-US', { weekday: 'short' })}</span>
+                        </div>
+                      </td>
+                      {isAdmin && (
+                        <td className="table-cell">
+                          <div className="modern-badge from-blue-100 to-blue-200 text-blue-800 border-blue-300/50">
+                            {entry.tenant}
+                          </div>
+                        </td>
+                      )}
+                      <td className="table-cell">
+                        <div className={getPaymentTypeColor(entry.payment_type)}>
+                          <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            {entry.payment_type === PayType.INCOMING ? (
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                            ) : (
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+                            )}
+                          </svg>
+                          {entry.payment_type.toUpperCase()}
+                        </div>
+                      </td>
+                      <td className="table-cell text-right">
+                        <div className="font-semibold text-neutral-900">
+                          {formatCurrency(entry.amount)}
+                        </div>
+                      </td>
+                      <td className="table-cell">
+                        <div className="max-w-xs">
+                          <div className="font-medium text-neutral-900 truncate" title={entry.description || 'No description'}>
+                            {highlightText(entry.description || 'No description', searchTerm)}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="table-cell">
+                        {entry.client_id && (
+                          <div className="text-sm text-neutral-700">
+                            <div className="font-medium">{highlightText(getClientName(entry.client_id), searchTerm)}</div>
+                            <div className="text-xs text-neutral-500">Client</div>
+                          </div>
+                        )}
+                        {entry.nurse_id && (
+                          <div className="text-sm text-neutral-700">
+                            <div className="font-medium">{highlightText(getNurseName(entry.nurse_id), searchTerm)}</div>
+                            <div className="text-xs text-neutral-500">Nurse</div>
+                          </div>
+                        )}
+                        {!entry.client_id && !entry.nurse_id && (
+                          <span className="text-neutral-400 text-sm">-</span>
+                        )}
+                      </td>
+                      <td className="table-cell text-center">
+                        <div className={getPaymentStatusColor(entry.pay_status)}>
+                          {entry.pay_status ? entry.pay_status.replace('_', ' ').toUpperCase() : 'N/A'}
+                        </div>
+                      </td>
+                      <td className="table-cell text-center">
+                        <span className="text-neutral-600 text-sm capitalize">
+                          {entry.mode_of_pay ? entry.mode_of_pay.replace('_', ' ') : 'N/A'}
+                        </span>
+                      </td>
+                      <td className="table-cell text-center">
+                        {entry.receipt ? (
+                          <a 
+                            href={entry.receipt} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="text-blue-600 hover:text-blue-700 text-sm underline"
+                          >
+                            View
+                          </a>
+                        ) : (
+                          <span className="text-neutral-400 text-sm">-</span>
+                        )}
+                      </td>
                       <td className="table-cell text-center" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-center space-x-1">
                           <Link
@@ -481,85 +581,6 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete 
                             </svg>
                           </button>
                         </div>
-                      </td>
-                      <td className="table-cell font-medium">
-                        <div className="flex flex-col">
-                          <span className="text-neutral-900">{formatDate(entry.created_at)}</span>
-                          <span className="text-xs text-neutral-500">{new Date(entry.created_at).toLocaleDateString('en-US', { weekday: 'short' })}</span>
-                        </div>
-                      </td>
-                      {isAdmin && (
-                        <td className="table-cell">
-                          <div className="modern-badge from-blue-100 to-blue-200 text-blue-800 border-blue-300/50">
-                            {entry.tenant}
-                          </div>
-                        </td>
-                      )}
-                      <td className="table-cell">
-                        <div className={getPaymentTypeColor(entry.payment_type)}>
-                          <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            {entry.payment_type === PayType.INCOMING ? (
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                            ) : (
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
-                            )}
-                          </svg>
-                          {entry.payment_type.toUpperCase()}
-                        </div>
-                      </td>
-                      <td className="table-cell text-right">
-                        <div className="font-semibold text-neutral-900">
-                          {formatCurrency(entry.amount)}
-                        </div>
-                      </td>
-                      <td className="table-cell">
-                        <div className="max-w-xs">
-                          <div className="font-medium text-neutral-900 truncate" title={entry.description || 'No description'}>
-                            {entry.description || 'No description'}
-                          </div>
-                        </div>
-                      </td>
-                      <td className="table-cell">
-                        {entry.client_id && (
-                          <div className="text-sm text-neutral-700">
-                            <div className="font-medium">{getClientName(entry.client_id)}</div>
-                            <div className="text-xs text-neutral-500">Client</div>
-                          </div>
-                        )}
-                        {entry.nurse_id && (
-                          <div className="text-sm text-neutral-700">
-                            <div className="font-medium">{getNurseName(entry.nurse_id)}</div>
-                            <div className="text-xs text-neutral-500">Nurse</div>
-                          </div>
-                        )}
-                        {!entry.client_id && !entry.nurse_id && (
-                          <span className="text-neutral-400 text-sm">-</span>
-                        )}
-                      </td>
-                      <td className="table-cell text-center">
-                        <div className={getPaymentStatusColor(entry.pay_status)}>
-                          {entry.pay_status ? entry.pay_status.replace('_', ' ').toUpperCase() : 'N/A'}
-                        </div>
-                      </td>
-                      <td className="table-cell text-center">
-                        <span className="text-neutral-600 text-sm capitalize">
-                          {entry.mode_of_pay ? entry.mode_of_pay.replace('_', ' ') : 'N/A'}
-                        </span>
-                      </td>
-                      <td className="table-cell text-center">
-                        {entry.receipt ? (
-                          <a 
-                            href={entry.receipt} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            onClick={(e) => e.stopPropagation()}
-                            className="text-blue-600 hover:text-blue-700 text-sm underline"
-                          >
-                            View
-                          </a>
-                        ) : (
-                          <span className="text-neutral-400 text-sm">-</span>
-                        )}
                       </td>
                     </tr>
                   ))}
