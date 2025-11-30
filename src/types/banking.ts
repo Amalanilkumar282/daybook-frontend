@@ -25,6 +25,7 @@ export interface BankAccount {
   ifsc?: string | null;
   branch?: string | null;
   balance: number;
+  current_balance?: number; // Some endpoints return this instead
   tenant?: string | null;
   created_at: string;
   updated_at: string;

@@ -49,6 +49,9 @@ export interface DaybookEntry {
   nurse_id?: string | null;
   client_id?: string | null;
   receipt?: string | null;
+  bank_account_id?: number | null;  // Link to bank account (frontend uses this)
+  account_id?: number | null;        // Backend might return this instead
+  affects_bank_balance?: boolean;   // Whether this entry should update bank balance
 }
 
 export interface DaybookFormData {
@@ -63,6 +66,8 @@ export interface DaybookFormData {
   nurse_id?: string;
   client_id?: string;
   receipt?: File;
+  bank_account_id?: number;        // Link to bank account
+  affects_bank_balance?: boolean;   // Whether this entry should update bank balance
 }
 
 // Authentication interfaces

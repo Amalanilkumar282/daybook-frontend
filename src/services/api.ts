@@ -252,6 +252,13 @@ export const daybookApi = {
       console.log('Token tenant:', tokenPayload?.tenant || tokenPayload?.user_metadata?.tenant);
       console.log('Tenant to use:', tenantToUse);
       
+      // Store bank account data for later use
+      const shouldCreateBankTransaction = data.bank_account_id && data.affects_bank_balance === true;
+      const bankAccountId = data.bank_account_id;
+      const amount = data.amount;
+      const paymentType = data.payment_type;
+      const description = data.description;
+      
       // If receipt file is present, use multipart/form-data
       if (data.receipt) {
         const formData = new FormData();
@@ -268,6 +275,9 @@ export const daybookApi = {
         // Only add IDs if they exist and are not empty
         if (data.nurse_id && data.nurse_id.trim() !== '') formData.append('nurse_id', data.nurse_id.trim());
         if (data.client_id && data.client_id.trim() !== '') formData.append('client_id', data.client_id.trim());
+        // Add bank account fields - backend expects 'account_id'
+        if (data.bank_account_id) formData.append('account_id', data.bank_account_id.toString());
+        if (data.affects_bank_balance !== undefined) formData.append('affects_bank_balance', data.affects_bank_balance.toString());
         formData.append('receipt', data.receipt);
 
         console.log('Form data keys:', Array.from(formData.keys()));
@@ -276,6 +286,8 @@ export const daybookApi = {
           const value = formData.get(key);
           console.log(`  ${key}:`, value instanceof File ? 'FILE' : value);
         });
+        console.log('Bank Account ID:', data.bank_account_id);
+        console.log('Affects Bank Balance:', data.affects_bank_balance);
         
         // Send FormData with proper headers (let browser set Content-Type with boundary)
         const response = await api.post('/daybook/create', formData, {
@@ -283,7 +295,45 @@ export const daybookApi = {
             'Content-Type': 'multipart/form-data',
           },
         });
-        return response.data.data || response.data;
+        const createdEntry = response.data.data || response.data;
+        
+        // ⭐ Create corresponding bank transaction if needed
+        if (shouldCreateBankTransaction && bankAccountId) {
+          console.log('=== CREATING BANK TRANSACTION ===');
+          console.log('Account ID:', bankAccountId);
+          console.log('Amount:', amount);
+          console.log('Type:', paymentType === 'incoming' ? 'deposit' : 'withdraw');
+          
+          try {
+            if (paymentType === 'incoming') {
+              // Create deposit transaction
+              await bankingApi.deposit({
+                account_id: bankAccountId,
+                amount: amount,
+                description: description || `Daybook Entry #${createdEntry.id}`,
+                reference: `DAYBOOK-${createdEntry.id}`,
+                tenant: tenantToUse,
+              });
+              console.log('✅ Deposit transaction created successfully');
+            } else {
+              // Create withdrawal transaction
+              await bankingApi.withdraw({
+                account_id: bankAccountId,
+                amount: amount,
+                description: description || `Daybook Entry #${createdEntry.id}`,
+                reference: `DAYBOOK-${createdEntry.id}`,
+                tenant: tenantToUse,
+              });
+              console.log('✅ Withdrawal transaction created successfully');
+            }
+          } catch (bankError: any) {
+            console.error('⚠️ Failed to create bank transaction:', bankError);
+            // Don't fail the whole operation, just log the error
+            console.warn('Daybook entry created but bank transaction failed. You may need to create it manually.');
+          }
+        }
+        
+        return createdEntry;
       } else {
         // Use JSON for non-file uploads
         const payload: any = {
@@ -301,11 +351,54 @@ export const daybookApi = {
         // Only add IDs if they exist and are not empty
         if (data.nurse_id && data.nurse_id.trim() !== '') payload.nurse_id = data.nurse_id.trim();
         if (data.client_id && data.client_id.trim() !== '') payload.client_id = data.client_id.trim();
+        // Add bank account fields - backend expects 'account_id'
+        if (data.bank_account_id) payload.account_id = data.bank_account_id;
+        if (data.affects_bank_balance !== undefined) payload.affects_bank_balance = data.affects_bank_balance;
 
         console.log('Creating entry (JSON):', payload);
+        console.log('Bank Account ID type:', typeof data.bank_account_id, 'value:', data.bank_account_id);
+        console.log('Affects Bank Balance:', data.affects_bank_balance);
 
         const response = await api.post('/daybook/create', payload);
-        return response.data.data || response.data;
+        const createdEntry = response.data.data || response.data;
+        
+        // ⭐ Create corresponding bank transaction if needed
+        if (shouldCreateBankTransaction && bankAccountId) {
+          console.log('=== CREATING BANK TRANSACTION ===');
+          console.log('Account ID:', bankAccountId);
+          console.log('Amount:', amount);
+          console.log('Type:', paymentType === 'incoming' ? 'deposit' : 'withdraw');
+          
+          try {
+            if (paymentType === 'incoming') {
+              // Create deposit transaction
+              await bankingApi.deposit({
+                account_id: bankAccountId,
+                amount: amount,
+                description: description || `Daybook Entry #${createdEntry.id}`,
+                reference: `DAYBOOK-${createdEntry.id}`,
+                tenant: tenantToUse,
+              });
+              console.log('✅ Deposit transaction created successfully');
+            } else {
+              // Create withdrawal transaction
+              await bankingApi.withdraw({
+                account_id: bankAccountId,
+                amount: amount,
+                description: description || `Daybook Entry #${createdEntry.id}`,
+                reference: `DAYBOOK-${createdEntry.id}`,
+                tenant: tenantToUse,
+              });
+              console.log('✅ Withdrawal transaction created successfully');
+            }
+          } catch (bankError: any) {
+            console.error('⚠️ Failed to create bank transaction:', bankError);
+            // Don't fail the whole operation, just log the error
+            console.warn('Daybook entry created but bank transaction failed. You may need to create it manually.');
+          }
+        }
+        
+        return createdEntry;
       }
     } catch (error: any) {
       console.error('=== CREATE ENTRY ERROR ===');
@@ -341,6 +434,9 @@ export const daybookApi = {
         if (data.payment_description) formData.append('payment_description', data.payment_description);
         if (data.nurse_id) formData.append('nurse_id', data.nurse_id);
         if (data.client_id) formData.append('client_id', data.client_id);
+        // Add bank account fields - backend expects 'account_id'
+        if (data.bank_account_id) formData.append('account_id', data.bank_account_id.toString());
+        if (data.affects_bank_balance !== undefined) formData.append('affects_bank_balance', data.affects_bank_balance.toString());
         formData.append('receipt', data.receipt);
 
         // Send FormData with proper headers (let browser set Content-Type with boundary)
@@ -357,6 +453,9 @@ export const daybookApi = {
         if (tenantToUse) {
           payload.tenant = tenantToUse;
         }
+        // Add bank account fields - backend expects 'account_id'
+        if (data.bank_account_id) payload.account_id = data.bank_account_id;
+        if (data.affects_bank_balance !== undefined) payload.affects_bank_balance = data.affects_bank_balance;
         
         const response = await api.put(`/daybook/update/${id}`, payload);
         return response.data.data || response.data;
