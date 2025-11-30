@@ -12,6 +12,8 @@ import ViewEntry from './pages/ViewEntry';
 import SearchPage from './pages/SearchPage';
 import ReportsPage from './pages/ReportsPage';
 import PersonalFinance from './pages/PersonalFinance';
+import BankAccounts from './pages/BankAccounts';
+import BankTransactions from './pages/BankTransactions';
 import DebugAuth from './pages/DebugAuth';
 import NotFound from './pages/NotFound';
 import { authUtils } from './services/api';
@@ -98,6 +100,16 @@ function App() {
               <Route path="/personal-finance" element={
                 <ProtectedRoute>
                   <PersonalFinance />
+                </ProtectedRoute>
+              } />
+              <Route path="/banking/accounts" element={
+                <ProtectedRoute>
+                  <BankAccounts />
+                </ProtectedRoute>
+              } />
+              <Route path="/banking/transactions" element={
+                <ProtectedRoute>
+                  <BankTransactions />
                 </ProtectedRoute>
               } />
               <Route path="/debug-auth" element={

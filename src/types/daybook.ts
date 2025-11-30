@@ -15,6 +15,13 @@ export enum ModeOfPay {
   ACCOUNT_TRANSFER = 'account_transfer'
 }
 
+export enum PaymentTypeSpecific {
+  CLIENT_PAYMENT_RECEIVED = 'client_payment_received',
+  NURSE_SALARY_PAID = 'nurse_salary_paid',
+  OFFICE_EXPENSES_PAID = 'office_expenses_paid',
+  STUDENT_FEE_RECEIVED = 'student_fee_received'
+}
+
 export enum Tenant {
   TATA_NURSING = 'TATANursing',
   DEARCARE = 'Dearcare',
@@ -36,6 +43,8 @@ export interface DaybookEntry {
   pay_status: PayStatus | null;
   description?: string | null;
   mode_of_pay: ModeOfPay | null;
+  payment_type_specific?: PaymentTypeSpecific | null;
+  payment_description?: string | null;
   tenant: Tenant;
   nurse_id?: string | null;
   client_id?: string | null;
@@ -49,6 +58,8 @@ export interface DaybookFormData {
   mode_of_pay: ModeOfPay;
   tenant: Tenant;
   description?: string;
+  payment_type_specific?: PaymentTypeSpecific;
+  payment_description?: string;
   nurse_id?: string;
   client_id?: string;
   receipt?: File;

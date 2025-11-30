@@ -18,6 +18,16 @@ import {
   PersonalEntry,
   PersonalEntryFormData
 } from '../types/personal';
+import {
+  BankAccount,
+  BankAccountFormData,
+  BankTransaction,
+  DepositFormData,
+  WithdrawFormData,
+  TransferFormData,
+  ChequeFormData,
+  TransactionType
+} from '../types/banking';
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://day-book-backend.vercel.app/api';
 
@@ -253,6 +263,8 @@ export const daybookApi = {
         
         if (data.mode_of_pay) formData.append('mode_of_pay', data.mode_of_pay);
         if (data.description) formData.append('description', data.description);
+        if (data.payment_type_specific) formData.append('payment_type_specific', data.payment_type_specific);
+        if (data.payment_description) formData.append('payment_description', data.payment_description);
         // Only add IDs if they exist and are not empty
         if (data.nurse_id && data.nurse_id.trim() !== '') formData.append('nurse_id', data.nurse_id.trim());
         if (data.client_id && data.client_id.trim() !== '') formData.append('client_id', data.client_id.trim());
@@ -284,6 +296,8 @@ export const daybookApi = {
         
         if (data.mode_of_pay) payload.mode_of_pay = data.mode_of_pay;
         if (data.description) payload.description = data.description;
+        if (data.payment_type_specific) payload.payment_type_specific = data.payment_type_specific;
+        if (data.payment_description) payload.payment_description = data.payment_description;
         // Only add IDs if they exist and are not empty
         if (data.nurse_id && data.nurse_id.trim() !== '') payload.nurse_id = data.nurse_id.trim();
         if (data.client_id && data.client_id.trim() !== '') payload.client_id = data.client_id.trim();
@@ -323,6 +337,8 @@ export const daybookApi = {
         if (tenantToUse) formData.append('tenant', tenantToUse);
         if (data.mode_of_pay) formData.append('mode_of_pay', data.mode_of_pay);
         if (data.description) formData.append('description', data.description);
+        if (data.payment_type_specific) formData.append('payment_type_specific', data.payment_type_specific);
+        if (data.payment_description) formData.append('payment_description', data.payment_description);
         if (data.nurse_id) formData.append('nurse_id', data.nurse_id);
         if (data.client_id) formData.append('client_id', data.client_id);
         formData.append('receipt', data.receipt);
@@ -946,6 +962,201 @@ export const personalFinanceApi = {
       return new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     } catch (error: any) {
       throw new Error(error.message || 'Failed to export personal finance data');
+    }
+  }
+};
+
+// Banking API - Complete CRUD operations for bank accounts and transactions
+export const bankingApi = {
+  // ==================== Bank Accounts ====================
+  
+  // Create new bank account
+  createAccount: async (data: BankAccountFormData): Promise<BankAccount> => {
+    try {
+      const response = await api.post('/banking/accounts/create', data);
+      return response.data.data || response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.error || error.response?.data?.message || 'Failed to create bank account');
+    }
+  },
+
+  // Get all bank accounts
+  getAllAccounts: async (): Promise<BankAccount[]> => {
+    try {
+      const response = await api.get('/banking/accounts/list');
+      return Array.isArray(response.data) ? response.data : (response.data.data || []);
+    } catch (error: any) {
+      throw new Error(error.response?.data?.error || error.response?.data?.message || 'Failed to fetch bank accounts');
+    }
+  },
+
+  // Get bank account by ID
+  getAccountById: async (id: number): Promise<BankAccount> => {
+    try {
+      const response = await api.get(`/banking/accounts/${id}`);
+      return response.data.data || response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.error || error.response?.data?.message || 'Failed to fetch bank account');
+    }
+  },
+
+  // Get account balance
+  getAccountBalance: async (id: number): Promise<number> => {
+    try {
+      const response = await api.get(`/banking/accounts/${id}/balance`);
+      return response.data.balance;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.error || error.response?.data?.message || 'Failed to fetch account balance');
+    }
+  },
+
+  // Update bank account
+  updateAccount: async (id: number, data: Partial<BankAccountFormData>): Promise<BankAccount> => {
+    try {
+      const response = await api.put(`/banking/accounts/update/${id}`, data);
+      return response.data.data || response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.error || error.response?.data?.message || 'Failed to update bank account');
+    }
+  },
+
+  // Delete bank account
+  deleteAccount: async (id: number): Promise<void> => {
+    try {
+      await api.delete(`/banking/accounts/delete/${id}`);
+    } catch (error: any) {
+      throw new Error(error.response?.data?.error || error.response?.data?.message || 'Failed to delete bank account');
+    }
+  },
+
+  // ==================== Transactions ====================
+
+  // Deposit money to account
+  deposit: async (data: DepositFormData): Promise<BankTransaction> => {
+    try {
+      const response = await api.post('/banking/transactions/deposit', data);
+      return response.data.data || response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.error || error.response?.data?.message || 'Failed to deposit money');
+    }
+  },
+
+  // Withdraw money from account
+  withdraw: async (data: WithdrawFormData): Promise<BankTransaction> => {
+    try {
+      const response = await api.post('/banking/transactions/withdraw', data);
+      return response.data.data || response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.error || error.response?.data?.message || 'Failed to withdraw money');
+    }
+  },
+
+  // Transfer money between accounts
+  transfer: async (data: TransferFormData): Promise<BankTransaction> => {
+    try {
+      const response = await api.post('/banking/transactions/transfer', data);
+      return response.data.data || response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.error || error.response?.data?.message || 'Failed to transfer money');
+    }
+  },
+
+  // Issue cheque
+  issueCheque: async (data: ChequeFormData): Promise<BankTransaction> => {
+    try {
+      const response = await api.post('/banking/transactions/cheque', data);
+      return response.data.data || response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.error || error.response?.data?.message || 'Failed to issue cheque');
+    }
+  },
+
+  // Get all transactions
+  getAllTransactions: async (): Promise<BankTransaction[]> => {
+    try {
+      const response = await api.get('/banking/transactions/list');
+      return Array.isArray(response.data) ? response.data : (response.data.data || []);
+    } catch (error: any) {
+      throw new Error(error.response?.data?.error || error.response?.data?.message || 'Failed to fetch transactions');
+    }
+  },
+
+  // Get transaction by ID
+  getTransactionById: async (id: number): Promise<BankTransaction> => {
+    try {
+      const response = await api.get(`/banking/transactions/${id}`);
+      return response.data.data || response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.error || error.response?.data?.message || 'Failed to fetch transaction');
+    }
+  },
+
+  // Get transactions for a specific account
+  getTransactionsByAccount: async (accountId: number): Promise<BankTransaction[]> => {
+    try {
+      const response = await api.get(`/banking/transactions/account/${accountId}`);
+      return Array.isArray(response.data) ? response.data : (response.data.data || []);
+    } catch (error: any) {
+      throw new Error(error.response?.data?.error || error.response?.data?.message || 'Failed to fetch account transactions');
+    }
+  },
+
+  // Get transactions by type
+  getTransactionsByType: async (type: TransactionType): Promise<BankTransaction[]> => {
+    try {
+      const response = await api.get(`/banking/transactions/type/${type}`);
+      return Array.isArray(response.data) ? response.data : (response.data.data || []);
+    } catch (error: any) {
+      throw new Error(error.response?.data?.error || error.response?.data?.message || 'Failed to fetch transactions by type');
+    }
+  },
+
+  // Get transactions by date range
+  getTransactionsByDateRange: async (startDate: string, endDate: string): Promise<BankTransaction[]> => {
+    try {
+      const response = await api.get(`/banking/transactions/date-range?start_date=${startDate}&end_date=${endDate}`);
+      return Array.isArray(response.data) ? response.data : (response.data.data || []);
+    } catch (error: any) {
+      throw new Error(error.response?.data?.error || error.response?.data?.message || 'Failed to fetch transactions by date range');
+    }
+  },
+
+  // Export transactions to CSV (client-side)
+  exportTransactionsToCsv: async (): Promise<Blob> => {
+    try {
+      const transactions = await bankingApi.getAllTransactions();
+      const accounts = await bankingApi.getAllAccounts();
+      
+      // Create a map for quick account lookup
+      const accountMap = new Map(accounts.map(acc => [acc.id, acc]));
+      
+      const headers = ['ID', 'Date', 'Type', 'Amount', 'Account', 'From Account', 'To Account', 'Cheque Number', 'Reference', 'Description', 'Status'];
+      const csvContent = [
+        headers.join(','),
+        ...transactions.map(txn => {
+          const account = accountMap.get(txn.bank_account_id);
+          const fromAccount = txn.from_account_id ? accountMap.get(txn.from_account_id) : null;
+          const toAccount = txn.to_account_id ? accountMap.get(txn.to_account_id) : null;
+          
+          return [
+            txn.id.toString(),
+            txn.created_at,
+            txn.transaction_type,
+            txn.amount.toString(),
+            account?.account_name || '',
+            fromAccount?.account_name || '',
+            toAccount?.account_name || '',
+            txn.cheque_number || '',
+            txn.reference || '',
+            `"${txn.description || ''}"`,
+            txn.status
+          ].join(',');
+        })
+      ].join('\n');
+      
+      return new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    } catch (error: any) {
+      throw new Error(error.message || 'Failed to export transactions');
     }
   }
 };
