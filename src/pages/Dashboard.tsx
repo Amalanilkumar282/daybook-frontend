@@ -115,14 +115,7 @@ const Dashboard: React.FC = () => {
     fetchData();
   }, [fetchData]);
 
-  // Perform search when search criteria change
-  useEffect(() => {
-    if (isSearchExpanded) {
-      performSearch();
-    }
-  }, [searchTerm, filters, sortBy, sortOrder, isSearchExpanded]);
-
-  const performSearch = async () => {
+  const performSearch = useCallback(async () => {
     try {
       // If no search criteria, clear results
       if (searchTerm.trim() === '' && Object.values(filters).every(value => value === '' || value === 'all')) {
@@ -197,7 +190,14 @@ const Dashboard: React.FC = () => {
     } finally {
       setSearchLoading(false);
     }
-  };
+  }, [searchTerm, filters, sortBy, sortOrder, entries]);
+
+  // Perform search when search criteria change
+  useEffect(() => {
+    if (isSearchExpanded) {
+      performSearch();
+    }
+  }, [isSearchExpanded, performSearch]);
 
   const handleFilterChange = (field: string, value: string) => {
     setFilters(prev => ({ ...prev, [field]: value }));
