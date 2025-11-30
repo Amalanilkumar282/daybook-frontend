@@ -3,7 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { DaybookEntry, PayType, PayStatus } from '../types/daybook';
 import Pagination from './Pagination';
 import { usePagination } from '../hooks/usePagination';
-import { authUtils, nursesClientsApi } from '../services/api';
+import { authUtils, nursesClientsApi, bankingApi } from '../services/api';
+import { BankAccount } from '../types/banking';
 
 interface DaybookTableProps {
   entries: DaybookEntry[];
@@ -20,6 +21,7 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete,
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [nursesMap, setNursesMap] = useState<Map<string, any>>(new Map());
   const [clientsMap, setClientsMap] = useState<Map<string, any>>(new Map());
+  const [bankAccountsMap, setBankAccountsMap] = useState<Map<number, BankAccount>>(new Map());
   const navigate = useNavigate();
   const isAdmin = authUtils.isAdmin();
 
@@ -47,19 +49,22 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete,
   useEffect(() => {
     const fetchNursesAndClients = async () => {
       try {
-        const [nurses, clients] = await Promise.all([
+        const [nurses, clients, bankAccounts] = await Promise.all([
           nursesClientsApi.getNurses().catch(() => []),
-          nursesClientsApi.getClients().catch(() => [])
+          nursesClientsApi.getClients().catch(() => []),
+          bankingApi.getAllAccounts().catch(() => [])
         ]);
         
         // Create maps for quick lookup
-        const nursesMap = new Map(nurses.map(n => [n.nurse_id.toString(), n]));
-        const clientsMap = new Map(clients.map(c => [c.client_id, c]));
+        const nursesMap = new Map(nurses.map((n: any) => [n.nurse_id.toString(), n]));
+        const clientsMap = new Map(clients.map((c: any) => [c.client_id, c]));
+        const bankAccountsMap = new Map(bankAccounts.map((a: any) => [a.id, a]));
         
         setNursesMap(nursesMap);
         setClientsMap(clientsMap);
+        setBankAccountsMap(bankAccountsMap);
       } catch (error) {
-        console.error('Failed to fetch nurse/client data:', error);
+        console.error('Failed to fetch nurse/client/bank data:', error);
       }
     };
     
@@ -103,6 +108,14 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete,
     
     // If both names are different, show both
     return `${patientName} (${requestorName})`;
+  };
+  
+  // Helper function to get bank account name
+  const getBankAccountName = (accountId: number | undefined | null): string => {
+    if (!accountId) return '';
+    const account = bankAccountsMap.get(accountId);
+    if (!account) return `Account ID: ${accountId}`;
+    return `${account.account_name} - ${account.account_number}`;
   };
 
   const sortedEntries = [...entries].sort((a, b) => {
@@ -303,6 +316,12 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete,
                       <span className="font-medium">Nurse:</span> {highlightText(getNurseName(entry.nurse_id), searchTerm)}
                     </p>
                   )}
+                  {(entry.bank_account_id || entry.account_id) && (
+                    <p className="text-xs text-neutral-600 mt-1">
+                      <span className="font-medium">Bank:</span> {getBankAccountName(entry.bank_account_id || entry.account_id)}
+                      {entry.affects_bank_balance && <span className="text-green-600 ml-1">✓</span>}
+                    </p>
+                  )}
                   {entry.receipt && (
                     <span className="text-xs text-blue-600 mt-1 inline-block">
                       Has Receipt
@@ -453,6 +472,9 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete,
                     <th className="table-header text-center">
                       Mode
                     </th>
+                    <th className="table-header">
+                      Bank Account
+                    </th>
                     <th className="table-header text-center">
                       Receipt
                     </th>
@@ -531,6 +553,18 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete,
                         <span className="text-neutral-600 text-sm capitalize">
                           {entry.mode_of_pay ? entry.mode_of_pay.replace('_', ' ') : 'N/A'}
                         </span>
+                      </td>
+                      <td className="table-cell">
+                        {entry.bank_account_id || entry.account_id ? (
+                          <div className="text-sm">
+                            <div className="font-medium text-neutral-700">{getBankAccountName(entry.bank_account_id || entry.account_id)}</div>
+                            {entry.affects_bank_balance && (
+                              <div className="text-xs text-green-600 mt-0.5">✓ Updates balance</div>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-neutral-400 text-sm">-</span>
+                        )}
                       </td>
                       <td className="table-cell text-center">
                         {entry.receipt ? (

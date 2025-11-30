@@ -105,7 +105,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
       switch (transactionType) {
         case TransactionType.DEPOSIT:
           payload = {
-            bank_account_id: formData.bank_account_id,
+            account_id: formData.bank_account_id,
             amount: formData.amount,
             description: formData.description,
             reference: formData.reference,
@@ -115,7 +115,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
 
         case TransactionType.WITHDRAW:
           payload = {
-            bank_account_id: formData.bank_account_id,
+            account_id: formData.bank_account_id,
             amount: formData.amount,
             description: formData.description,
             reference: formData.reference,
@@ -136,7 +136,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
 
         case TransactionType.CHEQUE:
           payload = {
-            bank_account_id: formData.bank_account_id,
+            account_id: formData.bank_account_id,
             amount: formData.amount,
             cheque_number: formData.cheque_number,
             description: formData.description,

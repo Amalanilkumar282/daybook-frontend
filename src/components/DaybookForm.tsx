@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { DaybookFormData, DaybookEntry, PayType, PayStatus, ModeOfPay, Tenant, PaymentTypeSpecific } from '../types/daybook';
-import { authUtils, nursesClientsApi } from '../services/api';
+import { authUtils, nursesClientsApi, bankingApi } from '../services/api';
 import AutocompleteSelect, { AutocompleteOption } from './AutocompleteSelect';
+import { BankAccount } from '../types/banking';
 
 interface DaybookFormProps {
   initialData?: DaybookEntry;
@@ -32,6 +33,8 @@ const DaybookForm: React.FC<DaybookFormProps> = ({
     payment_description: '',
     nurse_id: '',
     client_id: '',
+    bank_account_id: undefined,
+    affects_bank_balance: true, // Default to true for bank account transactions
   });
 
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
@@ -44,6 +47,10 @@ const DaybookForm: React.FC<DaybookFormProps> = ({
   const [isLoadingClients, setIsLoadingClients] = useState(false);
   const [selectedNurseId, setSelectedNurseId] = useState<number | string>('');
   const [selectedClientId, setSelectedClientId] = useState<string>('');
+  
+  // Bank Accounts state
+  const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
+  const [isLoadingBankAccounts, setIsLoadingBankAccounts] = useState(false);
 
   // Fetch nurses and clients on component mount
   useEffect(() => {
@@ -104,8 +111,21 @@ const DaybookForm: React.FC<DaybookFormProps> = ({
       }
     };
 
+    const fetchBankAccounts = async () => {
+      setIsLoadingBankAccounts(true);
+      try {
+        const accountsData = await bankingApi.getAllAccounts();
+        setBankAccounts(accountsData);
+      } catch (error) {
+        console.error('Error fetching bank accounts:', error);
+      } finally {
+        setIsLoadingBankAccounts(false);
+      }
+    };
+
     fetchNurses();
     fetchClients();
+    fetchBankAccounts();
   }, []);
 
   useEffect(() => {
@@ -121,6 +141,8 @@ const DaybookForm: React.FC<DaybookFormProps> = ({
         payment_description: initialData.payment_description || '',
         nurse_id: initialData.nurse_id || '',
         client_id: initialData.client_id || '',
+        bank_account_id: initialData.bank_account_id || undefined,
+        affects_bank_balance: initialData.affects_bank_balance ?? true,
       });
       
       // Set selected IDs for autocomplete
@@ -146,6 +168,11 @@ const DaybookForm: React.FC<DaybookFormProps> = ({
 
     if (!formData.tenant) {
       newErrors.tenant = 'Tenant is required';
+    }
+    
+    // Validate bank account selection when mode is account_transfer
+    if (formData.mode_of_pay === ModeOfPay.ACCOUNT_TRANSFER && !formData.bank_account_id) {
+      newErrors.bank_account_id = 'Bank account is required for account transfer';
     }
 
     setErrors(newErrors);
@@ -178,6 +205,8 @@ const DaybookForm: React.FC<DaybookFormProps> = ({
         payment_type_specific: formData.payment_type_specific || undefined,
         payment_description: formData.payment_description || undefined,
         receipt: receiptFile || undefined,
+        bank_account_id: formData.bank_account_id || undefined,
+        affects_bank_balance: formData.affects_bank_balance,
       };
 
       // Add nurse_id if payment is outgoing and a nurse is selected
@@ -195,6 +224,15 @@ const DaybookForm: React.FC<DaybookFormProps> = ({
         ...submitData,
         receipt: submitData.receipt ? 'FILE PRESENT' : undefined
       });
+      console.log('=== BANK ACCOUNT INTEGRATION ===');
+      console.log('Bank Account ID:', submitData.bank_account_id);
+      console.log('Affects Bank Balance:', submitData.affects_bank_balance);
+      console.log('Mode of Pay:', submitData.mode_of_pay);
+      if (submitData.bank_account_id && submitData.affects_bank_balance) {
+        console.log('✅ This entry SHOULD create a bank transaction and update account balance');
+        console.log(`   Transaction type: ${submitData.payment_type === PayType.INCOMING ? 'DEPOSIT' : 'WITHDRAW'}`);
+        console.log(`   Amount: ₹${submitData.amount}`);
+      }
 
       await onSubmit(submitData);
     } catch (error) {
@@ -214,6 +252,8 @@ const DaybookForm: React.FC<DaybookFormProps> = ({
       payment_description: '',
       nurse_id: '',
       client_id: '',
+      bank_account_id: undefined,
+      affects_bank_balance: true,
     });
     setReceiptFile(null);
     setErrors({});
@@ -329,7 +369,14 @@ const DaybookForm: React.FC<DaybookFormProps> = ({
             <select
               id="mode_of_pay"
               value={formData.mode_of_pay}
-              onChange={(e) => handleInputChange('mode_of_pay', e.target.value as ModeOfPay)}
+              onChange={(e) => {
+                const newMode = e.target.value as ModeOfPay;
+                handleInputChange('mode_of_pay', newMode);
+                // Clear bank account if changing from account_transfer to another mode
+                if (newMode !== ModeOfPay.ACCOUNT_TRANSFER) {
+                  setFormData(prev => ({ ...prev, bank_account_id: undefined }));
+                }
+              }}
               className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
                 errors.mode_of_pay ? 'border-red-500' : 'border-gray-300'
               }`}
@@ -341,6 +388,89 @@ const DaybookForm: React.FC<DaybookFormProps> = ({
             {errors.mode_of_pay && <p className="mt-1 text-sm text-red-600">{errors.mode_of_pay}</p>}
           </div>
         </div>
+
+        {/* Bank Account Selection - Show only when mode is Account Transfer */}
+        {formData.mode_of_pay === ModeOfPay.ACCOUNT_TRANSFER && (
+          <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+              <div>
+                <label htmlFor="bank_account_id" className="block text-sm font-medium text-dark-700 mb-2">
+                  Bank Account *
+                </label>
+                <select
+                  id="bank_account_id"
+                  value={formData.bank_account_id || ''}
+                  onChange={(e) => handleInputChange('bank_account_id', e.target.value ? Number(e.target.value) : undefined)}
+                  className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
+                    errors.bank_account_id ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                  disabled={isLoadingBankAccounts}
+                >
+                  <option value="">Select Bank Account</option>
+                  {bankAccounts.map(account => {
+                    const balance = account.current_balance ?? account.balance ?? 0;
+                    return (
+                      <option key={account.id} value={account.id}>
+                        {account.account_name} - {account.account_number} (₹{balance.toFixed(2)})
+                      </option>
+                    );
+                  })}
+                </select>
+                {errors.bank_account_id && <p className="mt-1 text-sm text-red-600">{errors.bank_account_id}</p>}
+                {isLoadingBankAccounts && <p className="mt-1 text-xs text-gray-500">Loading accounts...</p>}
+              </div>
+              
+              <div>
+                <label htmlFor="affects_bank_balance" className="block text-sm font-medium text-dark-700 mb-2">
+                  Update Bank Balance
+                </label>
+                <div className="flex items-center h-10">
+                  <input
+                    type="checkbox"
+                    id="affects_bank_balance"
+                    checked={formData.affects_bank_balance ?? true}
+                    onChange={(e) => handleInputChange('affects_bank_balance', e.target.checked)}
+                    className="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 focus:ring-2"
+                  />
+                  <label htmlFor="affects_bank_balance" className="ml-2 text-sm text-gray-700">
+                    Automatically update account balance
+                  </label>
+                </div>
+                <p className="mt-1 text-xs text-gray-500">
+                  When enabled, this entry will create a corresponding bank transaction
+                </p>
+              </div>
+            </div>
+            
+            {/* Visual Preview */}
+            {formData.bank_account_id && formData.affects_bank_balance && formData.amount > 0 && (
+              <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-md">
+                <div className="flex items-start">
+                  <svg className="w-5 h-5 text-green-600 mt-0.5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-green-800">Bank Transaction Preview</p>
+                    <p className="text-xs text-green-700 mt-1">
+                      {formData.payment_type === PayType.INCOMING ? (
+                        <>✓ Will create a <strong>DEPOSIT</strong> transaction of ₹{formData.amount.toFixed(2)}</>
+                      ) : (
+                        <>✓ Will create a <strong>WITHDRAWAL</strong> transaction of ₹{formData.amount.toFixed(2)}</>
+                      )}
+                    </p>
+                    <p className="text-xs text-green-700">
+                      {formData.payment_type === PayType.INCOMING ? (
+                        <>✓ Account balance will <strong>increase</strong> by ₹{formData.amount.toFixed(2)}</>
+                      ) : (
+                        <>✓ Account balance will <strong>decrease</strong> by ₹{formData.amount.toFixed(2)}</>
+                      )}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 lg:gap-6">
           {/* Payment Type Specific */}
