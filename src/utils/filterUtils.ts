@@ -1,4 +1,4 @@
-import { DaybookEntry, PayType, PayStatus } from '../types/daybook';
+import { DaybookEntry, PayType, PayStatus, PaymentTypeSpecific } from '../types/daybook';
 import { PersonalEntry } from '../types/personal';
 import { BankTransaction } from '../types/banking';
 
@@ -10,6 +10,7 @@ export interface DaybookFilters {
   maxAmount?: number;
   type?: PayType | 'all';
   payStatus?: PayStatus | 'all';
+  category?: PaymentTypeSpecific | 'all' | string;
   nurse_id?: string;
   client_id?: string;
 }
@@ -129,6 +130,15 @@ export const filterDaybookEntries = (
   // Payment status filter
   if (filters.payStatus && filters.payStatus !== 'all') {
     filtered = filtered.filter(entry => entry.pay_status === filters.payStatus);
+  }
+
+  // Category / payment_type_specific filter
+  if (filters.category && filters.category !== 'all') {
+    filtered = filtered.filter(entry => {
+      // support both enum value and string matching
+      if (entry.payment_type_specific) return entry.payment_type_specific === filters.category || entry.payment_type_specific === String(filters.category);
+      return false;
+    });
   }
 
   // Nurse filter
