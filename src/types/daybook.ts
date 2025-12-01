@@ -12,7 +12,8 @@ export enum PayStatus {
 export enum ModeOfPay {
   CASH = 'cash',
   UPI = 'upi',
-  ACCOUNT_TRANSFER = 'account_transfer'
+  ACCOUNT_TRANSFER = 'account_transfer',
+  OTHERS = 'others'
 }
 
 export enum PaymentTypeSpecific {

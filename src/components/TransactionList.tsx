@@ -20,18 +20,22 @@ const TransactionList: React.FC<TransactionListProps> = ({
 
   const accountMap = new Map(accounts.map(acc => [acc.id, acc]));
 
-  const getAccountName = (accountId: number): string => {
+  const getAccountName = (accountId?: number | null): string => {
+    if (accountId === undefined || accountId === null) return 'Unknown';
     const account = accountMap.get(accountId);
     return account ? `${account.shortform} - ${account.account_name}` : 'Unknown';
   };
 
   const filteredTransactions = transactions.filter(txn => {
+    const accountId = (txn as any).bank_account_id ?? (txn as any).account_id ?? null;
+    const accountName = getAccountName(accountId);
+
     const matchesSearch = 
       (txn.description?.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (txn.reference?.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (txn.cheque_number?.toLowerCase().includes(searchTerm.toLowerCase())) ||
       txn.amount.toString().includes(searchTerm) ||
-      getAccountName(txn.bank_account_id).toLowerCase().includes(searchTerm.toLowerCase());
+      accountName.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesType = filterType === 'all' || txn.transaction_type === filterType;
 
@@ -181,15 +185,17 @@ const TransactionList: React.FC<TransactionListProps> = ({
                 </td>
                 {showAccountColumn && (
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                    {getAccountName(txn.bank_account_id)}
+                    {((txn as any).bank_account_id ?? (txn as any).account_id)
+                      ? getAccountName(((txn as any).bank_account_id ?? (txn as any).account_id) as number)
+                      : '-'}
                   </td>
                 )}
                 <td className="px-6 py-4 text-sm text-gray-700">
                   <div>
                     {txn.transaction_type === TransactionType.TRANSFER && (
                       <div className="text-xs text-gray-600 mb-1">
-                        From: {txn.from_account_id ? getAccountName(txn.from_account_id) : '-'} →{' '}
-                        To: {txn.to_account_id ? getAccountName(txn.to_account_id) : '-'}
+                        From: {txn.from_account_id ? getAccountName((txn as any).from_account_id) : '-'} →{' '}
+                        To: {txn.to_account_id ? getAccountName((txn as any).to_account_id) : '-'}
                       </div>
                     )}
                     {txn.description && <div className="font-medium">{txn.description}</div>}

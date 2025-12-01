@@ -21,7 +21,7 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete,
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [nursesMap, setNursesMap] = useState<Map<string, any>>(new Map());
   const [clientsMap, setClientsMap] = useState<Map<string, any>>(new Map());
-  const [bankAccountsMap, setBankAccountsMap] = useState<Map<number, BankAccount>>(new Map());
+  const [bankAccountsMap, setBankAccountsMap] = useState<Map<string, BankAccount>>(new Map());
   const navigate = useNavigate();
   const isAdmin = authUtils.isAdmin();
 
@@ -58,7 +58,7 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete,
         // Create maps for quick lookup
         const nursesMap = new Map(nurses.map((n: any) => [n.nurse_id.toString(), n]));
         const clientsMap = new Map(clients.map((c: any) => [c.client_id, c]));
-        const bankAccountsMap = new Map(bankAccounts.map((a: any) => [a.id, a]));
+        const bankAccountsMap = new Map(bankAccounts.map((a: any) => [String(a.id), a]));
         
         setNursesMap(nursesMap);
         setClientsMap(clientsMap);
@@ -91,31 +91,32 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete,
     const patientName = client.patient_name?.trim();
     const requestorName = client.requestor_name?.trim();
     
-    // If no patient name, use requestor name
-    if (!patientName) {
-      return requestorName || clientId;
+    // Prioritize client (requestor) name
+    if (requestorName && patientName) {
+      if (requestorName.toLowerCase() === patientName.toLowerCase()) {
+        return requestorName; // Show only once if same
+      }
+      return requestorName; // Return client name for display
     }
     
-    // If no requestor name, use patient name
-    if (!requestorName) {
-      return patientName;
-    }
-    
-    // If both names are the same, show only once
-    if (patientName.toLowerCase() === requestorName.toLowerCase()) {
-      return patientName;
-    }
-    
-    // If both names are different, show both
-    return `${patientName} (${requestorName})`;
+    return requestorName || patientName || clientId;
+  };
+  
+  // Helper function to get patient name
+  const getPatientName = (clientId: string | undefined): string => {
+    if (!clientId) return '';
+    const client = clientsMap.get(clientId);
+    if (!client) return '';
+    return client.patient_name?.trim() || '';
   };
   
   // Helper function to get bank account name
-  const getBankAccountName = (accountId: number | undefined | null): string => {
-    if (!accountId) return '';
-    const account = bankAccountsMap.get(accountId);
-    if (!account) return `Account ID: ${accountId}`;
-    return `${account.account_name} - ${account.account_number}`;
+  const getBankAccountName = (accountId: number | string | undefined | null): string => {
+    if (accountId === undefined || accountId === null || accountId === '') return '';
+    const key = String(accountId);
+    const account = bankAccountsMap.get(key);
+    if (!account) return `Account ID: ${key}`;
+    return `${account.account_name} - ${account.account_number || ''}`;
   };
 
   const sortedEntries = [...entries].sort((a, b) => {
@@ -307,9 +308,18 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete,
                     {highlightText(entry.description || 'No description', searchTerm)}
                   </p>
                   {entry.client_id && (
-                    <p className="text-xs text-neutral-600 mt-1">
-                      <span className="font-medium">Client:</span> {highlightText(getClientName(entry.client_id), searchTerm)}
-                    </p>
+                    <>
+                      {getClientName(entry.client_id) && (
+                        <p className="text-xs text-neutral-600 mt-1">
+                          <span className="font-medium">Client:</span> {highlightText(getClientName(entry.client_id), searchTerm)}
+                        </p>
+                      )}
+                      {getPatientName(entry.client_id) && getPatientName(entry.client_id) !== getClientName(entry.client_id) && (
+                        <p className="text-xs text-neutral-600 mt-1">
+                          <span className="font-medium">Patient:</span> {highlightText(getPatientName(entry.client_id), searchTerm)}
+                        </p>
+                      )}
+                    </>
                   )}
                   {entry.nurse_id && (
                     <p className="text-xs text-neutral-600 mt-1">
@@ -530,11 +540,21 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete,
                       <td className="table-cell">
                         {entry.client_id && (
                           <div className="text-sm text-neutral-700">
-                            <div className="font-medium">{highlightText(getClientName(entry.client_id), searchTerm)}</div>
-                            <div className="text-xs text-neutral-500">Client</div>
+                            {getClientName(entry.client_id) && (
+                              <>
+                                <div className="font-medium">{highlightText(getClientName(entry.client_id), searchTerm)}</div>
+                                <div className="text-xs text-neutral-500">Client</div>
+                              </>
+                            )}
+                            {getPatientName(entry.client_id) && getPatientName(entry.client_id) !== getClientName(entry.client_id) && (
+                              <>
+                                <div className="font-medium mt-1">{highlightText(getPatientName(entry.client_id), searchTerm)}</div>
+                                <div className="text-xs text-neutral-500">Patient</div>
+                              </>
+                            )}
                           </div>
                         )}
-                        {entry.nurse_id && (
+                        {entry.nurse_id && !entry.client_id && (
                           <div className="text-sm text-neutral-700">
                             <div className="font-medium">{highlightText(getNurseName(entry.nurse_id), searchTerm)}</div>
                             <div className="text-xs text-neutral-500">Nurse</div>
