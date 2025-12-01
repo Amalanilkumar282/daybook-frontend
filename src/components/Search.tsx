@@ -4,7 +4,7 @@ import { DaybookEntry, PayType, PayStatus } from '../types/daybook';
 import Pagination from './Pagination';
 import { usePagination } from '../hooks/usePagination';
 import { dateUtils, currencyUtils } from '../utils';
-import { filterDaybookEntries, sortDaybookEntries, hasActiveFilters, DaybookFilters } from '../utils/filterUtils';
+import { filterDaybookEntries, sortDaybookEntries, DaybookFilters } from '../utils/filterUtils';
 import { daybookApi, nursesClientsApi } from '../services/api';
 
 interface SearchProps {
