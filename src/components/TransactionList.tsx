@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { BankTransaction, BankAccount, TransactionType } from '../types/banking';
 
 interface TransactionListProps {
@@ -92,6 +93,34 @@ const TransactionList: React.FC<TransactionListProps> = ({
       default:
         return 'bg-gray-100 text-gray-800';
     }
+  };
+
+  // Extract daybook entry ID from reference (e.g., "DAYBOOK-123" -> 123)
+  const getDaybookEntryId = (reference?: string | null): number | null => {
+    if (!reference) return null;
+    const match = reference.match(/^DAYBOOK-(\d+)$/i);
+    return match ? parseInt(match[1], 10) : null;
+  };
+
+  // Render reference with link if it's a daybook reference
+  const renderReference = (reference?: string | null) => {
+    if (!reference) return null;
+    const entryId = getDaybookEntryId(reference);
+    if (entryId) {
+      return (
+        <Link
+          to={`/view/${entryId}`}
+          className="text-blue-600 hover:text-blue-800 hover:underline inline-flex items-center gap-1"
+          title="View daybook entry"
+        >
+          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+          </svg>
+          {reference}
+        </Link>
+      );
+    }
+    return <span>{reference}</span>;
   };
 
   if (isLoading) {
@@ -199,7 +228,7 @@ const TransactionList: React.FC<TransactionListProps> = ({
                       </div>
                     )}
                     {txn.description && <div className="font-medium">{txn.description}</div>}
-                    {txn.reference && <div className="text-xs text-gray-500">Ref: {txn.reference}</div>}
+                    {txn.reference && <div className="text-xs text-gray-500">Ref: {renderReference(txn.reference)}</div>}
                     {txn.cheque_number && <div className="text-xs text-gray-500">Cheque: {txn.cheque_number}</div>}
                   </div>
                 </td>

@@ -4,7 +4,7 @@ import { DaybookEntry, PayType, PayStatus } from '../types/daybook';
 import Pagination from './Pagination';
 import { usePagination } from '../hooks/usePagination';
 import { authUtils, nursesClientsApi, bankingApi } from '../services/api';
-import { BankAccount } from '../types/banking';
+import { BankAccount, BankTransaction } from '../types/banking';
 
 interface DaybookTableProps {
   entries: DaybookEntry[];
@@ -22,6 +22,7 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete,
   const [nursesMap, setNursesMap] = useState<Map<string, any>>(new Map());
   const [clientsMap, setClientsMap] = useState<Map<string, any>>(new Map());
   const [bankAccountsMap, setBankAccountsMap] = useState<Map<string, BankAccount>>(new Map());
+  const [bankTransactionsMap, setBankTransactionsMap] = useState<Map<string, BankTransaction>>(new Map());
   const navigate = useNavigate();
   const isAdmin = authUtils.isAdmin();
 
@@ -49,20 +50,28 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete,
   useEffect(() => {
     const fetchNursesAndClients = async () => {
       try {
-        const [nurses, clients, bankAccounts] = await Promise.all([
+        const [nurses, clients, bankAccounts, transactions] = await Promise.all([
           nursesClientsApi.getNurses().catch(() => []),
           nursesClientsApi.getClients().catch(() => []),
-          bankingApi.getAllAccounts().catch(() => [])
+          bankingApi.getAllAccounts().catch(() => []),
+          bankingApi.getAllTransactions().catch(() => [])
         ]);
         
         // Create maps for quick lookup
         const nursesMap = new Map(nurses.map((n: any) => [n.nurse_id.toString(), n]));
         const clientsMap = new Map(clients.map((c: any) => [c.client_id, c]));
         const bankAccountsMap = new Map(bankAccounts.map((a: any) => [String(a.id), a]));
+        // Map transactions by reference for quick lookup (e.g., "DAYBOOK-123" -> transaction)
+        const bankTransactionsMap = new Map(
+          transactions
+            .filter((t: BankTransaction) => t.reference)
+            .map((t: BankTransaction) => [t.reference!, t])
+        );
         
         setNursesMap(nursesMap);
         setClientsMap(clientsMap);
         setBankAccountsMap(bankAccountsMap);
+        setBankTransactionsMap(bankTransactionsMap);
       } catch (error) {
         console.error('Failed to fetch nurse/client/bank data:', error);
       }
@@ -117,6 +126,12 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete,
     const account = bankAccountsMap.get(key);
     if (!account) return `Account ID: ${key}`;
     return `${account.account_name} - ${account.account_number || ''}`;
+  };
+  
+  // Helper function to get linked bank transaction
+  const getLinkedBankTransaction = (entryId: number): BankTransaction | undefined => {
+    const reference = `DAYBOOK-${entryId}`;
+    return bankTransactionsMap.get(reference);
   };
 
   const sortedEntries = [...entries].sort((a, b) => {
@@ -332,6 +347,16 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete,
                       {entry.affects_bank_balance && <span className="text-green-600 ml-1">✓</span>}
                     </p>
                   )}
+                  {getLinkedBankTransaction(entry.id) && (
+                    <Link
+                      to="/bank-transactions"
+                      onClick={(e) => e.stopPropagation()}
+                      className="text-xs text-blue-600 hover:text-blue-800 mt-1 inline-block hover:underline"
+                      title="View linked bank transaction"
+                    >
+                      🔗 Bank Transaction #{getLinkedBankTransaction(entry.id)!.id}
+                    </Link>
+                  )}
                   {entry.receipt && (
                     <span className="text-xs text-blue-600 mt-1 inline-block">
                       Has Receipt
@@ -486,6 +511,9 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete,
                       Bank Account
                     </th>
                     <th className="table-header text-center">
+                      Bank Txn
+                    </th>
+                    <th className="table-header text-center">
                       Receipt
                     </th>
                     <th className="table-header text-center w-32">
@@ -586,6 +614,22 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete,
                           <span className="text-neutral-400 text-sm">-</span>
                         )}
                       </td>
+                      <td className="table-cell text-center" onClick={(e) => e.stopPropagation()}>
+                        {getLinkedBankTransaction(entry.id) ? (
+                          <Link
+                            to="/bank-transactions"
+                            className="text-blue-600 hover:text-blue-700 text-sm hover:underline inline-flex items-center gap-1"
+                            title="View linked bank transaction"
+                          >
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                            </svg>
+                            #{getLinkedBankTransaction(entry.id)!.id}
+                          </Link>
+                        ) : (
+                          <span className="text-neutral-400 text-sm">-</span>
+                        )}
+                      </td>
                       <td className="table-cell text-center">
                         {entry.receipt ? (
                           <a 
@@ -659,6 +703,7 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete,
                         </div>
                       </div>
                     </td>
+                    <td className="px-6 py-5"></td>
                     <td className="px-6 py-5"></td>
                     <td className="px-6 py-5"></td>
                   </tr>
