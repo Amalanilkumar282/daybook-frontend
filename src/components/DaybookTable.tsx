@@ -4,7 +4,7 @@ import { DaybookEntry, PayType, PayStatus } from '../types/daybook';
 import Pagination from './Pagination';
 import { usePagination } from '../hooks/usePagination';
 import { authUtils, nursesClientsApi, bankingApi } from '../services/api';
-import { BankAccount, BankTransaction } from '../types/banking';
+import { BankTransaction } from '../types/banking';
 
 interface DaybookTableProps {
   entries: DaybookEntry[];
@@ -21,7 +21,6 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete,
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [nursesMap, setNursesMap] = useState<Map<string, any>>(new Map());
   const [clientsMap, setClientsMap] = useState<Map<string, any>>(new Map());
-  const [bankAccountsMap, setBankAccountsMap] = useState<Map<string, BankAccount>>(new Map());
   const [bankTransactionsMap, setBankTransactionsMap] = useState<Map<string, BankTransaction>>(new Map());
   const navigate = useNavigate();
   const isAdmin = authUtils.isAdmin();
@@ -50,17 +49,15 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete,
   useEffect(() => {
     const fetchNursesAndClients = async () => {
       try {
-        const [nurses, clients, bankAccounts, transactions] = await Promise.all([
+        const [nurses, clients, transactions] = await Promise.all([
           nursesClientsApi.getNurses().catch(() => []),
           nursesClientsApi.getClients().catch(() => []),
-          bankingApi.getAllAccounts().catch(() => []),
           bankingApi.getAllTransactions().catch(() => [])
         ]);
         
         // Create maps for quick lookup
         const nursesMap = new Map(nurses.map((n: any) => [n.nurse_id.toString(), n]));
         const clientsMap = new Map(clients.map((c: any) => [c.client_id, c]));
-        const bankAccountsMap = new Map(bankAccounts.map((a: any) => [String(a.id), a]));
         // Map transactions by reference for quick lookup (e.g., "DAYBOOK-123" -> transaction)
         const bankTransactionsMap = new Map(
           transactions
@@ -70,7 +67,6 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete,
         
         setNursesMap(nursesMap);
         setClientsMap(clientsMap);
-        setBankAccountsMap(bankAccountsMap);
         setBankTransactionsMap(bankTransactionsMap);
       } catch (error) {
         console.error('Failed to fetch nurse/client/bank data:', error);
@@ -119,14 +115,6 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete,
     return client.patient_name?.trim() || '';
   };
   
-  // Helper function to get bank account name
-  const getBankAccountName = (accountId: number | string | undefined | null): string => {
-    if (accountId === undefined || accountId === null || accountId === '') return '';
-    const key = String(accountId);
-    const account = bankAccountsMap.get(key);
-    if (!account) return `Account ID: ${key}`;
-    return `${account.account_name} - ${account.account_number || ''}`;
-  };
   
   // Helper function to get linked bank transaction
   const getLinkedBankTransaction = (entryId: number): BankTransaction | undefined => {
@@ -341,12 +329,7 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete,
                       <span className="font-medium">Nurse:</span> {highlightText(getNurseName(entry.nurse_id), searchTerm)}
                     </p>
                   )}
-                  {(entry.bank_account_id || entry.account_id) && (
-                    <p className="text-xs text-neutral-600 mt-1">
-                      <span className="font-medium">Bank:</span> {getBankAccountName(entry.bank_account_id || entry.account_id)}
-                      {entry.affects_bank_balance && <span className="text-green-600 ml-1">✓</span>}
-                    </p>
-                  )}
+                  {/* bank account info removed */}
                   {getLinkedBankTransaction(entry.id) && (
                     <Link
                       to="/banking/transactions"
@@ -507,9 +490,6 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete,
                     <th className="table-header text-center">
                       Mode
                     </th>
-                    <th className="table-header">
-                      Bank Account
-                    </th>
                     <th className="table-header text-center">
                       Bank Transaction
                     </th>
@@ -602,18 +582,7 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete,
                           {entry.mode_of_pay ? entry.mode_of_pay.replace('_', ' ') : 'N/A'}
                         </span>
                       </td>
-                      <td className="table-cell">
-                        {entry.bank_account_id || entry.account_id ? (
-                          <div className="text-sm">
-                            <div className="font-medium text-neutral-700">{getBankAccountName(entry.bank_account_id || entry.account_id)}</div>
-                            {entry.affects_bank_balance && (
-                              <div className="text-xs text-green-600 mt-0.5">✓ Updates balance</div>
-                            )}
-                          </div>
-                        ) : (
-                          <span className="text-neutral-400 text-sm">-</span>
-                        )}
-                      </td>
+                      {/* bank account column removed */}
                       <td className="table-cell text-center" onClick={(e) => e.stopPropagation()}>
                         {getLinkedBankTransaction(entry.id) ? (
                           <Link
