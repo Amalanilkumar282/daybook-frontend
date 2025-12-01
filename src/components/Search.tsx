@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { DaybookEntry, PayType, PayStatus } from '../types/daybook';
 import Pagination from './Pagination';
 import { usePagination } from '../hooks/usePagination';
 import { dateUtils, currencyUtils } from '../utils';
+import { filterDaybookEntries, sortDaybookEntries, DaybookFilters } from '../utils/filterUtils';
 import { daybookApi, nursesClientsApi } from '../services/api';
 
 interface SearchProps {
@@ -12,7 +13,6 @@ interface SearchProps {
 
 const Search: React.FC<SearchProps> = ({ entries: propEntries = [] }) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [searchResults, setSearchResults] = useState<DaybookEntry[]>([]);
   const [allEntries, setAllEntries] = useState<DaybookEntry[]>(propEntries);
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
@@ -21,14 +21,37 @@ const Search: React.FC<SearchProps> = ({ entries: propEntries = [] }) => {
     dateTo: '',
     minAmount: '',
     maxAmount: '',
-    type: 'all', // 'all', 'incoming', 'outgoing'
-    payStatus: 'all', // 'all', 'paid', 'un_paid'
+    type: 'all' as PayType | 'all',
+    payStatus: 'all' as PayStatus | 'all',
   });
   const [sortBy, setSortBy] = useState<'date' | 'amount' | 'relevance'>('relevance');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [isAdvancedSearch, setIsAdvancedSearch] = useState(false);
   const [nursesMap, setNursesMap] = useState<Map<string, any>>(new Map());
   const [clientsMap, setClientsMap] = useState<Map<string, any>>(new Map());
+
+  // Compute filtered and sorted results using useMemo for performance
+  const searchResults = useMemo(() => {
+    // Build filter object
+    const filterObj: DaybookFilters = {
+      searchTerm,
+      dateFrom: filters.dateFrom || undefined,
+      dateTo: filters.dateTo || undefined,
+      minAmount: filters.minAmount ? parseFloat(filters.minAmount) : undefined,
+      maxAmount: filters.maxAmount ? parseFloat(filters.maxAmount) : undefined,
+      type: filters.type,
+      payStatus: filters.payStatus,
+    };
+
+    // Apply filters
+    const filtered = filterDaybookEntries(allEntries, filterObj, nursesMap, clientsMap);
+    
+    // Apply sorting
+    const sorted = sortDaybookEntries(filtered, sortBy, sortOrder, searchTerm);
+    
+    return sorted;
+  }, [allEntries, searchTerm, filters, sortBy, sortOrder, nursesMap, clientsMap]);
+
 
   const {
     currentPage,
@@ -73,12 +96,6 @@ const Search: React.FC<SearchProps> = ({ entries: propEntries = [] }) => {
     fetchNursesAndClients();
   }, [propEntries]);
 
-  // Perform search when search criteria change
-  useEffect(() => {
-    performSearch();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchTerm, filters, sortBy, sortOrder, allEntries]);
-
   const loadAllEntries = async () => {
     try {
       setSearchLoading(true);
@@ -93,88 +110,9 @@ const Search: React.FC<SearchProps> = ({ entries: propEntries = [] }) => {
     }
   };
 
-  const performSearch = async () => {
-    try {
-      // If no search criteria, clear results
-      if (searchTerm.trim() === '' && Object.values(filters).every(value => value === '' || value === 'all')) {
-        setSearchResults([]);
-        resetPagination();
-        return;
-      }
-
-      setSearchLoading(true);
-      setSearchError(null);
-
-      // Prepare API filters
-      const apiFilters: any = {};
-      
-      if (filters.dateFrom) {
-        apiFilters.dateFrom = filters.dateFrom;
-      }
-      if (filters.dateTo) {
-        apiFilters.dateTo = filters.dateTo;
-      }
-      if (filters.minAmount) {
-        apiFilters.minAmount = parseFloat(filters.minAmount);
-      }
-      if (filters.maxAmount) {
-        apiFilters.maxAmount = parseFloat(filters.maxAmount);
-      }
-      if (filters.type !== 'all') {
-        apiFilters.paymentType = filters.type as PayType;
-      }
-      if (filters.payStatus !== 'all') {
-        apiFilters.payStatus = filters.payStatus as 'paid' | 'un_paid';
-      }
-
-      // Use API search or filter local entries
-      let filteredResults: DaybookEntry[];
-      
-      if (searchTerm.trim() || Object.keys(apiFilters).length > 0) {
-        filteredResults = await daybookApi.searchEntries(searchTerm, apiFilters);
-      } else {
-        filteredResults = allEntries;
-      }
-
-      // Apply sorting
-      filteredResults.sort((a: DaybookEntry, b: DaybookEntry) => {
-        let comparison = 0;
-        switch (sortBy) {
-          case 'date':
-            comparison = new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
-            break;
-          case 'amount':
-            comparison = a.amount - b.amount;
-            break;
-          case 'relevance':
-            // Simple relevance scoring based on search term position
-            if (searchTerm.trim()) {
-              const aScore = ((a.description && a.description.toLowerCase().indexOf(searchTerm.toLowerCase()) === 0) ? 2 : 1) +
-                (a.id.toString().indexOf(searchTerm.toLowerCase()) === 0 ? 1 : 0);
-              const bScore = ((b.description && b.description.toLowerCase().indexOf(searchTerm.toLowerCase()) === 0) ? 2 : 1) +
-                (b.id.toString().indexOf(searchTerm.toLowerCase()) === 0 ? 1 : 0);
-              comparison = bScore - aScore;
-            } else {
-              comparison = new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-            }
-            break;
-        }
-
-        return sortOrder === 'desc' ? -comparison : comparison;
-      });
-
-      setSearchResults(filteredResults);
-      resetPagination();
-    } catch (error) {
-      console.error('Search error:', error);
-      setSearchError('Search failed. Please try again.');
-    } finally {
-      setSearchLoading(false);
-    }
-  };
-
   const handleFilterChange = (field: string, value: string) => {
     setFilters(prev => ({ ...prev, [field]: value }));
+    resetPagination();
   };
 
   const clearFilters = () => {
@@ -190,6 +128,7 @@ const Search: React.FC<SearchProps> = ({ entries: propEntries = [] }) => {
     setSortBy('relevance');
     setSortOrder('desc');
     setIsAdvancedSearch(false);
+    resetPagination();
   };
 
   const highlightText = (text: string, searchTerm: string) => {
@@ -284,7 +223,10 @@ const Search: React.FC<SearchProps> = ({ entries: propEntries = [] }) => {
             type="text"
             placeholder="Search by description or entry ID..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              resetPagination();
+            }}
             className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm sm:text-base"
           />
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -402,7 +344,10 @@ const Search: React.FC<SearchProps> = ({ entries: propEntries = [] }) => {
               <label className="block text-sm font-medium text-dark-700 mb-1">Sort By</label>
               <select
                 value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as 'date' | 'amount' | 'relevance')}
+                onChange={(e) => {
+                  setSortBy(e.target.value as 'date' | 'amount' | 'relevance');
+                  resetPagination();
+                }}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
               >
                 <option value="relevance">Relevance</option>
@@ -420,7 +365,10 @@ const Search: React.FC<SearchProps> = ({ entries: propEntries = [] }) => {
                   name="sortOrder"
                   value="desc"
                   checked={sortOrder === 'desc'}
-                  onChange={(e) => setSortOrder(e.target.value as 'asc' | 'desc')}
+                  onChange={(e) => {
+                    setSortOrder(e.target.value as 'asc' | 'desc');
+                    resetPagination();
+                  }}
                   className="text-primary-600"
                 />
                 <span className="ml-2 text-sm">Descending</span>
@@ -431,7 +379,10 @@ const Search: React.FC<SearchProps> = ({ entries: propEntries = [] }) => {
                   name="sortOrder"
                   value="asc"
                   checked={sortOrder === 'asc'}
-                  onChange={(e) => setSortOrder(e.target.value as 'asc' | 'desc')}
+                  onChange={(e) => {
+                    setSortOrder(e.target.value as 'asc' | 'desc');
+                    resetPagination();
+                  }}
                   className="text-primary-600"
                 />
                 <span className="ml-2 text-sm">Ascending</span>

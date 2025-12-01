@@ -193,4 +193,7 @@ const utils = {
   debounce,
 };
 
+// Export filter utilities
+export * from './filterUtils';
+
 export default utils;

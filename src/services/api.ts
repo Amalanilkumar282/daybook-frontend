@@ -655,8 +655,8 @@ export const daybookApi = {
             (entry.description && entry.description.toLowerCase().includes(searchTerm)) ||
             entry.id.toString().toLowerCase().includes(searchTerm) ||
             entry.payment_type.toLowerCase().includes(searchTerm) ||
-            entry.mode_of_pay.toLowerCase().includes(searchTerm) ||
-            entry.tenant.toLowerCase().includes(searchTerm) ||
+            (entry.mode_of_pay && entry.mode_of_pay.toLowerCase().includes(searchTerm)) ||
+            (entry.tenant && entry.tenant.toLowerCase().includes(searchTerm)) ||
             entry.amount.toString().includes(searchTerm);
           
           if (basicMatch) return true;
