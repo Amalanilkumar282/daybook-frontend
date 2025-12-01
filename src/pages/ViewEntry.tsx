@@ -19,9 +19,10 @@ const ViewEntry: React.FC = () => {
   const [nurseData, setNurseData] = useState<any>(null);
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-IN', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'INR',
+      minimumFractionDigits: 2,
     }).format(amount);
   };
 
@@ -92,15 +93,20 @@ const ViewEntry: React.FC = () => {
       
       try {
         if (entry.client_id) {
-          const clients = await nursesClientsApi.getClients();
-          const client = clients.find((c: any) => c.client_id === entry.client_id);
+          // Use dedicated API to fetch client by ID
+          const client = await nursesClientsApi.getClientById(entry.client_id);
           setClientData(client || null);
         }
         
         if (entry.nurse_id) {
-          const nurses = await nursesClientsApi.getNurses();
-          const nurse = nurses.find((n: any) => n.nurse_id.toString() === entry.nurse_id);
-          setNurseData(nurse || null);
+          // nurse_id may be stored as string in the entry, convert to number for lookup
+          const nurseIdNum = Number(entry.nurse_id);
+          if (!isNaN(nurseIdNum)) {
+            const nurse = await nursesClientsApi.getNurseById(nurseIdNum);
+            setNurseData(nurse || null);
+          } else {
+            setNurseData(null);
+          }
         }
       } catch (err) {
         console.error('Failed to fetch client/nurse data:', err);
