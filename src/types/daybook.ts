@@ -12,13 +12,22 @@ export enum PayStatus {
 export enum ModeOfPay {
   CASH = 'cash',
   UPI = 'upi',
-  ACCOUNT_TRANSFER = 'account_transfer'
+  ACCOUNT_TRANSFER = 'account_transfer',
+  OTHERS = 'others'
+}
+
+export enum PaymentTypeSpecific {
+  CLIENT_PAYMENT_RECEIVED = 'client_payment_received',
+  NURSE_SALARY_PAID = 'nurse_salary_paid',
+  OFFICE_EXPENSES_PAID = 'office_expenses_paid',
+  STUDENT_FEE_RECEIVED = 'student_fee_received'
 }
 
 export enum Tenant {
   TATA_NURSING = 'TATANursing',
   DEARCARE = 'Dearcare',
-  DEARCARE_ACADEMY = 'DearcareAcademy'
+  DEARCARE_ACADEMY = 'DearcareAcademy',
+  PERSONAL = 'Personal'
 }
 
 export enum UserRole {
@@ -36,10 +45,15 @@ export interface DaybookEntry {
   pay_status: PayStatus | null;
   description?: string | null;
   mode_of_pay: ModeOfPay | null;
+  payment_type_specific?: PaymentTypeSpecific | null;
+  payment_description?: string | null;
   tenant: Tenant;
   nurse_id?: string | null;
   client_id?: string | null;
   receipt?: string | null;
+  bank_account_id?: number | null;  // Link to bank account (frontend uses this)
+  account_id?: number | null;        // Backend might return this instead
+  affects_bank_balance?: boolean;   // Whether this entry should update bank balance
 }
 
 export interface DaybookFormData {
@@ -49,9 +63,13 @@ export interface DaybookFormData {
   mode_of_pay: ModeOfPay;
   tenant: Tenant;
   description?: string;
+  payment_type_specific?: PaymentTypeSpecific;
+  payment_description?: string;
   nurse_id?: string;
   client_id?: string;
   receipt?: File;
+  bank_account_id?: number;        // Link to bank account
+  affects_bank_balance?: boolean;   // Whether this entry should update bank balance
 }
 
 // Authentication interfaces

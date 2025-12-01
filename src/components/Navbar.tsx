@@ -50,7 +50,7 @@ const Navbar: React.FC = () => {
   };
 
   const navLinkClass = (path: string) => {
-    const baseClass = "block px-4 py-3 rounded-2xl text-sm font-semibold transition-all duration-300 touch-target";
+    const baseClass = "block px-4 py-3 rounded-2xl text-sm font-semibold transition-all duration-300 touch-target whitespace-nowrap";
     const activeClass = "bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-glow border border-primary-400/30";
     const inactiveClass = "text-neutral-700 hover:text-primary-600 hover:bg-primary-50/80 backdrop-blur-sm";
     
@@ -58,7 +58,7 @@ const Navbar: React.FC = () => {
   };
 
   const mobileNavLinkClass = (path: string) => {
-    const baseClass = "nav-item-responsive block w-full text-left rounded-xl xs:rounded-2xl text-sm xs:text-base font-semibold transition-all duration-300 touch-target";
+    const baseClass = "nav-item-responsive block w-full text-left rounded-xl xs:rounded-2xl text-sm xs:text-base font-semibold transition-all duration-300 touch-target whitespace-nowrap";
     const activeClass = "bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-glow";
     const inactiveClass = "text-neutral-700 hover:text-primary-600 hover:bg-primary-50/80";
     
@@ -91,6 +91,11 @@ const Navbar: React.FC = () => {
             <Link to="/search" className={navLinkClass('/search')}>Search</Link>
             <Link to="/reports" className={navLinkClass('/reports')}>Reports</Link>
             <Link to="/personal-finance" className={navLinkClass('/personal-finance')}>Personal Finance</Link>
+            <Link to="/banking/accounts" className={navLinkClass('/banking/accounts')}>Bank Accounts</Link>
+            <Link to="/banking/transactions" className={navLinkClass('/banking/transactions')}>Transactions</Link>
+            {user?.role === 'admin' && (
+              <Link to="/admin/users" className={navLinkClass('/admin/users')}>User Management</Link>
+            )}
             
             <div className="h-8 w-px bg-gradient-to-b from-transparent via-neutral-300 to-transparent mx-3"></div>
             
@@ -113,7 +118,7 @@ const Navbar: React.FC = () => {
                 <div className="w-7 h-7 bg-gradient-to-r from-primary-500 to-primary-600 rounded-full flex items-center justify-center text-white text-xs font-bold">
                   {user?.email.charAt(0).toUpperCase()}
                 </div>
-                <span className="hidden xl:inline">{user?.email}</span>
+                {/* Email removed to save space; only profile icon shown */}
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
@@ -123,6 +128,9 @@ const Navbar: React.FC = () => {
                 <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-lg border border-neutral-200 py-1 z-[10001]">
                   <div className="px-4 py-2 border-b border-neutral-100">
                     <p className="text-sm font-medium text-neutral-900 truncate" title={user?.email}>{user?.email}</p>
+                    {user?.role && (
+                      <p className="text-xs font-medium text-neutral-600 mt-0.5">Role: {user.role}</p>
+                    )}
                     {user?.tenant && (
                       <p className="text-xs font-medium text-primary-600 mt-0.5">{user.tenant}</p>
                     )}
@@ -219,6 +227,35 @@ const Navbar: React.FC = () => {
                 </div>
               </Link>
 
+              <Link to="/banking/accounts" className={mobileNavLinkClass('/banking/accounts')} onClick={closeMobileMenu}>
+                <div className="flex items-center space-x-2 xs:space-x-3">
+                  <svg className="w-4 h-4 xs:w-5 xs:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                  </svg>
+                  <span>Bank Accounts</span>
+                </div>
+              </Link>
+
+              <Link to="/banking/transactions" className={mobileNavLinkClass('/banking/transactions')} onClick={closeMobileMenu}>
+                <div className="flex items-center space-x-2 xs:space-x-3">
+                  <svg className="w-4 h-4 xs:w-5 xs:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                  </svg>
+                  <span>Transactions</span>
+                </div>
+              </Link>
+
+              {user?.role === 'admin' && (
+                <Link to="/admin/users" className={mobileNavLinkClass('/admin/users')} onClick={closeMobileMenu}>
+                  <div className="flex items-center space-x-2 xs:space-x-3">
+                    <svg className="w-4 h-4 xs:w-5 xs:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                    <span>User Management</span>
+                  </div>
+                </Link>
+              )}
+
               <div className="border-t border-neutral-200 my-2"></div>
 
               <div className="px-2 py-2">
@@ -227,9 +264,9 @@ const Navbar: React.FC = () => {
                     {user?.email.charAt(0).toUpperCase()}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-neutral-900 truncate" title={user?.email}>{user?.email}</p>
+                    {/* Email omitted here as well to reduce clutter */}
                     {user?.tenant && (
-                      <p className="text-xs font-medium text-primary-600">{user.tenant}</p>
+                      <p className="text-sm font-medium text-primary-600">{user.tenant}</p>
                     )}
                     <p className="text-xs text-neutral-500">Logged in</p>
                   </div>

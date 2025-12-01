@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { daybookApi } from '../services/api';
+import { daybookApi, bankingApi, nursesClientsApi } from '../services/api';
 import { DaybookEntry, PayType, PayStatus } from '../types/daybook';
+import { BankAccount } from '../types/banking';
 import ConfirmModal from '../components/ConfirmModal';
 
 const ViewEntry: React.FC = () => {
@@ -12,11 +13,16 @@ const ViewEntry: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [deleteModal, setDeleteModal] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [bankAccount, setBankAccount] = useState<BankAccount | null>(null);
+  const [bankLoading, setBankLoading] = useState(false);
+  const [clientData, setClientData] = useState<any>(null);
+  const [nurseData, setNurseData] = useState<any>(null);
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-IN', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'INR',
+      minimumFractionDigits: 2,
     }).format(amount);
   };
 
@@ -59,6 +65,57 @@ const ViewEntry: React.FC = () => {
     fetchEntry();
   }, [id]);
 
+  // Fetch bank account details if entry references a bank account
+  useEffect(() => {
+    const fetchBank = async () => {
+      if (!entry) return;
+      const accountId = (entry as any).bank_account_id ?? (entry as any).account_id ?? null;
+      if (!accountId) return setBankAccount(null);
+
+      try {
+        setBankLoading(true);
+        const acct = await bankingApi.getAccountById(accountId as number);
+        setBankAccount(acct);
+      } catch (err) {
+        setBankAccount(null);
+      } finally {
+        setBankLoading(false);
+      }
+    };
+
+    fetchBank();
+  }, [entry]);
+
+  // Fetch client and nurse details
+  useEffect(() => {
+    const fetchRelatedData = async () => {
+      if (!entry) return;
+      
+      try {
+        if (entry.client_id) {
+          // Use dedicated API to fetch client by ID
+          const client = await nursesClientsApi.getClientById(entry.client_id);
+          setClientData(client || null);
+        }
+        
+        if (entry.nurse_id) {
+          // nurse_id may be stored as string in the entry, convert to number for lookup
+          const nurseIdNum = Number(entry.nurse_id);
+          if (!isNaN(nurseIdNum)) {
+            const nurse = await nursesClientsApi.getNurseById(nurseIdNum);
+            setNurseData(nurse || null);
+          } else {
+            setNurseData(null);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch client/nurse data:', err);
+      }
+    };
+
+    fetchRelatedData();
+  }, [entry]);
+
   const handleDelete = async () => {
     if (!entry) return;
 
@@ -89,6 +146,8 @@ const ViewEntry: React.FC = () => {
             </div>
           </div>
         </div>
+
+            
       </div>
     );
   }
@@ -205,6 +264,66 @@ const ViewEntry: React.FC = () => {
             </div>
           </div>
 
+          {/* Client/Patient/Nurse Information */}
+          {(entry.client_id || entry.nurse_id) && (
+            <div className="mb-8">
+              <h3 className="text-lg font-semibold text-neutral-900 mb-4">Client/Patient/Nurse Information</h3>
+              <div className="bg-gray-50 p-4 rounded-lg">
+                {entry.client_id && clientData && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    {clientData.requestor_name && (
+                      <div>
+                        <label className="block text-sm font-medium text-neutral-600 mb-1">Client Name</label>
+                        <p className="text-neutral-900 font-medium">{clientData.requestor_name}</p>
+                      </div>
+                    )}
+                    {clientData.patient_name && clientData.patient_name !== clientData.requestor_name && (
+                      <div>
+                        <label className="block text-sm font-medium text-neutral-600 mb-1">Patient Name</label>
+                        <p className="text-neutral-900 font-medium">{clientData.patient_name}</p>
+                      </div>
+                    )}
+                    {clientData.requestor_phone && (
+                      <div>
+                        <label className="block text-sm font-medium text-neutral-600 mb-1">Client Phone</label>
+                        <p className="text-neutral-700">{clientData.requestor_phone}</p>
+                      </div>
+                    )}
+                    {clientData.patient_phone && (
+                      <div>
+                        <label className="block text-sm font-medium text-neutral-600 mb-1">Patient Phone</label>
+                        <p className="text-neutral-700">{clientData.patient_phone}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+                {entry.nurse_id && nurseData && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-neutral-600 mb-1">Nurse Name</label>
+                      <p className="text-neutral-900 font-medium">{nurseData.full_name || `${nurseData.first_name} ${nurseData.last_name}`.trim()}</p>
+                    </div>
+                    {nurseData.phone_number && (
+                      <div>
+                        <label className="block text-sm font-medium text-neutral-600 mb-1">Nurse Phone</label>
+                        <p className="text-neutral-700">{nurseData.phone_number}</p>
+                      </div>
+                    )}
+                    {nurseData.nurse_reg_no && (
+                      <div>
+                        <label className="block text-sm font-medium text-neutral-600 mb-1">Registration No</label>
+                        <p className="text-neutral-700">{nurseData.nurse_reg_no}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+                {!clientData && !nurseData && (
+                  <p className="text-sm text-neutral-600">Loading information...</p>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Financial Information */}
           <div className="mb-8">
             <h3 className="text-lg font-semibold text-neutral-900 mb-4">Financial Information</h3>
@@ -231,6 +350,47 @@ const ViewEntry: React.FC = () => {
               </div>
             </div>
           </div>
+
+          {/* Bank Details (if linked) */}
+          {((entry as any).bank_account_id || (entry as any).account_id) && (
+            <div className="mb-8">
+              <h3 className="text-lg font-semibold text-neutral-900 mb-4">Bank Details</h3>
+              <div className="bg-gray-50 p-4 rounded-lg">
+                {bankLoading ? (
+                  <p className="text-sm text-neutral-600">Loading bank details...</p>
+                ) : bankAccount ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-neutral-700">
+                    <div>
+                      <label className="block text-sm font-medium text-neutral-600 mb-1">Bank</label>
+                      <p className="font-medium">{bankAccount.bank_name}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-neutral-600 mb-1">Account Name</label>
+                      <p className="font-medium">{bankAccount.account_name} ({bankAccount.shortform})</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-neutral-600 mb-1">Account Number</label>
+                      <p className="text-neutral-700">{bankAccount.account_number || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-neutral-600 mb-1">IFSC</label>
+                      <p className="text-neutral-700">{bankAccount.ifsc || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-neutral-600 mb-1">Branch</label>
+                      <p className="text-neutral-700">{bankAccount.branch || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-neutral-600 mb-1">Balance</label>
+                      <p className="font-medium">{bankAccount.balance !== undefined ? formatCurrency(bankAccount.balance) : 'N/A'}</p>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-sm text-neutral-600">No bank account information available.</p>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Description */}
           {entry.description && (
