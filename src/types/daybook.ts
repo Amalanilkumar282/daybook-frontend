@@ -26,7 +26,8 @@ export enum PaymentTypeSpecific {
 export enum Tenant {
   TATA_NURSING = 'TATANursing',
   DEARCARE = 'Dearcare',
-  DEARCARE_ACADEMY = 'DearcareAcademy'
+  DEARCARE_ACADEMY = 'DearcareAcademy',
+  PERSONAL = 'Personal'
 }
 
 export enum UserRole {

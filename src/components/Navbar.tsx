@@ -93,6 +93,9 @@ const Navbar: React.FC = () => {
             <Link to="/personal-finance" className={navLinkClass('/personal-finance')}>Personal Finance</Link>
             <Link to="/banking/accounts" className={navLinkClass('/banking/accounts')}>Bank Accounts</Link>
             <Link to="/banking/transactions" className={navLinkClass('/banking/transactions')}>Transactions</Link>
+            {user?.role === 'admin' && (
+              <Link to="/admin/users" className={navLinkClass('/admin/users')}>User Management</Link>
+            )}
             
             <div className="h-8 w-px bg-gradient-to-b from-transparent via-neutral-300 to-transparent mx-3"></div>
             
@@ -241,6 +244,17 @@ const Navbar: React.FC = () => {
                   <span>Transactions</span>
                 </div>
               </Link>
+
+              {user?.role === 'admin' && (
+                <Link to="/admin/users" className={mobileNavLinkClass('/admin/users')} onClick={closeMobileMenu}>
+                  <div className="flex items-center space-x-2 xs:space-x-3">
+                    <svg className="w-4 h-4 xs:w-5 xs:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                    <span>User Management</span>
+                  </div>
+                </Link>
+              )}
 
               <div className="border-t border-neutral-200 my-2"></div>
 
