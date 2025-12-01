@@ -349,7 +349,7 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete,
                   )}
                   {getLinkedBankTransaction(entry.id) && (
                     <Link
-                      to="/bank-transactions"
+                      to="/banking/transactions"
                       onClick={(e) => e.stopPropagation()}
                       className="text-xs text-blue-600 hover:text-blue-800 mt-1 inline-block hover:underline"
                       title="View linked bank transaction"
@@ -511,7 +511,7 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete,
                       Bank Account
                     </th>
                     <th className="table-header text-center">
-                      Bank Txn
+                      Bank Transaction
                     </th>
                     <th className="table-header text-center">
                       Receipt
@@ -617,7 +617,7 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete,
                       <td className="table-cell text-center" onClick={(e) => e.stopPropagation()}>
                         {getLinkedBankTransaction(entry.id) ? (
                           <Link
-                            to="/bank-transactions"
+                            to="/banking/transactions"
                             className="text-blue-600 hover:text-blue-700 text-sm hover:underline inline-flex items-center gap-1"
                             title="View linked bank transaction"
                           >
