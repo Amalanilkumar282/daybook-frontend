@@ -261,10 +261,10 @@ const DaybookForm: React.FC<DaybookFormProps> = ({
     setSelectedClientId('');
   };
 
-  const handleInputChange = (field: keyof DaybookFormData, value: string | number) => {
+  const handleInputChange = (field: keyof DaybookFormData, value: DaybookFormData[keyof DaybookFormData]) => {
     setFormData(prev => ({
       ...prev,
-      [field]: value,
+      [field]: value as any,
     }));
 
     // Clear error for this field when user starts typing
@@ -383,6 +383,7 @@ const DaybookForm: React.FC<DaybookFormProps> = ({
             >
               <option value={ModeOfPay.CASH}>Cash</option>
               <option value={ModeOfPay.UPI}>UPI</option>
+              <option value={ModeOfPay.OTHERS}>Others</option>
               <option value={ModeOfPay.ACCOUNT_TRANSFER}>Account Transfer</option>
             </select>
             {errors.mode_of_pay && <p className="mt-1 text-sm text-red-600">{errors.mode_of_pay}</p>}
