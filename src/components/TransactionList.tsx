@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { BankTransaction, BankAccount, TransactionType } from '../types/banking';
 
 interface TransactionListProps {
@@ -20,18 +21,22 @@ const TransactionList: React.FC<TransactionListProps> = ({
 
   const accountMap = new Map(accounts.map(acc => [acc.id, acc]));
 
-  const getAccountName = (accountId: number): string => {
+  const getAccountName = (accountId?: number | null): string => {
+    if (accountId === undefined || accountId === null) return 'Unknown';
     const account = accountMap.get(accountId);
     return account ? `${account.shortform} - ${account.account_name}` : 'Unknown';
   };
 
   const filteredTransactions = transactions.filter(txn => {
+    const accountId = (txn as any).bank_account_id ?? (txn as any).account_id ?? null;
+    const accountName = getAccountName(accountId);
+
     const matchesSearch = 
       (txn.description?.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (txn.reference?.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (txn.cheque_number?.toLowerCase().includes(searchTerm.toLowerCase())) ||
       txn.amount.toString().includes(searchTerm) ||
-      getAccountName(txn.bank_account_id).toLowerCase().includes(searchTerm.toLowerCase());
+      accountName.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesType = filterType === 'all' || txn.transaction_type === filterType;
 
@@ -88,6 +93,34 @@ const TransactionList: React.FC<TransactionListProps> = ({
       default:
         return 'bg-gray-100 text-gray-800';
     }
+  };
+
+  // Extract daybook entry ID from reference (e.g., "DAYBOOK-123" -> 123)
+  const getDaybookEntryId = (reference?: string | null): number | null => {
+    if (!reference) return null;
+    const match = reference.match(/^DAYBOOK-(\d+)$/i);
+    return match ? parseInt(match[1], 10) : null;
+  };
+
+  // Render reference with link if it's a daybook reference
+  const renderReference = (reference?: string | null) => {
+    if (!reference) return null;
+    const entryId = getDaybookEntryId(reference);
+    if (entryId) {
+      return (
+        <Link
+          to={`/view/${entryId}`}
+          className="text-blue-600 hover:text-blue-800 hover:underline inline-flex items-center gap-1"
+          title="View daybook entry"
+        >
+          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+          </svg>
+          {reference}
+        </Link>
+      );
+    }
+    return <span>{reference}</span>;
   };
 
   if (isLoading) {
@@ -181,19 +214,21 @@ const TransactionList: React.FC<TransactionListProps> = ({
                 </td>
                 {showAccountColumn && (
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                    {getAccountName(txn.bank_account_id)}
+                    {((txn as any).bank_account_id ?? (txn as any).account_id)
+                      ? getAccountName(((txn as any).bank_account_id ?? (txn as any).account_id) as number)
+                      : '-'}
                   </td>
                 )}
                 <td className="px-6 py-4 text-sm text-gray-700">
                   <div>
                     {txn.transaction_type === TransactionType.TRANSFER && (
                       <div className="text-xs text-gray-600 mb-1">
-                        From: {txn.from_account_id ? getAccountName(txn.from_account_id) : '-'} →{' '}
-                        To: {txn.to_account_id ? getAccountName(txn.to_account_id) : '-'}
+                        From: {txn.from_account_id ? getAccountName((txn as any).from_account_id) : '-'} →{' '}
+                        To: {txn.to_account_id ? getAccountName((txn as any).to_account_id) : '-'}
                       </div>
                     )}
                     {txn.description && <div className="font-medium">{txn.description}</div>}
-                    {txn.reference && <div className="text-xs text-gray-500">Ref: {txn.reference}</div>}
+                    {txn.reference && <div className="text-xs text-gray-500">Ref: {renderReference(txn.reference)}</div>}
                     {txn.cheque_number && <div className="text-xs text-gray-500">Cheque: {txn.cheque_number}</div>}
                   </div>
                 </td>

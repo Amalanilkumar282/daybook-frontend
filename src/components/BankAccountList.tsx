@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
+import ConfirmModal from './ConfirmModal';
 import { BankAccount } from '../types/banking';
 
 interface BankAccountListProps {
   accounts: BankAccount[];
   onEdit: (account: BankAccount) => void;
-  onDelete: (id: number) => void;
+  onDelete: (id: number) => Promise<void>;
   onViewTransactions: (accountId: number) => void;
   isLoading: boolean;
 }
@@ -19,6 +20,9 @@ const BankAccountList: React.FC<BankAccountListProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [sortField, setSortField] = useState<keyof BankAccount>('created_at');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [accountToDelete, setAccountToDelete] = useState<BankAccount | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const filteredAccounts = accounts.filter(account =>
     account.bank_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -83,6 +87,7 @@ const BankAccountList: React.FC<BankAccountListProps> = ({
   }
 
   return (
+    <>
     <div className="space-y-4">
       {/* Search Bar */}
       <div className="flex gap-4 items-center">
@@ -193,9 +198,8 @@ const BankAccountList: React.FC<BankAccountListProps> = ({
                     </button>
                     <button
                       onClick={() => {
-                        if (window.confirm(`Are you sure you want to delete account "${account.account_name}"?`)) {
-                          onDelete(account.id);
-                        }
+                        setAccountToDelete(account);
+                        setConfirmOpen(true);
                       }}
                       className="text-red-600 hover:text-red-900 transition-colors"
                       title="Delete Account"
@@ -224,6 +228,32 @@ const BankAccountList: React.FC<BankAccountListProps> = ({
         </div>
       </div>
     </div>
+    {accountToDelete && (
+      <ConfirmModal
+        isOpen={confirmOpen}
+        title="Delete Bank Account"
+        message={`Are you sure you want to delete account "${accountToDelete!.account_name}"? This action cannot be undone.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        isLoading={isDeleting}
+        onConfirm={async () => {
+          if (!accountToDelete) return;
+          try {
+            setIsDeleting(true);
+            await onDelete(accountToDelete.id);
+          } finally {
+            setIsDeleting(false);
+            setConfirmOpen(false);
+            setAccountToDelete(null);
+          }
+        }}
+        onCancel={() => {
+          setConfirmOpen(false);
+          setAccountToDelete(null);
+        }}
+      />
+    )}
+    </>
   );
 };
 

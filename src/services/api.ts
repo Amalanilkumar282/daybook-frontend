@@ -127,6 +127,16 @@ export const authApi = {
     }
   },
 
+  // Register new user by admin (does not auto-login)
+  registerUser: async (credentials: RegisterCredentials): Promise<{ message: string; user: User }> => {
+    try {
+      const response = await api.post('/auth/register', credentials);
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.error || error.response?.data?.message || 'User registration failed');
+    }
+  },
+
   // Login user
   login: async (credentials: LoginCredentials): Promise<AuthResponse> => {
     try {

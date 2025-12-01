@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { DaybookEntry, PayType, PayStatus } from '../types/daybook';
+import { DaybookEntry, PayType, PayStatus, PaymentTypeSpecific } from '../types/daybook';
 import Pagination from './Pagination';
 import { usePagination } from '../hooks/usePagination';
 import { dateUtils, currencyUtils } from '../utils';
@@ -23,6 +23,7 @@ const Search: React.FC<SearchProps> = ({ entries: propEntries = [] }) => {
     maxAmount: '',
     type: 'all' as PayType | 'all',
     payStatus: 'all' as PayStatus | 'all',
+    category: 'all' as PaymentTypeSpecific | 'all' | string,
   });
   const [sortBy, setSortBy] = useState<'date' | 'amount' | 'relevance'>('relevance');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
@@ -41,6 +42,7 @@ const Search: React.FC<SearchProps> = ({ entries: propEntries = [] }) => {
       maxAmount: filters.maxAmount ? parseFloat(filters.maxAmount) : undefined,
       type: filters.type,
       payStatus: filters.payStatus,
+      category: filters.category,
     };
 
     // Apply filters
@@ -124,6 +126,7 @@ const Search: React.FC<SearchProps> = ({ entries: propEntries = [] }) => {
       maxAmount: '',
       type: 'all',
       payStatus: 'all',
+      category: 'all',
     });
     setSortBy('relevance');
     setSortOrder('desc');
@@ -336,6 +339,22 @@ const Search: React.FC<SearchProps> = ({ entries: propEntries = [] }) => {
                 <option value="all">All Status</option>
                 <option value={PayStatus.PAID}>Paid</option>
                 <option value={PayStatus.UNPAID}>Unpaid</option>
+              </select>
+            </div>
+
+            {/* Payment Category Filter */}
+            <div>
+              <label className="block text-sm font-medium text-dark-700 mb-1">Payment Category</label>
+              <select
+                value={(filters as any).category}
+                onChange={(e) => handleFilterChange('category', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+              >
+                <option value="all">All Categories</option>
+                <option value={PaymentTypeSpecific.CLIENT_PAYMENT_RECEIVED}>Client Payment Received</option>
+                <option value={PaymentTypeSpecific.NURSE_SALARY_PAID}>Nurse Salary Paid</option>
+                <option value={PaymentTypeSpecific.OFFICE_EXPENSES_PAID}>Office Expenses Paid</option>
+                <option value={PaymentTypeSpecific.STUDENT_FEE_RECEIVED}>Student Fee Received</option>
               </select>
             </div>
 

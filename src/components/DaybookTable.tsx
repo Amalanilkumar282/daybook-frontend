@@ -4,7 +4,7 @@ import { DaybookEntry, PayType, PayStatus } from '../types/daybook';
 import Pagination from './Pagination';
 import { usePagination } from '../hooks/usePagination';
 import { authUtils, nursesClientsApi, bankingApi } from '../services/api';
-import { BankAccount } from '../types/banking';
+import { BankTransaction } from '../types/banking';
 
 interface DaybookTableProps {
   entries: DaybookEntry[];
@@ -21,7 +21,7 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete,
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [nursesMap, setNursesMap] = useState<Map<string, any>>(new Map());
   const [clientsMap, setClientsMap] = useState<Map<string, any>>(new Map());
-  const [bankAccountsMap, setBankAccountsMap] = useState<Map<number, BankAccount>>(new Map());
+  const [bankTransactionsMap, setBankTransactionsMap] = useState<Map<string, BankTransaction>>(new Map());
   const navigate = useNavigate();
   const isAdmin = authUtils.isAdmin();
 
@@ -49,20 +49,25 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete,
   useEffect(() => {
     const fetchNursesAndClients = async () => {
       try {
-        const [nurses, clients, bankAccounts] = await Promise.all([
+        const [nurses, clients, transactions] = await Promise.all([
           nursesClientsApi.getNurses().catch(() => []),
           nursesClientsApi.getClients().catch(() => []),
-          bankingApi.getAllAccounts().catch(() => [])
+          bankingApi.getAllTransactions().catch(() => [])
         ]);
         
         // Create maps for quick lookup
         const nursesMap = new Map(nurses.map((n: any) => [n.nurse_id.toString(), n]));
         const clientsMap = new Map(clients.map((c: any) => [c.client_id, c]));
-        const bankAccountsMap = new Map(bankAccounts.map((a: any) => [a.id, a]));
+        // Map transactions by reference for quick lookup (e.g., "DAYBOOK-123" -> transaction)
+        const bankTransactionsMap = new Map(
+          transactions
+            .filter((t: BankTransaction) => t.reference)
+            .map((t: BankTransaction) => [t.reference!, t])
+        );
         
         setNursesMap(nursesMap);
         setClientsMap(clientsMap);
-        setBankAccountsMap(bankAccountsMap);
+        setBankTransactionsMap(bankTransactionsMap);
       } catch (error) {
         console.error('Failed to fetch nurse/client/bank data:', error);
       }
@@ -91,31 +96,30 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete,
     const patientName = client.patient_name?.trim();
     const requestorName = client.requestor_name?.trim();
     
-    // If no patient name, use requestor name
-    if (!patientName) {
-      return requestorName || clientId;
+    // Prioritize client (requestor) name
+    if (requestorName && patientName) {
+      if (requestorName.toLowerCase() === patientName.toLowerCase()) {
+        return requestorName; // Show only once if same
+      }
+      return requestorName; // Return client name for display
     }
     
-    // If no requestor name, use patient name
-    if (!requestorName) {
-      return patientName;
-    }
-    
-    // If both names are the same, show only once
-    if (patientName.toLowerCase() === requestorName.toLowerCase()) {
-      return patientName;
-    }
-    
-    // If both names are different, show both
-    return `${patientName} (${requestorName})`;
+    return requestorName || patientName || clientId;
   };
   
-  // Helper function to get bank account name
-  const getBankAccountName = (accountId: number | undefined | null): string => {
-    if (!accountId) return '';
-    const account = bankAccountsMap.get(accountId);
-    if (!account) return `Account ID: ${accountId}`;
-    return `${account.account_name} - ${account.account_number}`;
+  // Helper function to get patient name
+  const getPatientName = (clientId: string | undefined): string => {
+    if (!clientId) return '';
+    const client = clientsMap.get(clientId);
+    if (!client) return '';
+    return client.patient_name?.trim() || '';
+  };
+  
+  
+  // Helper function to get linked bank transaction
+  const getLinkedBankTransaction = (entryId: number): BankTransaction | undefined => {
+    const reference = `DAYBOOK-${entryId}`;
+    return bankTransactionsMap.get(reference);
   };
 
   const sortedEntries = [...entries].sort((a, b) => {
@@ -307,20 +311,34 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete,
                     {highlightText(entry.description || 'No description', searchTerm)}
                   </p>
                   {entry.client_id && (
-                    <p className="text-xs text-neutral-600 mt-1">
-                      <span className="font-medium">Client:</span> {highlightText(getClientName(entry.client_id), searchTerm)}
-                    </p>
+                    <>
+                      {getClientName(entry.client_id) && (
+                        <p className="text-xs text-neutral-600 mt-1">
+                          <span className="font-medium">Client:</span> {highlightText(getClientName(entry.client_id), searchTerm)}
+                        </p>
+                      )}
+                      {getPatientName(entry.client_id) && getPatientName(entry.client_id) !== getClientName(entry.client_id) && (
+                        <p className="text-xs text-neutral-600 mt-1">
+                          <span className="font-medium">Patient:</span> {highlightText(getPatientName(entry.client_id), searchTerm)}
+                        </p>
+                      )}
+                    </>
                   )}
                   {entry.nurse_id && (
                     <p className="text-xs text-neutral-600 mt-1">
                       <span className="font-medium">Nurse:</span> {highlightText(getNurseName(entry.nurse_id), searchTerm)}
                     </p>
                   )}
-                  {(entry.bank_account_id || entry.account_id) && (
-                    <p className="text-xs text-neutral-600 mt-1">
-                      <span className="font-medium">Bank:</span> {getBankAccountName(entry.bank_account_id || entry.account_id)}
-                      {entry.affects_bank_balance && <span className="text-green-600 ml-1">✓</span>}
-                    </p>
+                  {/* bank account info removed */}
+                  {getLinkedBankTransaction(entry.id) && (
+                    <Link
+                      to="/banking/transactions"
+                      onClick={(e) => e.stopPropagation()}
+                      className="text-xs text-blue-600 hover:text-blue-800 mt-1 inline-block hover:underline"
+                      title="View linked bank transaction"
+                    >
+                      🔗 Bank Transaction #{getLinkedBankTransaction(entry.id)!.id}
+                    </Link>
                   )}
                   {entry.receipt && (
                     <span className="text-xs text-blue-600 mt-1 inline-block">
@@ -472,8 +490,8 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete,
                     <th className="table-header text-center">
                       Mode
                     </th>
-                    <th className="table-header">
-                      Bank Account
+                    <th className="table-header text-center">
+                      Bank Transaction
                     </th>
                     <th className="table-header text-center">
                       Receipt
@@ -530,11 +548,21 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete,
                       <td className="table-cell">
                         {entry.client_id && (
                           <div className="text-sm text-neutral-700">
-                            <div className="font-medium">{highlightText(getClientName(entry.client_id), searchTerm)}</div>
-                            <div className="text-xs text-neutral-500">Client</div>
+                            {getClientName(entry.client_id) && (
+                              <>
+                                <div className="font-medium">{highlightText(getClientName(entry.client_id), searchTerm)}</div>
+                                <div className="text-xs text-neutral-500">Client</div>
+                              </>
+                            )}
+                            {getPatientName(entry.client_id) && getPatientName(entry.client_id) !== getClientName(entry.client_id) && (
+                              <>
+                                <div className="font-medium mt-1">{highlightText(getPatientName(entry.client_id), searchTerm)}</div>
+                                <div className="text-xs text-neutral-500">Patient</div>
+                              </>
+                            )}
                           </div>
                         )}
-                        {entry.nurse_id && (
+                        {entry.nurse_id && !entry.client_id && (
                           <div className="text-sm text-neutral-700">
                             <div className="font-medium">{highlightText(getNurseName(entry.nurse_id), searchTerm)}</div>
                             <div className="text-xs text-neutral-500">Nurse</div>
@@ -554,14 +582,19 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete,
                           {entry.mode_of_pay ? entry.mode_of_pay.replace('_', ' ') : 'N/A'}
                         </span>
                       </td>
-                      <td className="table-cell">
-                        {entry.bank_account_id || entry.account_id ? (
-                          <div className="text-sm">
-                            <div className="font-medium text-neutral-700">{getBankAccountName(entry.bank_account_id || entry.account_id)}</div>
-                            {entry.affects_bank_balance && (
-                              <div className="text-xs text-green-600 mt-0.5">✓ Updates balance</div>
-                            )}
-                          </div>
+                      {/* bank account column removed */}
+                      <td className="table-cell text-center" onClick={(e) => e.stopPropagation()}>
+                        {getLinkedBankTransaction(entry.id) ? (
+                          <Link
+                            to="/banking/transactions"
+                            className="text-blue-600 hover:text-blue-700 text-sm hover:underline inline-flex items-center gap-1"
+                            title="View linked bank transaction"
+                          >
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                            </svg>
+                            #{getLinkedBankTransaction(entry.id)!.id}
+                          </Link>
                         ) : (
                           <span className="text-neutral-400 text-sm">-</span>
                         )}
@@ -639,6 +672,7 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete,
                         </div>
                       </div>
                     </td>
+                    <td className="px-6 py-5"></td>
                     <td className="px-6 py-5"></td>
                     <td className="px-6 py-5"></td>
                   </tr>

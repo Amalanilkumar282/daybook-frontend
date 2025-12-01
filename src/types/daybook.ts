@@ -12,7 +12,8 @@ export enum PayStatus {
 export enum ModeOfPay {
   CASH = 'cash',
   UPI = 'upi',
-  ACCOUNT_TRANSFER = 'account_transfer'
+  ACCOUNT_TRANSFER = 'account_transfer',
+  OTHERS = 'others'
 }
 
 export enum PaymentTypeSpecific {
@@ -25,7 +26,8 @@ export enum PaymentTypeSpecific {
 export enum Tenant {
   TATA_NURSING = 'TATANursing',
   DEARCARE = 'Dearcare',
-  DEARCARE_ACADEMY = 'DearcareAcademy'
+  DEARCARE_ACADEMY = 'DearcareAcademy',
+  PERSONAL = 'Personal'
 }
 
 export enum UserRole {
