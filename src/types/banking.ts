@@ -75,7 +75,8 @@ export interface TransactionFormData {
 
 // Deposit Transaction Form
 export interface DepositFormData {
-  bank_account_id: number;
+  bank_account_id?: number;
+  account_id?: number; // Alias for bank_account_id (backend compatibility)
   amount: number;
   description?: string;
   reference?: string;
@@ -84,7 +85,8 @@ export interface DepositFormData {
 
 // Withdraw Transaction Form
 export interface WithdrawFormData {
-  bank_account_id: number;
+  bank_account_id?: number;
+  account_id?: number; // Alias for bank_account_id (backend compatibility)
   amount: number;
   description?: string;
   reference?: string;
