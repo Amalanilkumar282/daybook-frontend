@@ -1,13 +1,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { DaybookEntry, PayType, PayStatus, SummaryData } from '../types/daybook';
-import { daybookApi } from '../services/api';
+import { daybookApi, authUtils } from '../services/api';
 import SummaryCards from '../components/SummaryCards';
 import DaybookTable from '../components/DaybookTable';
 import ConfirmModal from '../components/ConfirmModal';
 
 const Dashboard: React.FC = () => {
   console.log('DEBUG: Dashboard component rendering');
+  const currentUser = authUtils.getUser();
+  const tenantPrefix = currentUser?.tenant ? `${currentUser.tenant} ` : '';
   const [entries, setEntries] = useState<DaybookEntry[]>([]);
   const [summaryData, setSummaryData] = useState<SummaryData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -302,7 +304,7 @@ const Dashboard: React.FC = () => {
       <div className="mb-6 sm:mb-8 lg:mb-10">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="relative">
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold font-display gradient-text mb-2 sm:mb-3">Dashboard</h1>
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold font-display gradient-text mb-2 sm:mb-3">{tenantPrefix}Dashboard</h1>
             <p className="text-neutral-600 text-base sm:text-lg lg:text-xl font-medium">Overview of your financial activities and recent transactions</p>
             <div className="absolute -top-2 -left-2 w-16 h-16 sm:w-24 sm:h-24 bg-gradient-to-br from-primary-100/30 to-accent-100/30 rounded-full blur-2xl -z-10"></div>
           </div>

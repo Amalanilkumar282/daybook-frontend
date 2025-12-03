@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { authApi, authUtils } from '../services/api';
-import { UserRole, Tenant, User } from '../types/daybook';
+import { UserRole, Tenant } from '../types/daybook';
 
 interface UserFormData {
   email: string;
