@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { DaybookEntry, PayType, PayStatus, SummaryData } from '../types/daybook';
+import { DaybookEntry, PayType, PayStatus, SummaryData, PaymentTypeSpecific } from '../types/daybook';
 import { daybookApi, authUtils } from '../services/api';
 import SummaryCards from '../components/SummaryCards';
 import DaybookTable from '../components/DaybookTable';
@@ -32,6 +32,7 @@ const Dashboard: React.FC = () => {
     maxAmount: '',
     type: 'all',
     payStatus: 'all',
+    category: 'all',
   });
   const [sortBy, setSortBy] = useState<'date' | 'amount' | 'relevance'>('relevance');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
@@ -149,6 +150,9 @@ const Dashboard: React.FC = () => {
       if (filters.payStatus !== 'all') {
         apiFilters.payStatus = filters.payStatus as 'paid' | 'un_paid';
       }
+      if (filters.category !== 'all') {
+        apiFilters.paymentTypeSpecific = filters.category as PaymentTypeSpecific;
+      }
 
       // Use API search or filter local entries
       let filteredResults: DaybookEntry[];
@@ -214,6 +218,7 @@ const Dashboard: React.FC = () => {
       maxAmount: '',
       type: 'all',
       payStatus: 'all',
+      category: 'all',
     });
     setSortBy('relevance');
     setSortOrder('desc');
@@ -535,6 +540,22 @@ const Dashboard: React.FC = () => {
                       <option value="all">All Status</option>
                       <option value={PayStatus.PAID}>Paid</option>
                       <option value={PayStatus.UNPAID}>Unpaid</option>
+                    </select>
+                  </div>
+
+                  {/* Payment Category Filter */}
+                  <div>
+                    <label className="block text-sm font-semibold text-neutral-700 mb-2">Payment Category</label>
+                    <select
+                      value={filters.category}
+                      onChange={(e) => handleFilterChange('category', e.target.value)}
+                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+                    >
+                      <option value="all">All Categories</option>
+                      <option value={PaymentTypeSpecific.CLIENT_PAYMENT_RECEIVED}>Client Payment Received</option>
+                      <option value={PaymentTypeSpecific.NURSE_SALARY_PAID}>Nurse Salary Paid</option>
+                      <option value={PaymentTypeSpecific.OFFICE_EXPENSES_PAID}>Office Expenses Paid</option>
+                      <option value={PaymentTypeSpecific.STUDENT_FEE_RECEIVED}>Student Fee Received</option>
                     </select>
                   </div>
 
