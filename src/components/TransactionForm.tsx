@@ -173,20 +173,28 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
           Transaction Type <span className="text-red-500">*</span>
         </label>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {Object.values(TransactionType).map((type) => (
-            <button
-              key={type}
-              type="button"
-              onClick={() => setTransactionType(type)}
-              className={`px-4 py-3 rounded-lg font-medium transition-all ${
-                transactionType === type
-                  ? 'bg-blue-600 text-white shadow-lg'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              {type.charAt(0).toUpperCase() + type.slice(1)}
-            </button>
-          ))}
+          {Object.values(TransactionType).map((type) => {
+            let displayLabel = type.charAt(0).toUpperCase() + type.slice(1);
+            if (type === TransactionType.DEPOSIT) {
+              displayLabel = 'Deposit/Income';
+            } else if (type === TransactionType.WITHDRAW) {
+              displayLabel = 'Withdrawal/Expense';
+            }
+            return (
+              <button
+                key={type}
+                type="button"
+                onClick={() => setTransactionType(type)}
+                className={`px-4 py-3 rounded-lg font-medium transition-all ${
+                  transactionType === type
+                    ? 'bg-blue-600 text-white shadow-lg'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                {displayLabel}
+              </button>
+            );
+          })}
         </div>
       </div>
 
