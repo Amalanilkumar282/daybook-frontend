@@ -554,8 +554,8 @@ const DaybookForm: React.FC<DaybookFormProps> = ({
           </div>
         )}
 
-        {/* Conditional ID fields based on payment type */}
-        {formData.payment_type === PayType.INCOMING ? (
+        {/* Conditional ID fields based on payment type and category */}
+        {formData.payment_type === PayType.INCOMING && formData.payment_type_specific === PaymentTypeSpecific.CLIENT_PAYMENT_RECEIVED && (
           <AutocompleteSelect
             options={clients}
             value={selectedClientId}
@@ -569,7 +569,9 @@ const DaybookForm: React.FC<DaybookFormProps> = ({
             isLoading={isLoadingClients}
             maxVisibleOptions={8}
           />
-        ) : (
+        )}
+        
+        {formData.payment_type === PayType.OUTGOING && formData.payment_type_specific === PaymentTypeSpecific.NURSE_SALARY_PAID && (
           <AutocompleteSelect
             options={nurses}
             value={selectedNurseId}
