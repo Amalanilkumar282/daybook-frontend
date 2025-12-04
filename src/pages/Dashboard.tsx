@@ -5,6 +5,7 @@ import { daybookApi, authUtils } from '../services/api';
 import SummaryCards from '../components/SummaryCards';
 import DaybookTable from '../components/DaybookTable';
 import ConfirmModal from '../components/ConfirmModal';
+import { filterDaybookEntries, sortDaybookEntries, DaybookFilters } from '../utils/filterUtils';
 
 const Dashboard: React.FC = () => {
   console.log('DEBUG: Dashboard component rendering');
@@ -129,67 +130,25 @@ const Dashboard: React.FC = () => {
       setSearchLoading(true);
       setSearchError(null);
 
-      // Prepare API filters
-      const apiFilters: any = {};
-      
-      if (filters.dateFrom) {
-        apiFilters.dateFrom = filters.dateFrom;
-      }
-      if (filters.dateTo) {
-        apiFilters.dateTo = filters.dateTo;
-      }
-      if (filters.minAmount) {
-        apiFilters.minAmount = parseFloat(filters.minAmount);
-      }
-      if (filters.maxAmount) {
-        apiFilters.maxAmount = parseFloat(filters.maxAmount);
-      }
-      if (filters.type !== 'all') {
-        apiFilters.paymentType = filters.type as PayType;
-      }
-      if (filters.payStatus !== 'all') {
-        apiFilters.payStatus = filters.payStatus as 'paid' | 'un_paid';
-      }
-      if (filters.category !== 'all') {
-        apiFilters.paymentTypeSpecific = filters.category as PaymentTypeSpecific;
-      }
+      // Build filter object for client-side filtering
+      const filterObj: DaybookFilters = {
+        searchTerm,
+        dateFrom: filters.dateFrom || undefined,
+        dateTo: filters.dateTo || undefined,
+        minAmount: filters.minAmount ? parseFloat(filters.minAmount) : undefined,
+        maxAmount: filters.maxAmount ? parseFloat(filters.maxAmount) : undefined,
+        type: filters.type as PayType | 'all',
+        payStatus: filters.payStatus as PayStatus | 'all',
+        category: filters.category,
+      };
 
-      // Use API search or filter local entries
-      let filteredResults: DaybookEntry[];
+      // Apply client-side filters to entries
+      const filtered = filterDaybookEntries(entries, filterObj);
       
-      if (searchTerm.trim() || Object.keys(apiFilters).length > 0) {
-        filteredResults = await daybookApi.searchEntries(searchTerm, apiFilters);
-      } else {
-        filteredResults = entries;
-      }
-
       // Apply sorting
-      filteredResults.sort((a: DaybookEntry, b: DaybookEntry) => {
-        let comparison = 0;
-        switch (sortBy) {
-          case 'date':
-            comparison = new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
-            break;
-          case 'amount':
-            comparison = a.amount - b.amount;
-            break;
-          case 'relevance':
-            if (searchTerm.trim()) {
-              const aScore = ((a.description && a.description.toLowerCase().indexOf(searchTerm.toLowerCase()) === 0) ? 2 : 1) +
-                (a.id.toString().indexOf(searchTerm.toLowerCase()) === 0 ? 1 : 0);
-              const bScore = ((b.description && b.description.toLowerCase().indexOf(searchTerm.toLowerCase()) === 0) ? 2 : 1) +
-                (b.id.toString().indexOf(searchTerm.toLowerCase()) === 0 ? 1 : 0);
-              comparison = bScore - aScore;
-            } else {
-              comparison = new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-            }
-            break;
-        }
+      const sorted = sortDaybookEntries(filtered, sortBy, sortOrder, searchTerm);
 
-        return sortOrder === 'desc' ? -comparison : comparison;
-      });
-
-      setSearchResults(filteredResults);
+      setSearchResults(sorted);
     } catch (error) {
       console.error('Search error:', error);
       setSearchError('Search failed. Please try again.');
