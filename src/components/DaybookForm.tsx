@@ -35,6 +35,7 @@ const DaybookForm: React.FC<DaybookFormProps> = ({
     client_id: '',
     bank_account_id: undefined,
     affects_bank_balance: true, // Default to true for bank account transactions
+    custom_paid_date: '', // Custom payment date
   });
 
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
@@ -143,6 +144,7 @@ const DaybookForm: React.FC<DaybookFormProps> = ({
         client_id: initialData.client_id || '',
         bank_account_id: initialData.bank_account_id || undefined,
         affects_bank_balance: initialData.affects_bank_balance ?? true,
+        custom_paid_date: initialData.custom_paid_date ? initialData.custom_paid_date.split('T')[0] : '',
       });
       
       // Set selected IDs for autocomplete
@@ -207,6 +209,7 @@ const DaybookForm: React.FC<DaybookFormProps> = ({
         receipt: receiptFile || undefined,
         bank_account_id: formData.bank_account_id || undefined,
         affects_bank_balance: formData.affects_bank_balance,
+        custom_paid_date: formData.custom_paid_date || undefined,
       };
 
       // Add nurse_id if payment is outgoing and a nurse is selected
@@ -254,6 +257,7 @@ const DaybookForm: React.FC<DaybookFormProps> = ({
       client_id: '',
       bank_account_id: undefined,
       affects_bank_balance: true,
+      custom_paid_date: '',
     });
     setReceiptFile(null);
     setErrors({});
@@ -383,6 +387,25 @@ const DaybookForm: React.FC<DaybookFormProps> = ({
           </div>
         </div>
 
+        {/* Custom Paid Date */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 lg:gap-6">
+          <div>
+            <label htmlFor="custom_paid_date" className="block text-sm font-medium text-dark-700 mb-2">
+              Custom Payment Date
+            </label>
+            <input
+              type="date"
+              id="custom_paid_date"
+              value={formData.custom_paid_date || ''}
+              onChange={(e) => handleInputChange('custom_paid_date', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            />
+            <p className="mt-1 text-xs text-gray-500">
+              Leave empty to use current date. Use this to backdate or future-date entries.
+            </p>
+          </div>
+        </div>
+
         {/* Bank Account Selection - Always show for all payment modes */}
         <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
@@ -481,6 +504,7 @@ const DaybookForm: React.FC<DaybookFormProps> = ({
               <option value={PaymentTypeSpecific.NURSE_SALARY_PAID}>Nurse Salary Paid</option>
               <option value={PaymentTypeSpecific.OFFICE_EXPENSES_PAID}>Office Expenses Paid</option>
               <option value={PaymentTypeSpecific.STUDENT_FEE_RECEIVED}>Student Fee Received</option>
+              <option value={PaymentTypeSpecific.COMMISSION}>Commission</option>
             </select>
           </div>
 

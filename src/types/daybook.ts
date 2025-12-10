@@ -20,7 +20,8 @@ export enum PaymentTypeSpecific {
   CLIENT_PAYMENT_RECEIVED = 'client_payment_received',
   NURSE_SALARY_PAID = 'nurse_salary_paid',
   OFFICE_EXPENSES_PAID = 'office_expenses_paid',
-  STUDENT_FEE_RECEIVED = 'student_fee_received'
+  STUDENT_FEE_RECEIVED = 'student_fee_received',
+  COMMISSION = 'commission'
 }
 
 export enum Tenant {
@@ -54,6 +55,8 @@ export interface DaybookEntry {
   bank_account_id?: number | null;  // Link to bank account (frontend uses this)
   account_id?: number | null;        // Backend might return this instead
   affects_bank_balance?: boolean;   // Whether this entry should update bank balance
+  custom_paid_date?: string | null; // Custom payment date (YYYY-MM-DD format)
+  created_by?: string | null;       // Email of user who created entry
 }
 
 export interface DaybookFormData {
@@ -70,6 +73,7 @@ export interface DaybookFormData {
   receipt?: File;
   bank_account_id?: number;        // Link to bank account
   affects_bank_balance?: boolean;   // Whether this entry should update bank balance
+  custom_paid_date?: string;       // Custom payment date (YYYY-MM-DD format)
 }
 
 // Authentication interfaces

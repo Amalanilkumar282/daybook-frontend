@@ -3,7 +3,7 @@ import React from 'react';
 interface ConfirmModalProps {
   isOpen: boolean;
   title: string;
-  message: string;
+  message: React.ReactNode;
   confirmText?: string;
   cancelText?: string;
   onConfirm: () => void;
@@ -39,7 +39,7 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
           </div>
           
           <div className="mb-6">
-            <p className="text-sm text-gray-600">{message}</p>
+            <div className="text-sm text-gray-600">{message}</div>
           </div>
           
           <div className="flex flex-col sm:flex-row gap-3">

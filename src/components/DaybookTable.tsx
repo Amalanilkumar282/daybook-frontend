@@ -280,7 +280,7 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete,
   return (
     <div className="animate-fade-in">
       {/* Mobile View */}
-      <div className="lg:hidden">
+      <div className="ipad:hidden">
         <div className="card">
           <div className="p-3 xs:p-4 border-b border-neutral-200">
             <h3 className="text-base xs:text-lg font-semibold text-neutral-900">Recent Entries</h3>
@@ -344,6 +344,16 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete,
                     <span className="text-xs text-blue-600 mt-1 inline-block">
                       Has Receipt
                     </span>
+                  )}
+                  {entry.created_by && (
+                    <p className="text-xs text-neutral-500 mt-1">
+                      <span className="font-medium">By:</span> {entry.created_by}
+                    </p>
+                  )}
+                  {entry.custom_paid_date && (
+                    <p className="text-xs text-neutral-500 mt-1">
+                      <span className="font-medium">Paid:</span> {new Date(entry.custom_paid_date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                    </p>
                   )}
                 </div>
                 
@@ -421,10 +431,10 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete,
       </div>
 
       {/* Desktop View */}
-      <div className="hidden lg:block">
+      <div className="hidden ipad:block">
         <div className="card">
           {/* Sticky scroll hint */}
-          <div className="bg-blue-50/80 border-b border-blue-200/50 px-6 py-2 text-xs text-blue-700 font-medium">
+          <div className="bg-blue-50/80 border-b border-blue-200/50 px-4 ipad:px-6 py-2 text-xs text-blue-700 font-medium">
             💡 Tip: Scroll horizontally to see all columns. Click on any row to view details.
           </div>
           

@@ -50,7 +50,7 @@ const Navbar: React.FC = () => {
   };
 
   const navLinkClass = (path: string) => {
-    const baseClass = "block px-4 py-3 rounded-2xl text-sm font-semibold transition-all duration-300 touch-target whitespace-nowrap";
+    const baseClass = "block px-3 ipad:px-4 py-2.5 ipad:py-3 rounded-xl ipad:rounded-2xl text-xs ipad:text-sm font-semibold transition-all duration-300 touch-target whitespace-nowrap";
     const activeClass = "bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-glow border border-primary-400/30";
     const inactiveClass = "text-neutral-700 hover:text-primary-600 hover:bg-primary-50/80 backdrop-blur-sm";
     
@@ -85,7 +85,7 @@ const Navbar: React.FC = () => {
           </div>
           
           {/* Desktop Navigation */}
-          <div className="hidden lg:flex items-center space-x-1">
+          <div className="hidden ipad:flex items-center space-x-1">
             <Link to="/" className={navLinkClass('/')}>Dashboard</Link>
             <Link to="/add" className={navLinkClass('/add')}>Add Entry</Link>
             <Link to="/search" className={navLinkClass('/search')}>Search</Link>
@@ -151,7 +151,7 @@ const Navbar: React.FC = () => {
           </div>
 
           {/* Mobile Menu Button */}
-          <div className="lg:hidden flex items-center space-x-1 xs:space-x-2">
+          <div className="ipad:hidden flex items-center space-x-1 xs:space-x-2">
             <button 
               onClick={handleExportCsv}
               className="bg-gradient-to-r from-accent-500 to-accent-600 hover:from-accent-600 hover:to-accent-700 text-white p-2 xs:p-2.5 rounded-xl xs:rounded-2xl shadow-glow hover:shadow-glow-lg transition-all duration-300 active:scale-95 touch-target"
@@ -180,7 +180,7 @@ const Navbar: React.FC = () => {
 
         {/* Mobile Navigation Menu */}
         {isMobileMenuOpen && (
-          <div className="lg:hidden absolute top-full left-0 right-0 bg-white/95 backdrop-blur-md border-t border-neutral-200/50 shadow-strong rounded-b-2xl xs:rounded-b-3xl z-[10000]">
+          <div className="ipad:hidden absolute top-full left-0 right-0 bg-white/95 backdrop-blur-md border-t border-neutral-200/50 shadow-strong rounded-b-2xl xs:rounded-b-3xl z-[10000]">
             <div className="px-3 xs:px-4 py-4 xs:py-6 space-y-2 xs:space-y-3">
               <Link to="/" className={mobileNavLinkClass('/')} onClick={closeMobileMenu}>
                 <div className="flex items-center space-x-2 xs:space-x-3">
