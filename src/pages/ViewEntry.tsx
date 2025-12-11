@@ -4,6 +4,7 @@ import { daybookApi, bankingApi, nursesClientsApi } from '../services/api';
 import { DaybookEntry, PayType, PayStatus } from '../types/daybook';
 import { BankAccount } from '../types/banking';
 import ConfirmModal from '../components/ConfirmModal';
+import PaymentReceipt, { ReceiptModal } from '../components/PaymentReceipt';
 
 const ViewEntry: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -17,6 +18,7 @@ const ViewEntry: React.FC = () => {
   const [bankLoading, setBankLoading] = useState(false);
   const [clientData, setClientData] = useState<any>(null);
   const [nurseData, setNurseData] = useState<any>(null);
+  const [showReceiptModal, setShowReceiptModal] = useState(false);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-IN', {
@@ -204,6 +206,15 @@ const ViewEntry: React.FC = () => {
           <p className="text-neutral-600 mt-2">View complete information for this daybook entry</p>
         </div>
         <div className="flex flex-col sm:flex-row gap-2 mt-4 sm:mt-0">
+          <button
+            onClick={() => setShowReceiptModal(true)}
+            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            Download Receipt
+          </button>
           <Link
             to={`/edit/${entry.id}`}
             className="bg-primary-500 hover:bg-primary-600 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors text-center"
@@ -432,6 +443,15 @@ const ViewEntry: React.FC = () => {
         </div>
       </div>
 
+      {/* Payment Receipt Section */}
+      <div className="mt-8">
+        <PaymentReceipt
+          entry={entry}
+          clientData={clientData}
+          nurseData={nurseData}
+        />
+      </div>
+
       {/* Navigation */}
       <div className="mt-8 flex justify-between">
         <Link
@@ -458,6 +478,15 @@ const ViewEntry: React.FC = () => {
         onConfirm={handleDelete}
         onCancel={() => setDeleteModal(false)}
         isLoading={deleteLoading}
+      />
+
+      {/* Receipt Modal */}
+      <ReceiptModal
+        isOpen={showReceiptModal}
+        entry={entry}
+        clientData={clientData}
+        nurseData={nurseData}
+        onClose={() => setShowReceiptModal(false)}
       />
     </div>
   );

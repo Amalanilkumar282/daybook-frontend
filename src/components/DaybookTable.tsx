@@ -5,6 +5,7 @@ import Pagination from './Pagination';
 import { usePagination } from '../hooks/usePagination';
 import { authUtils, nursesClientsApi, bankingApi } from '../services/api';
 import { BankTransaction } from '../types/banking';
+import { DownloadReceiptButton } from './PaymentReceipt';
 
 interface DaybookTableProps {
   entries: DaybookEntry[];
@@ -385,6 +386,12 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete,
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                     </svg>
                   </Link>
+                  <DownloadReceiptButton
+                    entry={entry}
+                    clientData={clientsMap.get(entry.client_id || '')}
+                    nurseData={nursesMap.get(entry.nurse_id?.toString() || '')}
+                    variant="icon"
+                  />
                   <Link
                     to={`/edit/${entry.id}`}
                     className="p-2 text-accent-600 hover:text-accent-700 hover:bg-accent-50 rounded-xl transition-colors touch-target"
@@ -636,6 +643,12 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete,
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                             </svg>
                           </Link>
+                          <DownloadReceiptButton
+                            entry={entry}
+                            clientData={clientsMap.get(entry.client_id || '')}
+                            nurseData={nursesMap.get(entry.nurse_id?.toString() || '')}
+                            variant="icon"
+                          />
                           <Link
                             to={`/edit/${entry.id}`}
                             className="p-2 text-accent-600 hover:text-accent-700 hover:bg-accent-50/80 backdrop-blur-sm rounded-xl transition-all duration-200 group"
