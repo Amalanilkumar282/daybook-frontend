@@ -98,9 +98,14 @@ export interface TransferFormData {
   from_account_id: number;
   to_account_id: number;
   amount: number;
+}
+
+// Update Transaction Form Data
+export interface UpdateTransactionFormData {
   description?: string;
   reference?: string;
-  tenant?: string;
+  cheque_number?: string;
+  status?: TransactionStatus;
 }
 
 // Cheque Transaction Form

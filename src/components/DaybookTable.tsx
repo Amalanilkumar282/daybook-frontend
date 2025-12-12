@@ -5,6 +5,7 @@ import Pagination from './Pagination';
 import { usePagination } from '../hooks/usePagination';
 import { authUtils, nursesClientsApi, bankingApi } from '../services/api';
 import { BankTransaction } from '../types/banking';
+import { DownloadReceiptButton } from './PaymentReceipt';
 
 interface DaybookTableProps {
   entries: DaybookEntry[];
@@ -280,7 +281,7 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete,
   return (
     <div className="animate-fade-in">
       {/* Mobile View */}
-      <div className="lg:hidden">
+      <div className="ipad:hidden">
         <div className="card">
           <div className="p-3 xs:p-4 border-b border-neutral-200">
             <h3 className="text-base xs:text-lg font-semibold text-neutral-900">Recent Entries</h3>
@@ -345,6 +346,16 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete,
                       Has Receipt
                     </span>
                   )}
+                  {entry.created_by && (
+                    <p className="text-xs text-neutral-500 mt-1">
+                      <span className="font-medium">By:</span> {entry.created_by}
+                    </p>
+                  )}
+                  {entry.custom_paid_date && (
+                    <p className="text-xs text-neutral-500 mt-1">
+                      <span className="font-medium">Paid:</span> {new Date(entry.custom_paid_date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                    </p>
+                  )}
                 </div>
                 
                 <div className="flex flex-col xs:flex-row xs:justify-between xs:items-center gap-2 xs:gap-3 mb-2 xs:mb-3">
@@ -375,6 +386,12 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete,
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                     </svg>
                   </Link>
+                  <DownloadReceiptButton
+                    entry={entry}
+                    clientData={clientsMap.get(entry.client_id || '')}
+                    nurseData={nursesMap.get(entry.nurse_id?.toString() || '')}
+                    variant="icon"
+                  />
                   <Link
                     to={`/edit/${entry.id}`}
                     className="p-2 text-accent-600 hover:text-accent-700 hover:bg-accent-50 rounded-xl transition-colors touch-target"
@@ -421,10 +438,10 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete,
       </div>
 
       {/* Desktop View */}
-      <div className="hidden lg:block">
+      <div className="hidden ipad:block">
         <div className="card">
           {/* Sticky scroll hint */}
-          <div className="bg-blue-50/80 border-b border-blue-200/50 px-6 py-2 text-xs text-blue-700 font-medium">
+          <div className="bg-blue-50/80 border-b border-blue-200/50 px-4 ipad:px-6 py-2 text-xs text-blue-700 font-medium">
             💡 Tip: Scroll horizontally to see all columns. Click on any row to view details.
           </div>
           
@@ -626,6 +643,12 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete,
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                             </svg>
                           </Link>
+                          <DownloadReceiptButton
+                            entry={entry}
+                            clientData={clientsMap.get(entry.client_id || '')}
+                            nurseData={nursesMap.get(entry.nurse_id?.toString() || '')}
+                            variant="icon"
+                          />
                           <Link
                             to={`/edit/${entry.id}`}
                             className="p-2 text-accent-600 hover:text-accent-700 hover:bg-accent-50/80 backdrop-blur-sm rounded-xl transition-all duration-200 group"

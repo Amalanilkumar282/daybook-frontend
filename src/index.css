@@ -276,19 +276,36 @@ input[type="number"] {
   }
 
   .tablet-only {
-    @apply hidden sm:block lg:hidden;
+    @apply hidden tablet:block ipad:hidden;
+  }
+
+  .tablet-and-up {
+    @apply hidden tablet:block;
+  }
+
+  .ipad-only {
+    @apply hidden ipad:block xl:hidden;
   }
 
   .desktop-only {
-    @apply hidden lg:block;
+    @apply hidden ipad:block;
   }
 
   .mobile-tablet-only {
-    @apply block lg:hidden;
+    @apply block ipad:hidden;
   }
 
   .tablet-desktop-only {
     @apply hidden sm:block;
+  }
+
+  /* iPad-specific responsive adjustments */
+  .ipad-container {
+    @apply tablet:px-6 tablet:py-4 ipad:px-8 ipad:py-6;
+  }
+
+  .ipad-grid {
+    @apply tablet:grid-cols-2 ipad:grid-cols-3 xl:grid-cols-4;
   }
 
   /* Responsive Card Classes */
