@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { DaybookEntry, PayType } from '../types/daybook';
-import { ReceiptConfig, DEFAULT_RECEIPT_CONFIG, TENANT_COMPANY_INFO, CompanyInfo } from '../types/receipt';
+import { ReceiptConfig, DEFAULT_RECEIPT_CONFIG } from '../types/receipt';
 import { downloadReceiptAsPDF, previewReceipt, getReceiptHTMLString } from '../utils/receiptGenerator';
 
 interface PaymentReceiptProps {
@@ -10,145 +10,6 @@ interface PaymentReceiptProps {
   onClose?: () => void;
 }
 
-interface ReceiptSettingsModalProps {
-  isOpen: boolean;
-  config: ReceiptConfig;
-  companyInfo: CompanyInfo;
-  onConfigChange: (config: ReceiptConfig) => void;
-  onCompanyInfoChange: (info: CompanyInfo) => void;
-  onClose: () => void;
-  onApply: () => void;
-}
-
-// Settings Modal Component
-const ReceiptSettingsModal: React.FC<ReceiptSettingsModalProps> = ({
-  isOpen,
-  config,
-  companyInfo,
-  onConfigChange,
-  onCompanyInfoChange,
-  onClose,
-  onApply,
-}) => {
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6 border-b border-neutral-200">
-          <h3 className="text-xl font-semibold text-neutral-900">Receipt Settings</h3>
-          <p className="text-sm text-neutral-600 mt-1">Customize your receipt before downloading</p>
-        </div>
-
-        <div className="p-6 space-y-6">
-          {/* Company Information */}
-          <div>
-            <h4 className="text-sm font-semibold text-neutral-800 mb-3 uppercase tracking-wide">Company Information</h4>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-1">Company Name</label>
-                <input
-                  type="text"
-                  value={companyInfo.name}
-                  onChange={(e) => onCompanyInfoChange({ ...companyInfo, name: e.target.value })}
-                  className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-1">Address</label>
-                <textarea
-                  value={companyInfo.address || ''}
-                  onChange={(e) => onCompanyInfoChange({ ...companyInfo, address: e.target.value })}
-                  rows={2}
-                  className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-1">Phone</label>
-                  <input
-                    type="text"
-                    value={companyInfo.phone || ''}
-                    onChange={(e) => onCompanyInfoChange({ ...companyInfo, phone: e.target.value })}
-                    className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-1">Email</label>
-                  <input
-                    type="email"
-                    value={companyInfo.email || ''}
-                    onChange={(e) => onCompanyInfoChange({ ...companyInfo, email: e.target.value })}
-                    className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-1">Website</label>
-                <input
-                  type="text"
-                  value={companyInfo.website || ''}
-                  onChange={(e) => onCompanyInfoChange({ ...companyInfo, website: e.target.value })}
-                  className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Display Options */}
-          <div>
-            <h4 className="text-sm font-semibold text-neutral-800 mb-3 uppercase tracking-wide">Display Options</h4>
-            <div className="space-y-3">
-              <label className="flex items-center gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={config.showCompanyAddress}
-                  onChange={(e) => onConfigChange({ ...config, showCompanyAddress: e.target.checked })}
-                  className="w-4 h-4 text-primary-600 border-neutral-300 rounded focus:ring-primary-500"
-                />
-                <span className="text-sm text-neutral-700">Show company address</span>
-              </label>
-              <label className="flex items-center gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={config.showSignatureArea}
-                  onChange={(e) => onConfigChange({ ...config, showSignatureArea: e.target.checked })}
-                  className="w-4 h-4 text-primary-600 border-neutral-300 rounded focus:ring-primary-500"
-                />
-                <span className="text-sm text-neutral-700">Show signature area</span>
-              </label>
-              <label className="flex items-center gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={config.showTerms}
-                  onChange={(e) => onConfigChange({ ...config, showTerms: e.target.checked })}
-                  className="w-4 h-4 text-primary-600 border-neutral-300 rounded focus:ring-primary-500"
-                />
-                <span className="text-sm text-neutral-700">Show terms and notes</span>
-              </label>
-            </div>
-          </div>
-        </div>
-
-        <div className="p-6 border-t border-neutral-200 flex justify-end gap-3">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 text-neutral-700 bg-neutral-100 hover:bg-neutral-200 rounded-lg font-medium transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={onApply}
-            className="px-4 py-2 text-white bg-primary-600 hover:bg-primary-700 rounded-lg font-medium transition-colors"
-          >
-            Apply & Close
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
 // Main PaymentReceipt Component
 const PaymentReceipt: React.FC<PaymentReceiptProps> = ({
   entry,
@@ -157,12 +18,8 @@ const PaymentReceipt: React.FC<PaymentReceiptProps> = ({
   onClose,
 }) => {
   const [showPreview, setShowPreview] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [config, setConfig] = useState<ReceiptConfig>(DEFAULT_RECEIPT_CONFIG);
-  const [companyInfo, setCompanyInfo] = useState<CompanyInfo>(
-    TENANT_COMPANY_INFO[entry.tenant] || TENANT_COMPANY_INFO['Personal']
-  );
+  const config: ReceiptConfig = DEFAULT_RECEIPT_CONFIG;
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   const isIncoming = entry.payment_type === PayType.INCOMING;
@@ -170,16 +27,11 @@ const PaymentReceipt: React.FC<PaymentReceiptProps> = ({
   // Update preview when settings change
   useEffect(() => {
     if (showPreview && iframeRef.current) {
-      const modifiedConfig = { ...config };
-      // Apply custom company info
       const html = getReceiptHTMLString(
         { ...entry },
         clientData,
         nurseData,
-        modifiedConfig
-      ).replace(
-        TENANT_COMPANY_INFO[entry.tenant]?.name || '',
-        companyInfo.name
+        config
       );
       
       const iframe = iframeRef.current;
@@ -190,21 +42,12 @@ const PaymentReceipt: React.FC<PaymentReceiptProps> = ({
         doc.close();
       }
     }
-  }, [showPreview, config, companyInfo, entry, clientData, nurseData]);
+  }, [showPreview, config, entry, clientData, nurseData]);
 
   const handleDownload = async () => {
     setIsGenerating(true);
     try {
-      // Temporarily update TENANT_COMPANY_INFO with custom values
-      const originalInfo = TENANT_COMPANY_INFO[entry.tenant];
-      TENANT_COMPANY_INFO[entry.tenant] = companyInfo;
-      
       downloadReceiptAsPDF(entry, clientData, nurseData, config);
-      
-      // Restore original info
-      if (originalInfo) {
-        TENANT_COMPANY_INFO[entry.tenant] = originalInfo;
-      }
     } catch (error) {
       console.error('Error generating receipt:', error);
     } finally {
@@ -213,16 +56,7 @@ const PaymentReceipt: React.FC<PaymentReceiptProps> = ({
   };
 
   const handlePreviewInNewTab = () => {
-    // Temporarily update TENANT_COMPANY_INFO with custom values
-    const originalInfo = TENANT_COMPANY_INFO[entry.tenant];
-    TENANT_COMPANY_INFO[entry.tenant] = companyInfo;
-    
     previewReceipt(entry, clientData, nurseData, config);
-    
-    // Restore original info
-    if (originalInfo) {
-      TENANT_COMPANY_INFO[entry.tenant] = originalInfo;
-    }
   };
 
   const formatCurrency = (amount: number) => {
@@ -320,17 +154,6 @@ const PaymentReceipt: React.FC<PaymentReceiptProps> = ({
           </button>
           
           <button
-            onClick={() => setShowSettings(true)}
-            className="flex items-center justify-center gap-2 px-4 py-3 border-2 border-neutral-300 text-neutral-700 hover:bg-neutral-50 rounded-lg font-medium transition-colors"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-            Settings
-          </button>
-          
-          <button
             onClick={handleDownload}
             disabled={isGenerating}
             className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 ${
@@ -367,17 +190,6 @@ const PaymentReceipt: React.FC<PaymentReceiptProps> = ({
           </button>
         )}
       </div>
-
-      {/* Settings Modal */}
-      <ReceiptSettingsModal
-        isOpen={showSettings}
-        config={config}
-        companyInfo={companyInfo}
-        onConfigChange={setConfig}
-        onCompanyInfoChange={setCompanyInfo}
-        onClose={() => setShowSettings(false)}
-        onApply={() => setShowSettings(false)}
-      />
     </div>
   );
 };

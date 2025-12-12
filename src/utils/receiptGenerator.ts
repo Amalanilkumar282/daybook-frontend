@@ -73,17 +73,12 @@ export const buildReceiptData = (
   };
 };
 
-// Generate HTML for the receipt - Modern Invoice Style
+// Generate HTML for the receipt - Modern Invoice Style (A4 Single Page)
 export const generateReceiptHTML = (
   data: ReceiptData,
   config: ReceiptConfig = DEFAULT_RECEIPT_CONFIG
 ): string => {
   const isIncoming = data.paymentType === PayType.INCOMING;
-  const currentDate = new Date().toLocaleDateString('en-IN', {
-    day: '2-digit',
-    month: 'long',
-    year: 'numeric',
-  });
   
   return `
 <!DOCTYPE html>
@@ -101,30 +96,39 @@ export const generateReceiptHTML = (
       box-sizing: border-box;
     }
     
+    @page {
+      size: A4;
+      margin: 0;
+    }
+    
     body {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: #f1f5f9;
       min-height: 100vh;
-      padding: 40px 20px;
+      padding: 20px;
       color: #1a1a2e;
     }
     
     .invoice-wrapper {
-      max-width: 800px;
+      width: 210mm;
+      min-height: 297mm;
+      max-height: 297mm;
       margin: 0 auto;
+      overflow: hidden;
     }
     
     .invoice {
       background: #ffffff;
-      border-radius: 16px;
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
       overflow: hidden;
+      height: 100%;
     }
     
     /* Header */
     .invoice-header {
       background: linear-gradient(135deg, ${isIncoming ? '#059669 0%, #10b981 100%' : '#dc2626 0%, #ef4444 100%'});
-      padding: 40px;
+      padding: 24px 32px;
       color: white;
       position: relative;
       overflow: hidden;
@@ -135,20 +139,9 @@ export const generateReceiptHTML = (
       position: absolute;
       top: -50%;
       right: -20%;
-      width: 400px;
-      height: 400px;
-      background: rgba(255,255,255,0.1);
-      border-radius: 50%;
-    }
-    
-    .invoice-header::after {
-      content: '';
-      position: absolute;
-      bottom: -60%;
-      left: -10%;
       width: 300px;
       height: 300px;
-      background: rgba(255,255,255,0.05);
+      background: rgba(255,255,255,0.1);
       border-radius: 50%;
     }
     
@@ -157,20 +150,13 @@ export const generateReceiptHTML = (
       z-index: 1;
       display: flex;
       justify-content: space-between;
-      align-items: flex-start;
+      align-items: center;
     }
     
     .company-info h1 {
-      font-size: 28px;
+      font-size: 22px;
       font-weight: 700;
-      margin-bottom: 8px;
       letter-spacing: -0.5px;
-    }
-    
-    .company-info p {
-      font-size: 14px;
-      opacity: 0.9;
-      line-height: 1.6;
     }
     
     .invoice-type {
@@ -181,40 +167,40 @@ export const generateReceiptHTML = (
       display: inline-block;
       background: rgba(255,255,255,0.2);
       backdrop-filter: blur(10px);
-      padding: 8px 20px;
+      padding: 6px 16px;
       border-radius: 50px;
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 1px;
-      margin-bottom: 12px;
+      margin-bottom: 8px;
     }
     
     .invoice-number {
-      font-size: 14px;
+      font-size: 12px;
       opacity: 0.9;
     }
     
     .invoice-number strong {
       display: block;
-      font-size: 18px;
-      margin-top: 4px;
+      font-size: 15px;
+      margin-top: 2px;
     }
     
     /* Body */
     .invoice-body {
-      padding: 40px;
+      padding: 24px 32px;
     }
     
     /* Meta Info */
     .meta-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 24px;
-      padding: 24px;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      padding: 16px;
       background: #f8fafc;
-      border-radius: 12px;
-      margin-bottom: 32px;
+      border-radius: 10px;
+      margin-bottom: 20px;
     }
     
     .meta-item {
@@ -222,16 +208,16 @@ export const generateReceiptHTML = (
     }
     
     .meta-label {
-      font-size: 11px;
+      font-size: 10px;
       text-transform: uppercase;
       letter-spacing: 0.5px;
       color: #64748b;
-      margin-bottom: 6px;
+      margin-bottom: 4px;
       font-weight: 500;
     }
     
     .meta-value {
-      font-size: 15px;
+      font-size: 13px;
       font-weight: 600;
       color: #1e293b;
     }
@@ -240,13 +226,13 @@ export const generateReceiptHTML = (
     .parties-section {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 32px;
-      margin-bottom: 32px;
+      gap: 20px;
+      margin-bottom: 20px;
     }
     
     .party-card {
-      padding: 24px;
-      border-radius: 12px;
+      padding: 16px;
+      border-radius: 10px;
       border: 1px solid #e2e8f0;
       background: #ffffff;
     }
@@ -257,36 +243,36 @@ export const generateReceiptHTML = (
     }
     
     .party-label {
-      font-size: 11px;
+      font-size: 10px;
       text-transform: uppercase;
       letter-spacing: 0.5px;
       color: #64748b;
-      margin-bottom: 12px;
+      margin-bottom: 8px;
       font-weight: 600;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
     }
     
     .party-label::before {
       content: '';
-      width: 8px;
-      height: 8px;
+      width: 6px;
+      height: 6px;
       background: ${isIncoming ? '#10b981' : '#ef4444'};
       border-radius: 50%;
     }
     
     .party-name {
-      font-size: 18px;
+      font-size: 15px;
       font-weight: 600;
       color: #1e293b;
-      margin-bottom: 8px;
+      margin-bottom: 4px;
     }
     
     .party-details {
-      font-size: 14px;
+      font-size: 12px;
       color: #64748b;
-      line-height: 1.6;
+      line-height: 1.5;
     }
     
     .party-details span {
@@ -296,9 +282,9 @@ export const generateReceiptHTML = (
     /* Amount Section */
     .amount-section {
       background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
-      border-radius: 16px;
-      padding: 32px;
-      margin-bottom: 32px;
+      border-radius: 12px;
+      padding: 20px 24px;
+      margin-bottom: 20px;
       color: white;
       position: relative;
       overflow: hidden;
@@ -307,10 +293,10 @@ export const generateReceiptHTML = (
     .amount-section::before {
       content: '₹';
       position: absolute;
-      right: 20px;
+      right: 16px;
       top: 50%;
       transform: translateY(-50%);
-      font-size: 120px;
+      font-size: 80px;
       opacity: 0.05;
       font-weight: 700;
     }
@@ -319,11 +305,11 @@ export const generateReceiptHTML = (
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 20px;
+      margin-bottom: 12px;
     }
     
     .amount-label {
-      font-size: 14px;
+      font-size: 12px;
       text-transform: uppercase;
       letter-spacing: 1px;
       opacity: 0.7;
@@ -332,10 +318,10 @@ export const generateReceiptHTML = (
     .status-pill {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
-      padding: 6px 14px;
+      gap: 4px;
+      padding: 4px 10px;
       border-radius: 50px;
-      font-size: 12px;
+      font-size: 10px;
       font-weight: 600;
       text-transform: uppercase;
     }
@@ -351,46 +337,40 @@ export const generateReceiptHTML = (
     }
     
     .status-dot {
-      width: 6px;
-      height: 6px;
+      width: 5px;
+      height: 5px;
       border-radius: 50%;
       background: currentColor;
-      animation: pulse 2s infinite;
-    }
-    
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.5; }
     }
     
     .amount-value {
-      font-size: 48px;
+      font-size: 36px;
       font-weight: 700;
       letter-spacing: -1px;
-      margin-bottom: 12px;
+      margin-bottom: 8px;
     }
     
     .amount-words {
-      font-size: 14px;
+      font-size: 12px;
       opacity: 0.8;
       font-style: italic;
-      padding: 12px 16px;
+      padding: 8px 12px;
       background: rgba(255,255,255,0.1);
-      border-radius: 8px;
+      border-radius: 6px;
       display: inline-block;
     }
     
     /* Details Table */
     .details-section {
-      margin-bottom: 32px;
+      margin-bottom: 20px;
     }
     
     .section-title {
-      font-size: 13px;
+      font-size: 11px;
       text-transform: uppercase;
       letter-spacing: 0.5px;
       color: #64748b;
-      margin-bottom: 16px;
+      margin-bottom: 12px;
       font-weight: 600;
       display: flex;
       align-items: center;
@@ -409,12 +389,12 @@ export const generateReceiptHTML = (
       grid-template-columns: repeat(2, 1fr);
       gap: 1px;
       background: #e2e8f0;
-      border-radius: 12px;
+      border-radius: 10px;
       overflow: hidden;
     }
     
     .detail-item {
-      padding: 16px 20px;
+      padding: 12px 16px;
       background: #ffffff;
       display: flex;
       justify-content: space-between;
@@ -426,12 +406,12 @@ export const generateReceiptHTML = (
     }
     
     .detail-label {
-      font-size: 13px;
+      font-size: 12px;
       color: #64748b;
     }
     
     .detail-value {
-      font-size: 14px;
+      font-size: 12px;
       font-weight: 600;
       color: #1e293b;
     }
@@ -439,9 +419,9 @@ export const generateReceiptHTML = (
     .badge {
       display: inline-flex;
       align-items: center;
-      padding: 4px 12px;
-      border-radius: 6px;
-      font-size: 12px;
+      padding: 3px 10px;
+      border-radius: 5px;
+      font-size: 10px;
       font-weight: 600;
     }
     
@@ -469,83 +449,49 @@ export const generateReceiptHTML = (
     .description-section {
       background: #fffbeb;
       border: 1px solid #fde68a;
-      border-radius: 12px;
-      padding: 20px;
-      margin-bottom: 32px;
+      border-radius: 10px;
+      padding: 14px;
+      margin-bottom: 20px;
     }
     
     .description-title {
-      font-size: 13px;
+      font-size: 11px;
       font-weight: 600;
       color: #92400e;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
     }
     
     .description-title svg {
-      width: 16px;
-      height: 16px;
+      width: 14px;
+      height: 14px;
     }
     
     .description-text {
-      font-size: 14px;
-      color: #78350f;
-      line-height: 1.6;
-    }
-    
-    /* Signature Section */
-    .signature-section {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 40px;
-      margin-top: 48px;
-      padding-top: 32px;
-      border-top: 2px dashed #e2e8f0;
-    }
-    
-    .signature-box {
-      text-align: center;
-    }
-    
-    .signature-line {
-      width: 100%;
-      height: 60px;
-      border-bottom: 2px solid #cbd5e1;
-      margin-bottom: 12px;
-    }
-    
-    .signature-label {
       font-size: 12px;
-      color: #64748b;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-    
-    .signature-date {
-      font-size: 11px;
-      color: #94a3b8;
-      margin-top: 4px;
+      color: #78350f;
+      line-height: 1.5;
     }
     
     /* Footer */
     .invoice-footer {
       background: #f8fafc;
-      padding: 24px 40px;
+      padding: 16px 32px;
       border-top: 1px solid #e2e8f0;
       text-align: center;
     }
     
     .footer-note {
-      font-size: 12px;
+      font-size: 10px;
       color: #64748b;
-      margin-bottom: 12px;
-      line-height: 1.6;
+      margin-bottom: 8px;
+      line-height: 1.5;
     }
     
     .footer-thanks {
-      font-size: 16px;
+      font-size: 14px;
       font-weight: 600;
       color: #1e293b;
     }
@@ -556,13 +502,23 @@ export const generateReceiptHTML = (
     
     /* Responsive */
     @media (max-width: 640px) {
+      .invoice-wrapper {
+        width: 100%;
+        min-height: auto;
+        max-height: none;
+      }
+      
       .parties-section {
         grid-template-columns: 1fr;
       }
       
+      .meta-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      
       .header-content {
         flex-direction: column;
-        gap: 20px;
+        gap: 16px;
       }
       
       .invoice-type {
@@ -570,12 +526,7 @@ export const generateReceiptHTML = (
       }
       
       .amount-value {
-        font-size: 36px;
-      }
-      
-      .signature-section {
-        grid-template-columns: 1fr;
-        gap: 32px;
+        font-size: 28px;
       }
     }
     
@@ -583,15 +534,19 @@ export const generateReceiptHTML = (
       body {
         background: white;
         padding: 0;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      
+      .invoice-wrapper {
+        width: 100%;
+        min-height: auto;
+        max-height: none;
       }
       
       .invoice {
         box-shadow: none;
         border-radius: 0;
-      }
-      
-      .invoice-wrapper {
-        max-width: 100%;
       }
     }
   </style>
@@ -604,13 +559,6 @@ export const generateReceiptHTML = (
         <div class="header-content">
           <div class="company-info">
             <h1>${data.company.name}</h1>
-            ${config.showCompanyAddress && data.company.address ? `
-            <p>
-              ${data.company.address}<br>
-              ${data.company.phone ? `📞 ${data.company.phone}` : ''}
-              ${data.company.email ? ` · ✉️ ${data.company.email}` : ''}
-            </p>
-            ` : ''}
           </div>
           <div class="invoice-type">
             <div class="invoice-badge">${isIncoming ? '💰 Payment Receipt' : '📤 Payment Voucher'}</div>
@@ -651,10 +599,6 @@ export const generateReceiptHTML = (
           <div class="party-card">
             <div class="party-label">From</div>
             <div class="party-name">${data.company.name}</div>
-            <div class="party-details">
-              ${data.company.address ? `<span>${data.company.address}</span>` : ''}
-              ${data.company.email ? `<span>${data.company.email}</span>` : ''}
-            </div>
           </div>
           <div class="party-card highlight">
             <div class="party-label">${isIncoming ? 'Received From' : 'Paid To'}</div>
@@ -662,7 +606,6 @@ export const generateReceiptHTML = (
             <div class="party-details">
               ${data.payer?.patientName && data.payer.patientName !== data.payer?.name ? `<span>Patient: ${data.payer.patientName}</span>` : ''}
               ${data.payer?.phone || data.nurseInfo?.phone ? `<span>📞 ${data.payer?.phone || data.nurseInfo?.phone}</span>` : ''}
-              ${data.payer?.address ? `<span>📍 ${data.payer.address}</span>` : ''}
               ${data.nurseInfo?.regNo ? `<span>Reg. No: ${data.nurseInfo.regNo}</span>` : ''}
             </div>
           </div>
@@ -722,32 +665,13 @@ export const generateReceiptHTML = (
           </div>
         </div>
         ` : ''}
-        
-        <!-- Signature -->
-        ${config.showSignatureArea ? `
-        <div class="signature-section">
-          <div class="signature-box">
-            <div class="signature-line"></div>
-            <div class="signature-label">${isIncoming ? "Receiver's Signature" : "Payer's Signature"}</div>
-            <div class="signature-date">Date: _____________</div>
-          </div>
-          <div class="signature-box">
-            <div class="signature-line"></div>
-            <div class="signature-label">Authorized Signatory</div>
-            <div class="signature-date">${currentDate}</div>
-          </div>
-        </div>
-        ` : ''}
       </div>
       
       <!-- Footer -->
       <div class="invoice-footer">
-        ${config.showTerms ? `
         <div class="footer-note">
-          This is a computer-generated receipt. Valid without signature for amounts less than ₹5,000.<br>
-          Please retain this document for your records.
+          This is a computer-generated receipt and does not require a signature.
         </div>
-        ` : ''}
         <div class="footer-thanks">Thank you for your <span>payment</span>! 🙏</div>
       </div>
     </div>

@@ -75,43 +75,28 @@ export interface ReceiptConfig {
 // Default Receipt Configuration
 export const DEFAULT_RECEIPT_CONFIG: ReceiptConfig = {
   showLogo: true,
-  showCompanyAddress: true,
-  showGST: true,
-  showSignatureArea: true,
+  showCompanyAddress: false,  // Disabled - no dummy data
+  showGST: false,  // Disabled - no dummy data
+  showSignatureArea: false,  // Computer generated - no signature needed
   showTerms: true,
   showQRCode: false,
   paperSize: 'A4',
   orientation: 'portrait',
 };
 
-// Company Info based on Tenant
+// Company Info based on Tenant - Only valid names, no dummy data
 export const TENANT_COMPANY_INFO: Record<string, CompanyInfo> = {
   TATANursing: {
     name: 'TATA Nursing Services',
-    address: 'Nursing Care Center, Healthcare Complex',
-    phone: '+91 XXXXXXXXXX',
-    email: 'contact@tatanursing.com',
-    website: 'www.tatanursing.com',
   },
   Dearcare: {
     name: 'Dearcare Healthcare Services',
-    address: 'Healthcare Plaza, Main Road',
-    phone: '+91 XXXXXXXXXX',
-    email: 'contact@dearcare.com',
-    website: 'www.dearcare.com',
   },
   DearcareAcademy: {
     name: 'Dearcare Academy',
-    address: 'Education Center, Training Complex',
-    phone: '+91 XXXXXXXXXX',
-    email: 'academy@dearcare.com',
-    website: 'academy.dearcare.com',
   },
   Personal: {
     name: 'Personal Account',
-    address: '',
-    phone: '',
-    email: '',
   },
 };
 
