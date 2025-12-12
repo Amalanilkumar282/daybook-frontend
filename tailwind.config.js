@@ -8,8 +8,10 @@ module.exports = {
       'xs': '320px',      // Small mobile phones
       'sm': '475px',      // Large mobile phones
       'md': '640px',      // Small tablets
-      'lg': '768px',      // Large tablets
-      'xl': '1024px',     // Small desktop
+      'tablet': '768px',  // iPad Mini, iPad (portrait)
+      'lg': '834px',      // iPad Pro 11" (portrait)
+      'ipad': '1024px',   // iPad (landscape), iPad Pro (portrait)
+      'xl': '1194px',     // iPad Pro 12.9" (landscape)
       '2xl': '1280px',    // Large desktop
       '3xl': '1536px',    // Extra large desktop
       '4xl': '1920px',    // Ultra wide screens

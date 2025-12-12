@@ -26,7 +26,8 @@ import {
   WithdrawFormData,
   TransferFormData,
   ChequeFormData,
-  TransactionType
+  TransactionType,
+  UpdateTransactionFormData
 } from '../types/banking';
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://day-book-backend.vercel.app/api';
@@ -1197,6 +1198,26 @@ export const bankingApi = {
       return response.data.data || response.data;
     } catch (error: any) {
       throw new Error(error.response?.data?.error || error.response?.data?.message || 'Failed to fetch transaction');
+    }
+  },
+
+  // Update transaction (only description, reference, cheque_number, status can be updated)
+  updateTransaction: async (id: number, data: UpdateTransactionFormData): Promise<BankTransaction> => {
+    try {
+      const response = await api.put(`/banking/transactions/update/${id}`, data);
+      return response.data.data || response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.error || error.response?.data?.message || 'Failed to update transaction');
+    }
+  },
+
+  // Delete transaction (Warning: does not reverse balance changes)
+  deleteTransaction: async (id: number): Promise<{ message: string; warning?: string }> => {
+    try {
+      const response = await api.delete(`/banking/transactions/delete/${id}`);
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.error || error.response?.data?.message || 'Failed to delete transaction');
     }
   },
 

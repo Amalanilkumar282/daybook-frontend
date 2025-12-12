@@ -256,6 +256,17 @@ const BankTransactions: React.FC = () => {
             accounts={accounts}
             isLoading={isLoadingTransactions || isLoadingAccounts}
             showAccountColumn={!accountIdParam}
+            onTransactionUpdate={async () => {
+              // Refresh data after update/delete
+              await fetchAccounts();
+              if (accountIdParam) {
+                await fetchTransactionsByAccount(parseInt(accountIdParam));
+              } else {
+                await fetchAllTransactions();
+              }
+              setSuccess('Transaction updated successfully!');
+              setTimeout(() => setSuccess(null), 3000);
+            }}
           />
         )}
       </div>
