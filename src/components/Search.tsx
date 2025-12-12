@@ -354,6 +354,7 @@ const Search: React.FC<SearchProps> = ({ entries: propEntries = [] }) => {
                 <option value={PaymentTypeSpecific.CLIENT_PAYMENT_RECEIVED}>Client Payment Received</option>
                 <option value={PaymentTypeSpecific.NURSE_SALARY_PAID}>Nurse Salary Paid</option>
                 <option value={PaymentTypeSpecific.OFFICE_EXPENSES_PAID}>Office Expenses Paid</option>
+                <option value={PaymentTypeSpecific.COMMISSION}>Commission</option>
                 <option value={PaymentTypeSpecific.STUDENT_FEE_RECEIVED}>Student Fee Received</option>
               </select>
             </div>
