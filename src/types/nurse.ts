@@ -61,6 +61,8 @@ export interface Client {
   patient_state: string | null;
   patient_location_link: string | null;
   requestor_location_link: string | null;
+  patient_dob: string | null;
+  requestor_dob: string | null;
 }
 
 export interface NursesResponse {
