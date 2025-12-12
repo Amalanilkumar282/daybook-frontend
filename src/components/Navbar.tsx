@@ -68,58 +68,46 @@ const Navbar: React.FC = () => {
   return (
     <nav className="glass-card border-0 border-b border-neutral-200/30 w-full">
       <div className="container-wide">
-        <div className="flex justify-between items-center h-14 xs:h-16 sm:h-20">
+        {/* Top Row: Logo and User Actions */}
+        <div className="flex justify-between items-center h-14 xs:h-16 sm:h-14 ipad:h-16">
           {/* Logo */}
           <div className="flex items-center flex-shrink-0">
             <Link to="/" className="flex items-center space-x-2 xs:space-x-3 group" onClick={closeMobileMenu}>
-              <div className="bg-gradient-to-br from-primary-500 via-primary-600 to-primary-700 text-white p-1.5 xs:p-2 sm:p-3 rounded-xl xs:rounded-2xl shadow-glow-lg group-hover:shadow-intense transition-all duration-300 group-hover:scale-105 border border-primary-400/30">
-                <svg className="w-4 h-4 xs:w-5 xs:h-5 sm:w-7 sm:h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="bg-gradient-to-br from-primary-500 via-primary-600 to-primary-700 text-white p-1.5 xs:p-2 sm:p-2.5 rounded-xl xs:rounded-2xl shadow-glow-lg group-hover:shadow-intense transition-all duration-300 group-hover:scale-105 border border-primary-400/30">
+                <svg className="w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
               </div>
               <div className="hidden xs:flex flex-col">
-                <span className="text-lg xs:text-xl sm:text-2xl font-bold font-display gradient-text">Daybook</span>
+                <span className="text-lg xs:text-xl sm:text-xl font-bold font-display gradient-text">Daybook</span>
                 <span className="text-xs text-neutral-500 font-medium -mt-1 hidden sm:block">Professional Suite</span>
               </div>
             </Link>
           </div>
-          
-          {/* Desktop Navigation */}
-          <div className="hidden ipad:flex items-center space-x-1">
-            <Link to="/" className={navLinkClass('/')}>Dashboard</Link>
-            <Link to="/add" className={navLinkClass('/add')}>Add Entry</Link>
-            <Link to="/search" className={navLinkClass('/search')}>Search</Link>
-            <Link to="/reports" className={navLinkClass('/reports')}>Reports</Link>
-            <Link to="/personal-finance" className={navLinkClass('/personal-finance')}>Personal Finance</Link>
-            <Link to="/banking/accounts" className={navLinkClass('/banking/accounts')}>Bank Accounts</Link>
-            <Link to="/banking/transactions" className={navLinkClass('/banking/transactions')}>Transactions</Link>
-            {user?.role === 'admin' && (
-              <Link to="/admin/users" className={navLinkClass('/admin/users')}>User Management</Link>
-            )}
-            
-            <div className="h-8 w-px bg-gradient-to-b from-transparent via-neutral-300 to-transparent mx-3"></div>
-            
+
+          {/* Desktop: Export Button and User Menu */}
+          <div className="hidden ipad:flex items-center space-x-2 flex-shrink-0">
             <button 
               onClick={handleExportCsv}
-              className="bg-gradient-to-r from-accent-500 to-accent-600 hover:from-accent-600 hover:to-accent-700 text-white px-3 xl:px-4 py-2.5 rounded-2xl text-sm font-semibold shadow-glow hover:shadow-glow-lg transition-all duration-300 active:scale-95 flex items-center space-x-2 border border-accent-400/30"
+              className="bg-gradient-to-r from-accent-500 to-accent-600 hover:from-accent-600 hover:to-accent-700 text-white px-3 py-2 rounded-xl text-sm font-semibold shadow-glow hover:shadow-glow-lg transition-all duration-300 active:scale-95 flex items-center space-x-2 border border-accent-400/30"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
-              <span className="hidden xl:inline">Export</span>
+              <span>Export</span>
             </button>
             
             {/* User Menu */}
             <div className="relative">
               <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
-                className="flex items-center space-x-2 px-3 py-2.5 rounded-2xl text-sm font-semibold text-neutral-700 hover:text-primary-600 hover:bg-primary-50/80 transition-all duration-300"
+                className="flex items-center space-x-2 px-3 py-2 rounded-xl text-sm font-semibold text-neutral-700 hover:text-primary-600 hover:bg-primary-50/80 transition-all duration-300"
               >
                 <div className="w-7 h-7 bg-gradient-to-r from-primary-500 to-primary-600 rounded-full flex items-center justify-center text-white text-xs font-bold">
                   {user?.email.charAt(0).toUpperCase()}
                 </div>
-                {/* Email removed to save space; only profile icon shown */}
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <span className="hidden xl:inline max-w-[120px] truncate">{user?.email.split('@')[0]}</span>
+                <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
               </button>
@@ -175,6 +163,26 @@ const Navbar: React.FC = () => {
                 )}
               </svg>
             </button>
+          </div>
+        </div>
+        
+        {/* Desktop Navigation - Two Rows */}
+        <div className="hidden ipad:block border-t border-neutral-200/30 py-2">
+          {/* Row 1: Main Navigation */}
+          <div className="flex items-center justify-center space-x-1 mb-1.5">
+            <Link to="/" className={navLinkClass('/')}>Dashboard</Link>
+            <Link to="/add" className={navLinkClass('/add')}>Add Entry</Link>
+            <Link to="/search" className={navLinkClass('/search')}>Search</Link>
+            <Link to="/reports" className={navLinkClass('/reports')}>Reports</Link>
+          </div>
+          {/* Row 2: Additional Navigation */}
+          <div className="flex items-center justify-center space-x-1">
+            <Link to="/personal-finance" className={navLinkClass('/personal-finance')}>Personal Finance</Link>
+            <Link to="/banking/accounts" className={navLinkClass('/banking/accounts')}>Bank Accounts</Link>
+            <Link to="/banking/transactions" className={navLinkClass('/banking/transactions')}>Transactions</Link>
+            {user?.role === 'admin' && (
+              <Link to="/admin/users" className={navLinkClass('/admin/users')}>User Management</Link>
+            )}
           </div>
         </div>
 
