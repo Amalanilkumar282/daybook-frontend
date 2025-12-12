@@ -169,14 +169,14 @@ const Navbar: React.FC = () => {
         {/* Desktop Navigation - Two Rows */}
         <div className="hidden ipad:block border-t border-neutral-200/30 py-2">
           {/* Row 1: Main Navigation */}
-          <div className="flex items-center justify-center space-x-1 mb-1.5">
+          <div className="flex items-center justify-evenly mb-1.5">
             <Link to="/" className={navLinkClass('/')}>Dashboard</Link>
             <Link to="/add" className={navLinkClass('/add')}>Add Entry</Link>
             <Link to="/search" className={navLinkClass('/search')}>Search</Link>
             <Link to="/reports" className={navLinkClass('/reports')}>Reports</Link>
           </div>
           {/* Row 2: Additional Navigation */}
-          <div className="flex items-center justify-center space-x-1">
+          <div className="flex items-center justify-evenly">
             <Link to="/personal-finance" className={navLinkClass('/personal-finance')}>Personal Finance</Link>
             <Link to="/banking/accounts" className={navLinkClass('/banking/accounts')}>Bank Accounts</Link>
             <Link to="/banking/transactions" className={navLinkClass('/banking/transactions')}>Transactions</Link>
