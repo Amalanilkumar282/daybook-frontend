@@ -5,7 +5,17 @@ export interface AutocompleteOption {
   id: string | number;
   label: string;
   sublabel?: string;
+  searchableFields?: {
+    regNo?: string;
+    prevRegNo?: string;
+    phone?: string;
+    city?: string;
+    status?: string;
+    [key: string]: string | undefined;
+  };
 }
+
+export type SearchMode = 'all' | 'name' | 'regNo' | 'phone' | 'location';
 
 interface AutocompleteSelectProps {
   options: AutocompleteOption[];
@@ -18,11 +28,14 @@ interface AutocompleteSelectProps {
   required?: boolean;
   isLoading?: boolean;
   maxVisibleOptions?: number;
+  enableSearchFilters?: boolean;
+  searchFilterLabel?: string;
 }
 
 /**
  * Autocomplete Select Component with Virtual Scrolling
  * Handles large datasets efficiently with search and keyboard navigation
+ * Supports enhanced search filters for searching by different fields
  */
 const AutocompleteSelect: React.FC<AutocompleteSelectProps> = ({
   options,
@@ -35,11 +48,14 @@ const AutocompleteSelect: React.FC<AutocompleteSelectProps> = ({
   required = false,
   isLoading = false,
   maxVisibleOptions = 10,
+  enableSearchFilters = false,
+  searchFilterLabel = 'Search by',
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [highlightedIndex, setHighlightedIndex] = useState(0);
   const [displayValue, setDisplayValue] = useState('');
+  const [searchMode, setSearchMode] = useState<SearchMode>('all');
   
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -58,16 +74,48 @@ const AutocompleteSelect: React.FC<AutocompleteSelectProps> = ({
     }
   }, [value, options]);
 
-  // Filter options based on search term
+  // Filter options based on search term and search mode
   const filteredOptions = React.useMemo(() => {
     if (!debouncedSearchTerm.trim()) return options;
     
-    const searchLower = debouncedSearchTerm.toLowerCase();
-    return options.filter(option => 
-      option.label.toLowerCase().includes(searchLower) ||
-      (option.sublabel && option.sublabel.toLowerCase().includes(searchLower))
-    );
-  }, [options, debouncedSearchTerm]);
+    const searchLower = debouncedSearchTerm.toLowerCase().trim();
+    
+    return options.filter(option => {
+      const searchFields = option.searchableFields || {};
+      
+      switch (searchMode) {
+        case 'name':
+          return option.label.toLowerCase().includes(searchLower);
+        
+        case 'regNo':
+          const regNo = searchFields.regNo?.toLowerCase() || '';
+          const prevRegNo = searchFields.prevRegNo?.toLowerCase() || '';
+          return regNo.includes(searchLower) || prevRegNo.includes(searchLower);
+        
+        case 'phone':
+          const phone = searchFields.phone?.toLowerCase() || '';
+          return phone.includes(searchLower);
+        
+        case 'location':
+          const city = searchFields.city?.toLowerCase() || '';
+          const district = searchFields.district?.toLowerCase() || '';
+          return city.includes(searchLower) || district.includes(searchLower);
+        
+        case 'all':
+        default:
+          // Search in label
+          if (option.label.toLowerCase().includes(searchLower)) return true;
+          // Search in sublabel
+          if (option.sublabel && option.sublabel.toLowerCase().includes(searchLower)) return true;
+          // Search in all searchable fields
+          for (const key of Object.keys(searchFields)) {
+            const fieldValue = searchFields[key];
+            if (fieldValue && fieldValue.toLowerCase().includes(searchLower)) return true;
+          }
+          return false;
+      }
+    });
+  }, [options, debouncedSearchTerm, searchMode]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -221,34 +269,94 @@ const AutocompleteSelect: React.FC<AutocompleteSelectProps> = ({
 
       {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
 
+      {/* Search Filter Buttons - Show when filters are enabled */}
+      {enableSearchFilters && (
+        <div className="mt-2 flex flex-wrap gap-1">
+          <span className="text-xs text-gray-500 mr-1 self-center">{searchFilterLabel}:</span>
+          {[
+            { mode: 'all' as SearchMode, label: 'All' },
+            { mode: 'name' as SearchMode, label: 'Name' },
+            { mode: 'regNo' as SearchMode, label: 'Reg No' },
+            { mode: 'phone' as SearchMode, label: 'Phone' },
+            { mode: 'location' as SearchMode, label: 'Location' },
+          ].map(({ mode, label: filterLabel }) => (
+            <button
+              key={mode}
+              type="button"
+              onClick={() => {
+                setSearchMode(mode);
+                setHighlightedIndex(0);
+              }}
+              className={`px-2 py-0.5 text-xs rounded-full border transition-colors ${
+                searchMode === mode
+                  ? 'bg-primary-500 text-white border-primary-500'
+                  : 'bg-white text-gray-600 border-gray-300 hover:border-primary-400 hover:text-primary-600'
+              }`}
+            >
+              {filterLabel}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Dropdown List */}
       {isOpen && !isLoading && (
-        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-hidden">
+        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-80 overflow-hidden">
           {filteredOptions.length > 0 ? (
             <>
-              <div className="px-3 py-2 text-xs text-gray-500 bg-gray-50 border-b">
-                {filteredOptions.length} result{filteredOptions.length !== 1 ? 's' : ''}
+              <div className="px-3 py-2 text-xs text-gray-500 bg-gray-50 border-b flex justify-between items-center">
+                <span>{filteredOptions.length} result{filteredOptions.length !== 1 ? 's' : ''}</span>
+                {enableSearchFilters && searchMode !== 'all' && (
+                  <span className="text-primary-600">
+                    Filtering by: {searchMode === 'regNo' ? 'Registration No' : searchMode.charAt(0).toUpperCase() + searchMode.slice(1)}
+                  </span>
+                )}
               </div>
               <ul 
                 ref={listRef}
                 className="overflow-y-auto"
-                style={{ maxHeight: `${maxVisibleOptions * 60}px` }}
+                style={{ maxHeight: `${maxVisibleOptions * 70}px` }}
               >
                 {filteredOptions.map((option, index) => (
                   <li
                     key={option.id}
                     onClick={() => handleOptionClick(option)}
-                    className={`px-3 py-3 cursor-pointer transition-colors ${
+                    className={`px-3 py-3 cursor-pointer transition-colors border-b border-gray-100 last:border-b-0 ${
                       index === highlightedIndex
                         ? 'bg-primary-100 text-primary-900'
-                        : 'hover:bg-gray-100'
+                        : 'hover:bg-gray-50'
                     } ${value === option.id ? 'bg-primary-50 font-medium' : ''}`}
                     onMouseEnter={() => setHighlightedIndex(index)}
                   >
                     <div className="flex flex-col">
-                      <span className="text-sm font-medium">{option.label}</span>
+                      <span className="text-sm font-medium text-gray-900">{option.label}</span>
                       {option.sublabel && (
                         <span className="text-xs text-gray-500 mt-0.5">{option.sublabel}</span>
+                      )}
+                      {/* Show searchable fields as tags when filters are enabled */}
+                      {enableSearchFilters && option.searchableFields && (
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {option.searchableFields.regNo && (
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-blue-100 text-blue-700">
+                              Reg: {option.searchableFields.regNo}
+                            </span>
+                          )}
+                          {option.searchableFields.prevRegNo && (
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-purple-100 text-purple-700">
+                              Prev: {option.searchableFields.prevRegNo}
+                            </span>
+                          )}
+                          {option.searchableFields.phone && (
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-green-100 text-green-700">
+                              📞 {option.searchableFields.phone}
+                            </span>
+                          )}
+                          {option.searchableFields.city && (
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-orange-100 text-orange-700">
+                              📍 {option.searchableFields.city}
+                            </span>
+                          )}
+                        </div>
                       )}
                     </div>
                   </li>
@@ -261,7 +369,11 @@ const AutocompleteSelect: React.FC<AutocompleteSelectProps> = ({
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
               <p className="mt-2 text-sm">No results found</p>
-              <p className="text-xs text-gray-400 mt-1">Try a different search term</p>
+              <p className="text-xs text-gray-400 mt-1">
+                {enableSearchFilters && searchMode !== 'all' 
+                  ? `Try searching in "All" or use a different filter`
+                  : 'Try a different search term'}
+              </p>
             </div>
           )}
         </div>

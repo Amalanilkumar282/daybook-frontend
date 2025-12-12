@@ -62,7 +62,14 @@ const DaybookForm: React.FC<DaybookFormProps> = ({
         const nursesOptions: AutocompleteOption[] = nursesData.map(nurse => ({
           id: nurse.nurse_id,
           label: nurse.full_name || `${nurse.first_name} ${nurse.last_name}`,
-          sublabel: `Reg: ${nurse.nurse_reg_no} | Phone: ${nurse.phone_number} | Status: ${nurse.status}`,
+          sublabel: `Status: ${nurse.status} | ${nurse.service_type} | ${nurse.shift_pattern}`,
+          searchableFields: {
+            regNo: nurse.nurse_reg_no || '',
+            prevRegNo: nurse.nurse_prev_reg_no || '',
+            phone: nurse.phone_number || '',
+            city: nurse.city || '',
+            status: nurse.status || '',
+          },
         }));
         setNurses(nursesOptions);
       } catch (error) {
@@ -101,7 +108,13 @@ const DaybookForm: React.FC<DaybookFormProps> = ({
           return {
             id: client.client_id,
             label: displayName,
-            sublabel: `Service: ${client.service_required} | Gender: ${client.preferred_caregiver_gender || 'N/A'} | Location: ${client.patient_city || client.requestor_city}`,
+            sublabel: `Service: ${client.service_required} | Gender: ${client.preferred_caregiver_gender || 'N/A'}`,
+            searchableFields: {
+              regNo: client.client_id || '',
+              phone: client.requestor_phone || client.patient_phone || '',
+              city: client.patient_city || client.requestor_city || '',
+              district: client.patient_district || client.requestor_district || '',
+            },
           };
         });
         setClients(clientsOptions);
@@ -579,10 +592,12 @@ const DaybookForm: React.FC<DaybookFormProps> = ({
               setFormData(prev => ({ ...prev, client_id: value as string }));
             }}
             label="Select Client"
-            placeholder="Search by registration number, type, or status..."
+            placeholder="Search by name, ID, phone, or location..."
             error={errors.client_id}
             isLoading={isLoadingClients}
             maxVisibleOptions={8}
+            enableSearchFilters={true}
+            searchFilterLabel="Filter by"
           />
         )}
         
@@ -595,10 +610,12 @@ const DaybookForm: React.FC<DaybookFormProps> = ({
               setFormData(prev => ({ ...prev, nurse_id: value.toString() }));
             }}
             label="Select Nurse"
-            placeholder="Search by name, registration number, or phone..."
+            placeholder="Search by name, reg no (current/previous), phone..."
             error={errors.nurse_id}
             isLoading={isLoadingNurses}
             maxVisibleOptions={8}
+            enableSearchFilters={true}
+            searchFilterLabel="Filter by"
           />
         )}
 
