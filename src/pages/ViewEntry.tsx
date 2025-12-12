@@ -417,16 +417,16 @@ const ViewEntry: React.FC = () => {
           <div className="mt-6 pt-6 border-t border-gray-200">
             <h3 className="text-lg font-semibold text-neutral-900 mb-4">Entry History</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-neutral-600">
+              {entry.custom_paid_date && (
+                <div>
+                  <span className="font-medium">Payment Date:</span>
+                  <p className="text-lg font-semibold text-neutral-900">{formatDate(entry.custom_paid_date)}</p>
+                </div>
+              )}
               <div>
                 <span className="font-medium">Created:</span>
                 <p>{formatDateTime(entry.created_at)}</p>
               </div>
-              {entry.custom_paid_date && (
-                <div>
-                  <span className="font-medium">Custom Paid Date:</span>
-                  <p>{formatDate(entry.custom_paid_date)}</p>
-                </div>
-              )}
               {entry.created_by && (
                 <div>
                   <span className="font-medium">Created By:</span>
