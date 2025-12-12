@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { bankingApi } from '../services/api';
+import { bankingApi, authUtils } from '../services/api';
 import { BankAccount, BankTransaction, TransactionType } from '../types/banking';
 import TransactionForm from '../components/TransactionForm';
 import TransactionList from '../components/TransactionList';
@@ -8,6 +8,8 @@ import TransactionList from '../components/TransactionList';
 const BankTransactions: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const user = authUtils.getUser();
+  const isAdmin = user?.role === 'admin';
   const accountIdParam = searchParams.get('account');
   
   const [accounts, setAccounts] = useState<BankAccount[]>([]);
@@ -185,15 +187,17 @@ const BankTransactions: React.FC = () => {
               )}
             </div>
             <div className="flex gap-3">
-              <button
-                onClick={handleExportCsv}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2"
-              >
-                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                Export
-              </button>
+              {isAdmin && (
+                <button
+                  onClick={handleExportCsv}
+                  className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2"
+                >
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  Export
+                </button>
+              )}
               {!showForm && (
                 <button
                   onClick={handleCreate}
