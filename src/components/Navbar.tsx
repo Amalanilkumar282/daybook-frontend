@@ -9,6 +9,8 @@ const Navbar: React.FC = () => {
   const [showUserMenu, setShowUserMenu] = useState(false);
 
   const user = authUtils.getUser();
+  const isAdmin = user?.role === 'admin';
+  const isStaff = user?.role === 'staff';
 
   // Close mobile menu and user menu on route change
   React.useEffect(() => {
@@ -87,15 +89,17 @@ const Navbar: React.FC = () => {
 
           {/* Desktop: Export Button and User Menu */}
           <div className="hidden ipad:flex items-center space-x-2 flex-shrink-0">
-            <button 
-              onClick={handleExportCsv}
-              className="bg-gradient-to-r from-accent-500 to-accent-600 hover:from-accent-600 hover:to-accent-700 text-white px-3 py-2 rounded-xl text-sm font-semibold shadow-glow hover:shadow-glow-lg transition-all duration-300 active:scale-95 flex items-center space-x-2 border border-accent-400/30"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              <span>Export</span>
-            </button>
+            {isAdmin && (
+              <button 
+                onClick={handleExportCsv}
+                className="bg-gradient-to-r from-accent-500 to-accent-600 hover:from-accent-600 hover:to-accent-700 text-white px-3 py-2 rounded-xl text-sm font-semibold shadow-glow hover:shadow-glow-lg transition-all duration-300 active:scale-95 flex items-center space-x-2 border border-accent-400/30"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <span>Export</span>
+              </button>
+            )}
             
             {/* User Menu */}
             <div className="relative">
@@ -140,15 +144,17 @@ const Navbar: React.FC = () => {
 
           {/* Mobile Menu Button */}
           <div className="ipad:hidden flex items-center space-x-1 xs:space-x-2">
-            <button 
-              onClick={handleExportCsv}
-              className="bg-gradient-to-r from-accent-500 to-accent-600 hover:from-accent-600 hover:to-accent-700 text-white p-2 xs:p-2.5 rounded-xl xs:rounded-2xl shadow-glow hover:shadow-glow-lg transition-all duration-300 active:scale-95 touch-target"
-              title="Export CSV"
-            >
-              <svg className="w-4 h-4 xs:w-5 xs:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-            </button>
+            {isAdmin && (
+              <button 
+                onClick={handleExportCsv}
+                className="bg-gradient-to-r from-accent-500 to-accent-600 hover:from-accent-600 hover:to-accent-700 text-white p-2 xs:p-2.5 rounded-xl xs:rounded-2xl shadow-glow hover:shadow-glow-lg transition-all duration-300 active:scale-95 touch-target"
+                title="Export CSV"
+              >
+                <svg className="w-4 h-4 xs:w-5 xs:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </button>
+            )}
             
             <button
               onClick={toggleMobileMenu}
@@ -168,100 +174,127 @@ const Navbar: React.FC = () => {
         
         {/* Desktop Navigation - Two Rows */}
         <div className="hidden ipad:block border-t border-neutral-200/30 py-2">
-          {/* Row 1: Main Navigation */}
-          <div className="flex items-center justify-evenly mb-1.5">
-            <Link to="/" className={navLinkClass('/')}>Dashboard</Link>
-            <Link to="/add" className={navLinkClass('/add')}>Add Entry</Link>
-            <Link to="/search" className={navLinkClass('/search')}>Search</Link>
-            <Link to="/reports" className={navLinkClass('/reports')}>Reports</Link>
-          </div>
-          {/* Row 2: Additional Navigation */}
-          <div className="flex items-center justify-evenly">
-            <Link to="/personal-finance" className={navLinkClass('/personal-finance')}>Personal Finance</Link>
-            <Link to="/banking/accounts" className={navLinkClass('/banking/accounts')}>Bank Accounts</Link>
-            <Link to="/banking/transactions" className={navLinkClass('/banking/transactions')}>Transactions</Link>
-            {user?.role === 'admin' && (
-              <Link to="/admin/users" className={navLinkClass('/admin/users')}>User Management</Link>
-            )}
-          </div>
+          {isStaff ? (
+            /* Staff only sees Add Entry */
+            <div className="flex items-center justify-center">
+              <Link to="/add" className={navLinkClass('/add')}>Add Entry</Link>
+            </div>
+          ) : (
+            <>
+              {/* Row 1: Main Navigation */}
+              <div className="flex items-center justify-evenly mb-1.5">
+                <Link to="/" className={navLinkClass('/')}>Dashboard</Link>
+                <Link to="/add" className={navLinkClass('/add')}>Add Entry</Link>
+                <Link to="/search" className={navLinkClass('/search')}>Search</Link>
+                <Link to="/reports" className={navLinkClass('/reports')}>Reports</Link>
+              </div>
+              {/* Row 2: Additional Navigation */}
+              <div className="flex items-center justify-evenly">
+                {isAdmin && (
+                  <Link to="/personal-finance" className={navLinkClass('/personal-finance')}>Personal Finance</Link>
+                )}
+                <Link to="/banking/accounts" className={navLinkClass('/banking/accounts')}>Bank Accounts</Link>
+                <Link to="/banking/transactions" className={navLinkClass('/banking/transactions')}>Transactions</Link>
+                {isAdmin && (
+                  <Link to="/admin/users" className={navLinkClass('/admin/users')}>User Management</Link>
+                )}
+              </div>
+            </>
+          )}
         </div>
 
         {/* Mobile Navigation Menu */}
         {isMobileMenuOpen && (
           <div className="ipad:hidden absolute top-full left-0 right-0 bg-white/95 backdrop-blur-md border-t border-neutral-200/50 shadow-strong rounded-b-2xl xs:rounded-b-3xl z-[10000]">
             <div className="px-3 xs:px-4 py-4 xs:py-6 space-y-2 xs:space-y-3">
-              <Link to="/" className={mobileNavLinkClass('/')} onClick={closeMobileMenu}>
-                <div className="flex items-center space-x-2 xs:space-x-3">
-                  <svg className="w-4 h-4 xs:w-5 xs:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
-                  </svg>
-                  <span>Dashboard</span>
-                </div>
-              </Link>
-              
-              <Link to="/add" className={mobileNavLinkClass('/add')} onClick={closeMobileMenu}>
-                <div className="flex items-center space-x-2 xs:space-x-3">
-                  <svg className="w-4 h-4 xs:w-5 xs:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                  </svg>
-                  <span>Add Entry</span>
-                </div>
-              </Link>
-              
-              <Link to="/search" className={mobileNavLinkClass('/search')} onClick={closeMobileMenu}>
-                <div className="flex items-center space-x-2 xs:space-x-3">
-                  <svg className="w-4 h-4 xs:w-5 xs:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                  <span>Search</span>
-                </div>
-              </Link>
-              
-              <Link to="/reports" className={mobileNavLinkClass('/reports')} onClick={closeMobileMenu}>
-                <div className="flex items-center space-x-2 xs:space-x-3">
-                  <svg className="w-4 h-4 xs:w-5 xs:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                  </svg>
-                  <span>Reports</span>
-                </div>
-              </Link>
-
-              <Link to="/personal-finance" className={mobileNavLinkClass('/personal-finance')} onClick={closeMobileMenu}>
-                <div className="flex items-center space-x-2 xs:space-x-3">
-                  <svg className="w-4 h-4 xs:w-5 xs:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <span>Personal Finance</span>
-                </div>
-              </Link>
-
-              <Link to="/banking/accounts" className={mobileNavLinkClass('/banking/accounts')} onClick={closeMobileMenu}>
-                <div className="flex items-center space-x-2 xs:space-x-3">
-                  <svg className="w-4 h-4 xs:w-5 xs:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                  </svg>
-                  <span>Bank Accounts</span>
-                </div>
-              </Link>
-
-              <Link to="/banking/transactions" className={mobileNavLinkClass('/banking/transactions')} onClick={closeMobileMenu}>
-                <div className="flex items-center space-x-2 xs:space-x-3">
-                  <svg className="w-4 h-4 xs:w-5 xs:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-                  </svg>
-                  <span>Transactions</span>
-                </div>
-              </Link>
-
-              {user?.role === 'admin' && (
-                <Link to="/admin/users" className={mobileNavLinkClass('/admin/users')} onClick={closeMobileMenu}>
+              {isStaff ? (
+                /* Staff only sees Add Entry */
+                <Link to="/add" className={mobileNavLinkClass('/add')} onClick={closeMobileMenu}>
                   <div className="flex items-center space-x-2 xs:space-x-3">
                     <svg className="w-4 h-4 xs:w-5 xs:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                     </svg>
-                    <span>User Management</span>
+                    <span>Add Entry</span>
                   </div>
                 </Link>
+              ) : (
+                <>
+                  <Link to="/" className={mobileNavLinkClass('/')} onClick={closeMobileMenu}>
+                    <div className="flex items-center space-x-2 xs:space-x-3">
+                      <svg className="w-4 h-4 xs:w-5 xs:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
+                      </svg>
+                      <span>Dashboard</span>
+                    </div>
+                  </Link>
+                  
+                  <Link to="/add" className={mobileNavLinkClass('/add')} onClick={closeMobileMenu}>
+                    <div className="flex items-center space-x-2 xs:space-x-3">
+                      <svg className="w-4 h-4 xs:w-5 xs:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                      </svg>
+                      <span>Add Entry</span>
+                    </div>
+                  </Link>
+                  
+                  <Link to="/search" className={mobileNavLinkClass('/search')} onClick={closeMobileMenu}>
+                    <div className="flex items-center space-x-2 xs:space-x-3">
+                      <svg className="w-4 h-4 xs:w-5 xs:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                      </svg>
+                      <span>Search</span>
+                    </div>
+                  </Link>
+                  
+                  <Link to="/reports" className={mobileNavLinkClass('/reports')} onClick={closeMobileMenu}>
+                    <div className="flex items-center space-x-2 xs:space-x-3">
+                      <svg className="w-4 h-4 xs:w-5 xs:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                      </svg>
+                      <span>Reports</span>
+                    </div>
+                  </Link>
+
+                  {isAdmin && (
+                    <Link to="/personal-finance" className={mobileNavLinkClass('/personal-finance')} onClick={closeMobileMenu}>
+                      <div className="flex items-center space-x-2 xs:space-x-3">
+                        <svg className="w-4 h-4 xs:w-5 xs:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span>Personal Finance</span>
+                      </div>
+                    </Link>
+                  )}
+
+                  <Link to="/banking/accounts" className={mobileNavLinkClass('/banking/accounts')} onClick={closeMobileMenu}>
+                    <div className="flex items-center space-x-2 xs:space-x-3">
+                      <svg className="w-4 h-4 xs:w-5 xs:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                      </svg>
+                      <span>Bank Accounts</span>
+                    </div>
+                  </Link>
+
+                  <Link to="/banking/transactions" className={mobileNavLinkClass('/banking/transactions')} onClick={closeMobileMenu}>
+                    <div className="flex items-center space-x-2 xs:space-x-3">
+                      <svg className="w-4 h-4 xs:w-5 xs:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                      </svg>
+                      <span>Transactions</span>
+                    </div>
+                  </Link>
+
+                  {isAdmin && (
+                    <Link to="/admin/users" className={mobileNavLinkClass('/admin/users')} onClick={closeMobileMenu}>
+                      <div className="flex items-center space-x-2 xs:space-x-3">
+                        <svg className="w-4 h-4 xs:w-5 xs:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                        </svg>
+                        <span>User Management</span>
+                      </div>
+                    </Link>
+                  )}
+                </>
               )}
 
               <div className="border-t border-neutral-200 my-2"></div>
