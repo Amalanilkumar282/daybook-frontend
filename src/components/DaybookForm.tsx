@@ -50,7 +50,8 @@ const DaybookForm: React.FC<DaybookFormProps> = ({
   const [selectedClientId, setSelectedClientId] = useState<string>('');
   
   // Bank Accounts state
-  const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
+  const [allBankAccounts, setAllBankAccounts] = useState<BankAccount[]>([]); // Store all accounts
+  const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]); // Filtered accounts by tenant
   const [isLoadingBankAccounts, setIsLoadingBankAccounts] = useState(false);
 
   // Fetch nurses and clients on component mount
@@ -129,20 +130,7 @@ const DaybookForm: React.FC<DaybookFormProps> = ({
       setIsLoadingBankAccounts(true);
       try {
         const accountsData = await bankingApi.getAllAccounts();
-        setBankAccounts(accountsData);
-        // Auto-select first bank account if not already set
-        if (accountsData.length > 0) {
-          setFormData(prev => {
-            // Only set if not already set
-            if (!prev.bank_account_id) {
-              return {
-                ...prev,
-                bank_account_id: accountsData[0].id
-              };
-            }
-            return prev;
-          });
-        }
+        setAllBankAccounts(accountsData);
       } catch (error) {
         console.error('Error fetching bank accounts:', error);
       } finally {
@@ -154,6 +142,38 @@ const DaybookForm: React.FC<DaybookFormProps> = ({
     fetchClients();
     fetchBankAccounts();
   }, []);
+
+  // Filter bank accounts by tenant and reset bank_account_id when tenant changes
+  useEffect(() => {
+    if (allBankAccounts.length === 0) return;
+
+    // Filter accounts by tenant
+    const filteredAccounts = allBankAccounts.filter(account => {
+      // If account has no tenant, it's available to all tenants
+      if (!account.tenant) return true;
+      // Otherwise, match the tenant
+      return account.tenant === formData.tenant;
+    });
+
+    setBankAccounts(filteredAccounts);
+
+    // Reset bank_account_id when tenant changes to prevent cross-tenant issues
+    setFormData(prev => {
+      // If current bank_account_id is not in filtered list, reset it
+      const isCurrentAccountValid = filteredAccounts.some(acc => acc.id === prev.bank_account_id);
+      
+      if (!isCurrentAccountValid) {
+        // Auto-select first account if available
+        const newBankAccountId = filteredAccounts.length > 0 ? filteredAccounts[0].id : undefined;
+        return {
+          ...prev,
+          bank_account_id: newBankAccountId
+        };
+      }
+      
+      return prev;
+    });
+  }, [formData.tenant, allBankAccounts]);
 
   useEffect(() => {
     if (initialData) {
