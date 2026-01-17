@@ -133,6 +133,12 @@ const PersonalFinanceForm: React.FC<PersonalFinanceFormProps> = ({
               step="0.01"
               min="0.01"
               value={formData.amount === '' || formData.amount === 0 ? '' : formData.amount}
+              onKeyDown={(e) => {
+                // Prevent minus sign, plus sign, and 'e' (exponential notation)
+                if (e.key === '-' || e.key === '+' || e.key === 'e' || e.key === 'E') {
+                  e.preventDefault();
+                }
+              }}
               onChange={(e) => {
                 const value = e.target.value;
                 // Allow only numbers with up to 2 decimals (e.g., 123, 123.4, 123.45)

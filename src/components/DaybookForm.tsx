@@ -130,6 +130,13 @@ const DaybookForm: React.FC<DaybookFormProps> = ({
       try {
         const accountsData = await bankingApi.getAllAccounts();
         setBankAccounts(accountsData);
+        // Auto-select first bank account if not already set
+        if (accountsData.length > 0 && !formData.bank_account_id) {
+          setFormData(prev => ({
+            ...prev,
+            bank_account_id: accountsData[0].id
+          }));
+        }
       } catch (error) {
         console.error('Error fetching bank accounts:', error);
       } finally {
@@ -337,6 +344,12 @@ const DaybookForm: React.FC<DaybookFormProps> = ({
                 step="0.01"
                 min="0"
                 value={formData.amount === 0 ? '' : formData.amount}
+                onKeyDown={(e) => {
+                  // Prevent minus sign, plus sign, and 'e' (exponential notation)
+                  if (e.key === '-' || e.key === '+' || e.key === 'e' || e.key === 'E') {
+                    e.preventDefault();
+                  }
+                }}
                 onChange={(e) => {
                   const value = e.target.value;
                   // Allow only numbers with up to 2 decimals (e.g., 123, 123.4, 123.45)

@@ -287,6 +287,12 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
             type="number"
             id="amount"
             value={formData.amount}
+            onKeyDown={(e) => {
+              // Prevent minus sign, plus sign, and 'e' (exponential notation)
+              if (e.key === '-' || e.key === '+' || e.key === 'e' || e.key === 'E') {
+                e.preventDefault();
+              }
+            }}
             onChange={(e) => handleChange('amount', parseFloat(e.target.value) || 0)}
             className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
               errors.amount ? 'border-red-500' : 'border-gray-300'
