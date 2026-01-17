@@ -286,7 +286,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
           <input
             type="number"
             id="amount"
-            value={formData.amount}
+            value={formData.amount === 0 ? '' : formData.amount}
             onKeyDown={(e) => {
               // Prevent minus sign, plus sign, and 'e' (exponential notation)
               if (e.key === '-' || e.key === '+' || e.key === 'e' || e.key === 'E') {
