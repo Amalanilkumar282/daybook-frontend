@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { DaybookFormData, DaybookEntry } from '../types/daybook';
-import { daybookApi } from '../services/api';
+import { DaybookEntry, DaybookFormData, PayStatus, PayType } from '../types/daybook';
+import { daybookApi, bankingApi } from '../services/api';
 import DaybookForm from '../components/DaybookForm';
 
 const EditEntry: React.FC = () => {
@@ -41,13 +41,64 @@ const EditEntry: React.FC = () => {
   };
 
   const handleSubmit = async (data: DaybookFormData) => {
-    if (!id) return;
+    if (!id || !entry) return;
 
     try {
       setIsLoading(true);
       setError(null);
       
+      // Check if pay_status changed from unpaid to paid
+      const originalPayStatus = entry.pay_status || PayStatus.PAID;
+      const isUnpaidToPaid = originalPayStatus === PayStatus.UNPAID && data.pay_status === PayStatus.PAID;
+      
+      console.log('=== EDIT ENTRY SUBMISSION ===');
+      console.log('Original pay status:', originalPayStatus);
+      console.log('New pay status:', data.pay_status);
+      console.log('Status changed from unpaid to paid:', isUnpaidToPaid);
+      console.log('Bank account ID:', data.bank_account_id);
+      console.log('Affects bank balance:', data.affects_bank_balance);
+      
+      // Update the daybook entry
       await daybookApi.updateEntry(id, data);
+      
+      // If status changed from unpaid to paid AND bank transaction should be created
+      if (isUnpaidToPaid && data.bank_account_id && data.affects_bank_balance) {
+        console.log('=== CREATING BANK TRANSACTION FOR STATUS CHANGE ===');
+        
+        try {
+          const description = data.description || `Daybook Entry #${id}`;
+          const reference = `DAYBOOK-${id}`;
+          const tenant = data.tenant;
+          
+          if (data.payment_type === PayType.INCOMING) {
+            // Create deposit transaction
+            await bankingApi.deposit({
+              account_id: data.bank_account_id,
+              amount: data.amount,
+              description: description,
+              reference: reference,
+              tenant: tenant,
+            });
+            console.log('✅ Deposit transaction created successfully');
+          } else {
+            // Create withdrawal transaction
+            await bankingApi.withdraw({
+              account_id: data.bank_account_id,
+              amount: data.amount,
+              description: description,
+              reference: reference,
+              tenant: tenant,
+            });
+            console.log('✅ Withdrawal transaction created successfully');
+          }
+        } catch (bankError: any) {
+          console.error('⚠️ Failed to create bank transaction:', bankError);
+          setError('Entry updated but failed to create bank transaction. You may need to create it manually.');
+          setIsLoading(false);
+          return;
+        }
+      }
+      
       setSuccess(true);
       
       // Show success message briefly, then redirect

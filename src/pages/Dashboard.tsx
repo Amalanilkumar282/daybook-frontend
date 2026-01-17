@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { DaybookEntry, PayType, PayStatus, SummaryData, PaymentTypeSpecific } from '../types/daybook';
 import { daybookApi, authUtils } from '../services/api';
 import SummaryCards from '../components/SummaryCards';
@@ -9,8 +9,17 @@ import { filterDaybookEntries, sortDaybookEntries, DaybookFilters } from '../uti
 
 const Dashboard: React.FC = () => {
   console.log('DEBUG: Dashboard component rendering');
+  const navigate = useNavigate();
   const currentUser = authUtils.getUser();
+  const isStaff = authUtils.isStaff();
   const tenantPrefix = currentUser?.tenant ? `${currentUser.tenant} ` : '';
+  
+  // Redirect staff users to add entry page
+  useEffect(() => {
+    if (isStaff) {
+      navigate('/add', { replace: true });
+    }
+  }, [isStaff, navigate]);
   const [entries, setEntries] = useState<DaybookEntry[]>([]);
   const [summaryData, setSummaryData] = useState<SummaryData | null>(null);
   const [loading, setLoading] = useState(true);
