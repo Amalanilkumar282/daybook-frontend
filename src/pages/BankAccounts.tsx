@@ -4,6 +4,8 @@ import { bankingApi, authUtils } from '../services/api';
 import { BankAccount, BankAccountFormData } from '../types/banking';
 import BankAccountForm from '../components/BankAccountForm';
 import BankAccountList from '../components/BankAccountList';
+import Pagination from '../components/Pagination';
+import { usePagination } from '../hooks/usePagination';
 
 const BankAccounts: React.FC = () => {
   const navigate = useNavigate();
@@ -34,6 +36,17 @@ const BankAccounts: React.FC = () => {
       setIsLoading(false);
     }
   };
+
+  // Pagination
+  const {
+    currentPage,
+    itemsPerPage,
+    totalPages,
+    totalItems,
+    paginatedData: paginatedAccounts,
+    handlePageChange,
+    handleItemsPerPageChange,
+  } = usePagination(accounts, { initialItemsPerPage: 10 });
 
   const handleCreate = () => {
     setEditingAccount(undefined);
@@ -204,13 +217,27 @@ const BankAccounts: React.FC = () => {
             mode={editingAccount ? 'edit' : 'create'}
           />
         ) : (
-          <BankAccountList
-            accounts={accounts}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            onViewTransactions={handleViewTransactions}
-            isLoading={isLoading}
-          />
+          <>
+            <BankAccountList
+              accounts={paginatedAccounts}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              onViewTransactions={handleViewTransactions}
+              isLoading={isLoading}
+            />
+            {!isLoading && accounts.length > 0 && (
+              <div className="mt-6">
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  itemsPerPage={itemsPerPage}
+                  totalItems={totalItems}
+                  onPageChange={handlePageChange}
+                  onItemsPerPageChange={handleItemsPerPageChange}
+                />
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

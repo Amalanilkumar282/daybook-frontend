@@ -4,6 +4,8 @@ import { bankingApi, authUtils } from '../services/api';
 import { BankAccount, BankTransaction, TransactionType } from '../types/banking';
 import TransactionForm from '../components/TransactionForm';
 import TransactionList from '../components/TransactionList';
+import Pagination from '../components/Pagination';
+import { usePagination } from '../hooks/usePagination';
 
 const BankTransactions: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -149,6 +151,17 @@ const BankTransactions: React.FC = () => {
     }
   };
 
+  // Pagination
+  const {
+    currentPage,
+    itemsPerPage,
+    totalPages,
+    totalItems,
+    paginatedData: paginatedTransactions,
+    handlePageChange,
+    handleItemsPerPageChange,
+  } = usePagination(transactions, { initialItemsPerPage: 10 });
+
   const selectedAccount = accountIdParam 
     ? accounts.find(acc => acc.id === parseInt(accountIdParam))
     : null;
@@ -255,23 +268,37 @@ const BankTransactions: React.FC = () => {
             isLoading={isSubmitting}
           />
         ) : (
-          <TransactionList
-            transactions={transactions}
-            accounts={accounts}
-            isLoading={isLoadingTransactions || isLoadingAccounts}
-            showAccountColumn={!accountIdParam}
-            onTransactionUpdate={async () => {
-              // Refresh data after update/delete
-              await fetchAccounts();
-              if (accountIdParam) {
-                await fetchTransactionsByAccount(parseInt(accountIdParam));
-              } else {
-                await fetchAllTransactions();
-              }
-              setSuccess('Transaction updated successfully!');
-              setTimeout(() => setSuccess(null), 3000);
-            }}
-          />
+          <>
+            <TransactionList
+              transactions={paginatedTransactions}
+              accounts={accounts}
+              isLoading={isLoadingTransactions || isLoadingAccounts}
+              showAccountColumn={!accountIdParam}
+              onTransactionUpdate={async () => {
+                // Refresh data after update/delete
+                await fetchAccounts();
+                if (accountIdParam) {
+                  await fetchTransactionsByAccount(parseInt(accountIdParam));
+                } else {
+                  await fetchAllTransactions();
+                }
+                setSuccess('Transaction updated successfully!');
+                setTimeout(() => setSuccess(null), 3000);
+              }}
+            />
+            {!isLoadingTransactions && !isLoadingAccounts && transactions.length > 0 && (
+              <div className="mt-6">
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  itemsPerPage={itemsPerPage}
+                  totalItems={totalItems}
+                  onPageChange={handlePageChange}
+                  onItemsPerPageChange={handleItemsPerPageChange}
+                />
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
