@@ -308,8 +308,8 @@ export const daybookApi = {
         });
         const createdEntry = response.data.data || response.data;
         
-        // ⭐ Create corresponding bank transaction if needed
-        if (shouldCreateBankTransaction && bankAccountId) {
+        // ⭐ Create corresponding bank transaction if needed (only for PAID entries)
+        if (shouldCreateBankTransaction && bankAccountId && data.pay_status === 'paid') {
           console.log('=== CREATING BANK TRANSACTION ===');
           console.log('Account ID:', bankAccountId);
           console.log('Amount:', amount);
@@ -373,8 +373,8 @@ export const daybookApi = {
         const response = await api.post('/daybook/create', payload);
         const createdEntry = response.data.data || response.data;
         
-        // ⭐ Create corresponding bank transaction if needed
-        if (shouldCreateBankTransaction && bankAccountId) {
+        // ⭐ Create corresponding bank transaction if needed (only for PAID entries)
+        if (shouldCreateBankTransaction && bankAccountId && data.pay_status === 'paid') {
           console.log('=== CREATING BANK TRANSACTION ===');
           console.log('Account ID:', bankAccountId);
           console.log('Amount:', amount);
