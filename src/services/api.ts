@@ -111,6 +111,11 @@ export const authUtils = {
   isAdmin: (): boolean => {
     const user = authUtils.getUser();
     return user?.role === 'admin';
+  },
+
+  isStaff: (): boolean => {
+    const user = authUtils.getUser();
+    return user?.role === 'staff';
   }
 };
 

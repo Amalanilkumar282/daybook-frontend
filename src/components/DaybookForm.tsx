@@ -50,8 +50,14 @@ const DaybookForm: React.FC<DaybookFormProps> = ({
   const [selectedClientId, setSelectedClientId] = useState<string>('');
   
   // Bank Accounts state
-  const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
+  const [allBankAccounts, setAllBankAccounts] = useState<BankAccount[]>([]); // Store all accounts
+  const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]); // Filtered accounts by tenant
   const [isLoadingBankAccounts, setIsLoadingBankAccounts] = useState(false);
+  
+  // Track original pay_status for edit mode
+  const [originalPayStatus, setOriginalPayStatus] = useState<PayStatus | null>(null);
+  const [showPayStatusWarning, setShowPayStatusWarning] = useState(false);
+  const [payStatusWarningType, setPayStatusWarningType] = useState<'paid-to-unpaid' | 'unpaid-to-paid' | null>(null);
 
   // Fetch nurses and clients on component mount
   useEffect(() => {
@@ -129,20 +135,7 @@ const DaybookForm: React.FC<DaybookFormProps> = ({
       setIsLoadingBankAccounts(true);
       try {
         const accountsData = await bankingApi.getAllAccounts();
-        setBankAccounts(accountsData);
-        // Auto-select first bank account if not already set
-        if (accountsData.length > 0) {
-          setFormData(prev => {
-            // Only set if not already set
-            if (!prev.bank_account_id) {
-              return {
-                ...prev,
-                bank_account_id: accountsData[0].id
-              };
-            }
-            return prev;
-          });
-        }
+        setAllBankAccounts(accountsData);
       } catch (error) {
         console.error('Error fetching bank accounts:', error);
       } finally {
@@ -154,6 +147,38 @@ const DaybookForm: React.FC<DaybookFormProps> = ({
     fetchClients();
     fetchBankAccounts();
   }, []);
+
+  // Filter bank accounts by tenant and reset bank_account_id when tenant changes
+  useEffect(() => {
+    if (allBankAccounts.length === 0) return;
+
+    // Filter accounts by tenant
+    const filteredAccounts = allBankAccounts.filter(account => {
+      // If account has no tenant, it's available to all tenants
+      if (!account.tenant) return true;
+      // Otherwise, match the tenant
+      return account.tenant === formData.tenant;
+    });
+
+    setBankAccounts(filteredAccounts);
+
+    // Reset bank_account_id when tenant changes to prevent cross-tenant issues
+    setFormData(prev => {
+      // If current bank_account_id is not in filtered list, reset it
+      const isCurrentAccountValid = filteredAccounts.some(acc => acc.id === prev.bank_account_id);
+      
+      if (!isCurrentAccountValid) {
+        // Auto-select first account if available
+        const newBankAccountId = filteredAccounts.length > 0 ? filteredAccounts[0].id : undefined;
+        return {
+          ...prev,
+          bank_account_id: newBankAccountId
+        };
+      }
+      
+      return prev;
+    });
+  }, [formData.tenant, allBankAccounts]);
 
   useEffect(() => {
     if (initialData) {
@@ -172,6 +197,9 @@ const DaybookForm: React.FC<DaybookFormProps> = ({
         affects_bank_balance: initialData.affects_bank_balance ?? true,
         custom_paid_date: initialData.custom_paid_date ? initialData.custom_paid_date.split('T')[0] : '',
       });
+      
+      // Store the original pay_status for edit mode
+      setOriginalPayStatus(initialData.pay_status || PayStatus.PAID);
       
       // Set selected IDs for autocomplete
       if (initialData.nurse_id) {
@@ -257,6 +285,9 @@ const DaybookForm: React.FC<DaybookFormProps> = ({
       console.log('Bank Account ID:', submitData.bank_account_id);
       console.log('Affects Bank Balance:', submitData.affects_bank_balance);
       console.log('Mode of Pay:', submitData.mode_of_pay);
+      console.log('Original Pay Status:', originalPayStatus);
+      console.log('New Pay Status:', submitData.pay_status);
+      
       if (submitData.bank_account_id && submitData.affects_bank_balance) {
         console.log('✅ This entry SHOULD create a bank transaction and update account balance');
         console.log(`   Transaction type: ${submitData.payment_type === PayType.INCOMING ? 'DEPOSIT' : 'WITHDRAW'}`);
@@ -292,6 +323,38 @@ const DaybookForm: React.FC<DaybookFormProps> = ({
   };
 
   const handleInputChange = (field: keyof DaybookFormData, value: DaybookFormData[keyof DaybookFormData]) => {
+    // Special handling for pay_status changes in edit mode
+    if (field === 'pay_status' && mode === 'edit' && originalPayStatus) {
+      const newPayStatus = value as PayStatus;
+      
+      // Check if changing from PAID to UNPAID
+      if (originalPayStatus === PayStatus.PAID && newPayStatus === PayStatus.UNPAID) {
+        // Check if there's a bank account associated (meaning a bank transaction likely exists)
+        if (formData.bank_account_id && formData.affects_bank_balance) {
+          setPayStatusWarningType('paid-to-unpaid');
+          setShowPayStatusWarning(true);
+        }
+      }
+      
+      // Check if changing from UNPAID to PAID
+      if (originalPayStatus === PayStatus.UNPAID && newPayStatus === PayStatus.PAID) {
+        setPayStatusWarningType('unpaid-to-paid');
+        setShowPayStatusWarning(true);
+        
+        // Prompt for bank account selection if not set
+        if (!formData.bank_account_id && bankAccounts.length > 0) {
+          // Auto-select first bank account
+          setFormData(prev => ({
+            ...prev,
+            [field]: value as any,
+            bank_account_id: bankAccounts[0].id,
+            affects_bank_balance: true,
+          }));
+          return;
+        }
+      }
+    }
+    
     setFormData(prev => ({
       ...prev,
       [field]: value as any,
@@ -350,6 +413,7 @@ const DaybookForm: React.FC<DaybookFormProps> = ({
                 step="0.01"
                 min="0"
                 value={formData.amount === 0 ? '' : formData.amount}
+                disabled={mode === 'edit'}
                 onKeyDown={(e) => {
                   // Prevent minus sign, plus sign, and 'e' (exponential notation)
                   if (e.key === '-' || e.key === '+' || e.key === 'e' || e.key === 'E') {
@@ -372,11 +436,15 @@ const DaybookForm: React.FC<DaybookFormProps> = ({
                 placeholder="1000.00"
                 className={`w-full pl-8 pr-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
                   errors.amount ? 'border-red-500' : 'border-gray-300'
-                }`}
+                } ${mode === 'edit' ? 'bg-gray-100 cursor-not-allowed' : ''}`}
               />
             </div>
             {errors.amount && <p className="mt-1 text-sm text-red-600">{errors.amount}</p>}
-            <p className="mt-1 text-xs text-gray-500">Enter amount (decimals allowed, e.g., 1500.50)</p>
+            {mode === 'edit' ? (
+              <p className="mt-1 text-xs text-amber-600 font-medium">Amount cannot be edited to maintain data integrity</p>
+            ) : (
+              <p className="mt-1 text-xs text-gray-500">Enter amount (decimals allowed, e.g., 1500.50)</p>
+            )}
           </div>
         </div>
 
@@ -395,6 +463,42 @@ const DaybookForm: React.FC<DaybookFormProps> = ({
               <option value={PayStatus.PAID}>Paid</option>
               <option value={PayStatus.UNPAID}>Unpaid</option>
             </select>
+            
+            {/* Warning messages for pay status changes */}
+            {mode === 'edit' && showPayStatusWarning && payStatusWarningType === 'paid-to-unpaid' && (
+              <div className="mt-2 p-3 bg-red-50 border border-red-300 rounded-md">
+                <div className="flex items-start">
+                  <svg className="w-5 h-5 text-red-600 mt-0.5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-red-800">⚠️ Bank Transaction Alert</p>
+                    <p className="text-xs text-red-700 mt-1">
+                      This entry has an associated bank transaction. Changing to unpaid will NOT automatically remove the bank entry.
+                    </p>
+                    <p className="text-xs text-red-700 mt-1 font-medium">
+                      <strong>Important:</strong> If you mark this as paid again later, please UNCHECK "Update Bank Balance" to avoid creating a duplicate bank transaction.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {mode === 'edit' && showPayStatusWarning && payStatusWarningType === 'unpaid-to-paid' && (
+              <div className="mt-2 p-3 bg-blue-50 border border-blue-300 rounded-md">
+                <div className="flex items-start">
+                  <svg className="w-5 h-5 text-blue-600 mt-0.5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-blue-800">💡 Bank Transaction Required</p>
+                    <p className="text-xs text-blue-700 mt-1">
+                      Marking this entry as paid will create a corresponding bank transaction. Please ensure the correct bank account is selected below.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Mode of Payment */}
@@ -439,7 +543,28 @@ const DaybookForm: React.FC<DaybookFormProps> = ({
         </div>
 
         {/* Bank Account Selection - Always show for all payment modes */}
-        <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
+        <div className={`border rounded-md p-4 ${
+          mode === 'edit' && showPayStatusWarning && payStatusWarningType === 'unpaid-to-paid'
+            ? 'bg-yellow-50 border-yellow-400 shadow-lg'
+            : 'bg-blue-50 border-blue-200'
+        }`}>
+          {/* Additional warning for unpaid-to-paid transition */}
+          {mode === 'edit' && showPayStatusWarning && payStatusWarningType === 'unpaid-to-paid' && (
+            <div className="mb-4 p-3 bg-yellow-100 border border-yellow-400 rounded-md">
+              <div className="flex items-start">
+                <svg className="w-5 h-5 text-yellow-700 mt-0.5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <div className="flex-1">
+                  <p className="text-sm font-bold text-yellow-900">🏦 Please Select Bank Account</p>
+                  <p className="text-xs text-yellow-800 mt-1">
+                    Since you're marking this as paid, a bank transaction will be created automatically. Verify the bank account selection below and ensure "Update Bank Balance" is checked.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+          
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div>
               <label htmlFor="bank_account_id" className="block text-sm font-medium text-dark-700 mb-2">
@@ -487,6 +612,13 @@ const DaybookForm: React.FC<DaybookFormProps> = ({
               <p className="mt-1 text-xs text-gray-500">
                 When enabled, this entry will create a corresponding bank transaction
               </p>
+              
+              {/* Warning when changing back from unpaid after being paid */}
+              {mode === 'edit' && originalPayStatus === PayStatus.PAID && formData.pay_status === PayStatus.PAID && formData.bank_account_id && (
+                <div className="mt-2 p-2 bg-orange-50 border border-orange-300 rounded text-xs text-orange-800">
+                  <strong>⚠️ Caution:</strong> If this was previously marked as paid, a bank transaction may already exist. Uncheck this to avoid duplicate entries.
+                </div>
+              )}
             </div>
           </div>
           
