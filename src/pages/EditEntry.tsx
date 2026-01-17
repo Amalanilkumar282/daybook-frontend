@@ -59,7 +59,7 @@ const EditEntry: React.FC = () => {
       console.log('Affects bank balance:', data.affects_bank_balance);
       
       // Update the daybook entry
-      const updatedEntry = await daybookApi.updateEntry(id, data);
+      await daybookApi.updateEntry(id, data);
       
       // If status changed from unpaid to paid AND bank transaction should be created
       if (isUnpaidToPaid && data.bank_account_id && data.affects_bank_balance) {
