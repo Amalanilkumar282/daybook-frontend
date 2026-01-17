@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { bankingApi, authUtils } from '../services/api';
 import { BankAccount, BankTransaction, TransactionType } from '../types/banking';
+import { Tenant } from '../types/daybook';
 import TransactionForm from '../components/TransactionForm';
 import TransactionList from '../components/TransactionList';
 import Pagination from '../components/Pagination';
@@ -22,6 +23,7 @@ const BankTransactions: React.FC = () => {
   const [showForm, setShowForm] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [selectedTenant, setSelectedTenant] = useState<string>('all');
 
   useEffect(() => {
     fetchAccounts();
@@ -151,6 +153,30 @@ const BankTransactions: React.FC = () => {
     }
   };
 
+  // Filter transactions by tenant
+  const filteredTransactions = useMemo(() => {
+    if (selectedTenant === 'all') {
+      return transactions;
+    }
+    if (selectedTenant === 'null') {
+      return transactions.filter(transaction => !transaction.tenant || transaction.tenant === null);
+    }
+    return transactions.filter(transaction => transaction.tenant === selectedTenant);
+  }, [transactions, selectedTenant]);
+
+  // Get unique tenants from transactions (including null)
+  const availableTenants = useMemo(() => {
+    const tenants = new Set<string>();
+    transactions.forEach(transaction => {
+      if (transaction.tenant) {
+        tenants.add(transaction.tenant);
+      } else {
+        tenants.add('null');
+      }
+    });
+    return Array.from(tenants).sort();
+  }, [transactions]);
+
   // Pagination
   const {
     currentPage,
@@ -160,7 +186,13 @@ const BankTransactions: React.FC = () => {
     paginatedData: paginatedTransactions,
     handlePageChange,
     handleItemsPerPageChange,
-  } = usePagination(transactions, { initialItemsPerPage: 10 });
+    resetPagination,
+  } = usePagination(filteredTransactions, { initialItemsPerPage: 10 });
+
+  // Reset pagination when filter changes
+  useEffect(() => {
+    resetPagination();
+  }, [selectedTenant, resetPagination]);
 
   const selectedAccount = accountIdParam 
     ? accounts.find(acc => acc.id === parseInt(accountIdParam))
@@ -199,29 +231,50 @@ const BankTransactions: React.FC = () => {
                 </div>
               )}
             </div>
-            <div className="flex gap-3">
-              {isAdmin && (
-                <button
-                  onClick={handleExportCsv}
-                  className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2"
-                >
-                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                  Export
-                </button>
-              )}
+            <div className="flex flex-col sm:flex-row gap-3">
+              {/* Tenant Filter */}
               {!showForm && (
-                <button
-                  onClick={handleCreate}
-                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
-                >
-                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                  </svg>
-                  New Transaction
-                </button>
+                <div className="flex items-center gap-2">
+                  <label className="text-sm font-medium text-gray-700">Tenant:</label>
+                  <select
+                    value={selectedTenant}
+                    onChange={(e) => setSelectedTenant(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                  >
+                    <option value="all">All Tenants</option>
+                    {Object.values(Tenant).map(tenant => (
+                      <option key={tenant} value={tenant}>{tenant}</option>
+                    ))}
+                    {availableTenants.includes('null') && (
+                      <option value="null">No Tenant</option>
+                    )}
+                  </select>
+                </div>
               )}
+              <div className="flex gap-3">
+                {isAdmin && (
+                  <button
+                    onClick={handleExportCsv}
+                    className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2"
+                  >
+                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Export
+                  </button>
+                )}
+                {!showForm && (
+                  <button
+                    onClick={handleCreate}
+                    className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                  >
+                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                    New Transaction
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -286,7 +339,7 @@ const BankTransactions: React.FC = () => {
                 setTimeout(() => setSuccess(null), 3000);
               }}
             />
-            {!isLoadingTransactions && !isLoadingAccounts && transactions.length > 0 && (
+            {!isLoadingTransactions && !isLoadingAccounts && filteredTransactions.length > 0 && (
               <div className="mt-6">
                 <Pagination
                   currentPage={currentPage}
