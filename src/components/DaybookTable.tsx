@@ -137,12 +137,12 @@ const DaybookTable: React.FC<DaybookTableProps> = ({ entries, loading, onDelete,
         bValue = b.amount;
         break;
       case 'tenant':
-        aValue = a.tenant.toLowerCase();
-        bValue = b.tenant.toLowerCase();
+        aValue = (a.tenant || '').toLowerCase();
+        bValue = (b.tenant || '').toLowerCase();
         break;
       case 'payment_type':
-        aValue = a.payment_type.toLowerCase();
-        bValue = b.payment_type.toLowerCase();
+        aValue = (a.payment_type || '').toLowerCase();
+        bValue = (b.payment_type || '').toLowerCase();
         break;
       default:
         return 0;
