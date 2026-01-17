@@ -131,11 +131,17 @@ const DaybookForm: React.FC<DaybookFormProps> = ({
         const accountsData = await bankingApi.getAllAccounts();
         setBankAccounts(accountsData);
         // Auto-select first bank account if not already set
-        if (accountsData.length > 0 && !formData.bank_account_id) {
-          setFormData(prev => ({
-            ...prev,
-            bank_account_id: accountsData[0].id
-          }));
+        if (accountsData.length > 0) {
+          setFormData(prev => {
+            // Only set if not already set
+            if (!prev.bank_account_id) {
+              return {
+                ...prev,
+                bank_account_id: accountsData[0].id
+              };
+            }
+            return prev;
+          });
         }
       } catch (error) {
         console.error('Error fetching bank accounts:', error);
