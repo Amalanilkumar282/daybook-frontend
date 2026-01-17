@@ -370,6 +370,7 @@ const DaybookForm: React.FC<DaybookFormProps> = ({
                 step="0.01"
                 min="0"
                 value={formData.amount === 0 ? '' : formData.amount}
+                disabled={mode === 'edit'}
                 onKeyDown={(e) => {
                   // Prevent minus sign, plus sign, and 'e' (exponential notation)
                   if (e.key === '-' || e.key === '+' || e.key === 'e' || e.key === 'E') {
@@ -392,11 +393,15 @@ const DaybookForm: React.FC<DaybookFormProps> = ({
                 placeholder="1000.00"
                 className={`w-full pl-8 pr-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
                   errors.amount ? 'border-red-500' : 'border-gray-300'
-                }`}
+                } ${mode === 'edit' ? 'bg-gray-100 cursor-not-allowed' : ''}`}
               />
             </div>
             {errors.amount && <p className="mt-1 text-sm text-red-600">{errors.amount}</p>}
-            <p className="mt-1 text-xs text-gray-500">Enter amount (decimals allowed, e.g., 1500.50)</p>
+            {mode === 'edit' ? (
+              <p className="mt-1 text-xs text-amber-600 font-medium">Amount cannot be edited to maintain data integrity</p>
+            ) : (
+              <p className="mt-1 text-xs text-gray-500">Enter amount (decimals allowed, e.g., 1500.50)</p>
+            )}
           </div>
         </div>
 
